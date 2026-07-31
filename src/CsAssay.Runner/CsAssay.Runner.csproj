@@ -8,11 +8,17 @@
     <ToolCommandName>cs-assay</ToolCommandName>
     <PackageId>CsAssay.Tool</PackageId>
     <Version>0.1.0</Version>
+    <Title>CSharpAssay command-line verifier</Title>
+    <PackageTags>dotnet-tool;csharp;roslyn;verification;functional-programming</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../CsAssay.Domain/CsAssay.Domain.csproj" />
     <ProjectReference Include="../CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
     <ProjectReference Include="../CsAssay.Workspaces/CsAssay.Workspaces.csproj" />
     <ProjectReference Include="../CsAssay.Reporting/CsAssay.Reporting.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../../docs/packaging/tool/README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

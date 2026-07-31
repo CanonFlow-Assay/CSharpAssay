@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Description>Deterministic CSharpAssay package content and provenance audit.</Description>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

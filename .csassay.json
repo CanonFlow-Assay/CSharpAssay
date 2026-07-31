@@ -42,7 +42,8 @@
       "tests/CsAssay.Runner.Tests/CsAssay.Runner.Tests.csproj",
       "tests/CsAssay.Integration.Tests/CsAssay.Integration.Tests.csproj",
       "tests/CsAssay.Performance.Tests/CsAssay.Performance.Tests.csproj",
-      "typegym/CsAssay.TypeGym/CsAssay.TypeGym.csproj"
+      "typegym/CsAssay.TypeGym/CsAssay.TypeGym.csproj",
+      "eng/CsAssay.PackageAudit/CsAssay.PackageAudit.csproj"
     ],
     "coreNamespaces": [
       "CsAssay.Domain",

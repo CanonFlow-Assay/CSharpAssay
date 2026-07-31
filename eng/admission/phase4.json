@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "phase": 4,
+  "status": "complete",
+  "packages": [
+    {
+      "id": "CsAssay.Analyzers",
+      "version": "0.1.0",
+      "entries": 9,
+      "qualification": "clean consumer builds and CSAN0001 blocks the negative specimen"
+    },
+    {
+      "id": "CsAssay.Tool",
+      "version": "0.1.0",
+      "entries": 133,
+      "qualification": "isolated local-feed install, doctor, and authoritative sample verification pass"
+    }
+  ],
+  "packageContract": {
+    "independentPacks": 2,
+    "byteIdenticalAfterCanonicalization": true,
+    "embeddedCommitMatchesProvenance": true,
+    "requiredPayloadAudited": true,
+    "sourceAndInspirationContentRejected": true,
+    "checksums": "SHA-256 emitted per exact release commit",
+    "nugetSigned": false,
+    "nugetSigningReason": "repository policy supplies no signing certificate or authorized private key",
+    "mainBranchAttestation": "GitHub/Sigstore keyless build provenance",
+    "registryPublicationAuthorized": false
+  },
+  "qualification": {
+    "sdk": "10.0.301",
+    "configuration": "Release",
+    "projects": 16,
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "testsPassed": 84,
+    "testsFailed": 0,
+    "testsSkipped": 0
+  },
+  "authoritativeSelfAssay": {
+    "verdict": "pass",
+    "projects": 16,
+    "requiredTests": 18,
+    "findings": 0,
+    "missingEvidence": 0,
+    "toolFailures": 0,
+    "repeatByteIdentical": true,
+    "jsonSha256": "42d3340fc25d0c3334b250c4e8478feba37190f1daa0eb6ba3c0804eb854f2bd",
+    "sarifSha256": "c194636e6c595ebd6788c1c0dd92e488457011c4ce14dfdba78774c1528fbc0d",
+    "policySha256": "6310130d4ccaacdc4d3f4ad1bac2693deecb17e4e2700d3e3da96c83ee164013"
+  },
+  "ciAuthority": {
+    "stable": ".NET 10 locked restore, build, tests, verify, package qualification, SARIF, and provenance",
+    "preview": "separate continue-on-error job; never authoritative",
+    "localPreviewResult": "preview-language build passes; native check is explicitly Inconclusive because .NET 11 capability is unavailable"
+  },
+  "rollbackDocumented": true
+}

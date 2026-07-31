@@ -5,7 +5,7 @@ product:        CSharpAssay
 executable:     cs-assay
 assemblies:     CsAssay.*
 plan version:   1.0.0
-status:         phase-2-complete-on-stable-lane
+status:         phase-4-complete-on-stable-lane
 date:           2026-07-31
 stable floor:   C# 14 / .NET 10 LTS
 preview lane:   C# 15 working set / .NET 11 Preview 6
@@ -1257,6 +1257,16 @@ package contents contain no inspiration repository;
 preview failure cannot block stable release unless explicitly promoted;
 release artifacts match the tested hashes.
 ```
+
+Implementation status on 2026-07-31: complete on the stable lane. The
+repository now builds both packages twice, canonicalizes unsigned NuGet
+archives, binds package metadata and provenance to the exact commit, compares
+the results byte for byte, audits payload/signing state, and qualifies a fresh
+tool and analyzer consumer from a local-only feed. GitHub Actions keeps the
+stable release gate and non-authoritative preview probe in separate jobs,
+uploads SARIF, and attests main-branch package bytes. No NuGet signing authority
+or publication authority is present, so those actions remain deliberately out
+of scope.
 
 ### Phase 5 — migration report and ecosystem adapters
 

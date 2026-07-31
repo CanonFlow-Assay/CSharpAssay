@@ -120,7 +120,7 @@ public static class SarifWriter
         writer.WriteString("semanticVersion", version);
         writer.WriteString(
             "informationUri",
-            "https://github.com/CanonFlowFoundation/CSharpAssay");
+            "https://github.com/CanonFlow-Assay/CSharpAssay");
         writer.WritePropertyName("rules");
         writer.WriteStartArray();
         foreach (var rule in RuleCatalogue.All.OrderBy(
@@ -140,7 +140,7 @@ public static class SarifWriter
             writer.WriteEndObject();
             writer.WriteString(
                 "helpUri",
-                "https://github.com/CanonFlowFoundation/CSharpAssay/blob/main/" +
+                "https://github.com/CanonFlow-Assay/CSharpAssay/blob/main/" +
                     rule.Documentation);
             writer.WritePropertyName("properties");
             writer.WriteStartObject();

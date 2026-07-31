@@ -1,29 +1,137 @@
-name: .NET
+name: CSharpAssay
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  stable:
+    name: Stable .NET 10 release gate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.301
-    - name: Locked restore
-      run: dotnet restore CSharpAssay.slnx --locked-mode
-    - name: Release build
-      run: dotnet build CSharpAssay.slnx --no-restore --configuration Release
-    - name: Release tests
-      run: >-
-        dotnet test CSharpAssay.slnx
-        --no-build
-        --no-restore
-        --configuration Release
-        --max-parallel-test-modules 1
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.301
+
+      - name: Locked restore
+        run: dotnet restore CSharpAssay.slnx --locked-mode
+
+      - name: Release build
+        run: dotnet build CSharpAssay.slnx --no-restore --configuration Release
+
+      - name: Release tests
+        run: >-
+          dotnet test CSharpAssay.slnx
+          --no-build
+          --no-restore
+          --configuration Release
+          --max-parallel-test-modules 1
+
+      - name: Authoritative self-verification
+        run: >-
+          dotnet src/CsAssay.Runner/bin/Release/net10.0/cs-assay.dll
+          verify CSharpAssay.slnx
+          --profile compat
+          --json artifacts/evidence/csassay.json
+          --sarif artifacts/evidence/csassay.sarif
+
+      - name: Reproducible packages and provenance
+        run: ./eng/pack-release.sh
+
+      - name: Fresh package installation qualification
+        run: ./eng/qualify-packages.sh
+
+      - name: Upload SARIF
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: artifacts/evidence/csassay.sarif
+          category: csharp-assay-stable
+
+      - name: Attest release package provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest@v4
+        with:
+          subject-path: artifacts/packages/*.nupkg
+
+      - name: Upload release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: csharp-assay-release-evidence
+          path: |
+            artifacts/evidence/csassay.json
+            artifacts/evidence/csassay.sarif
+            artifacts/packages/*.nupkg
+            artifacts/packages/checksums.sha256
+            artifacts/packages/provenance.json
+          if-no-files-found: error
+          retention-days: 14
+
+  preview:
+    name: Native preview probe (non-authoritative)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Probe current .NET 11 preview SDK
+        continue-on-error: true
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 11.0.x
+          dotnet-quality: preview
+
+      - name: Setup stable SDK required by global.json
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.301
+
+      - name: Locked restore
+        run: dotnet restore CSharpAssay.slnx --locked-mode
+
+      - name: Preview-language build
+        run: >-
+          dotnet build CSharpAssay.slnx
+          --no-restore
+          --configuration Release
+          -p:LangVersion=preview
+
+      - name: Non-authoritative native profile check
+        continue-on-error: true
+        run: >-
+          dotnet src/CsAssay.Runner/bin/Release/net10.0/cs-assay.dll
+          check CSharpAssay.slnx
+          --profile native
+          --json artifacts/preview/csassay.json
+          --sarif artifacts/preview/csassay.sarif
+
+      - name: Upload preview evidence
+        if: always() && hashFiles('artifacts/preview/csassay.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: csharp-assay-preview-evidence
+          path: artifacts/preview/
+          if-no-files-found: error
+          retention-days: 7

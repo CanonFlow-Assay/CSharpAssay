@@ -111,4 +111,12 @@ rules, and fixed test inputs:
 ```
 
 See [grandplan.md](grandplan.md) for the full design and
-[STATUS.md](STATUS.md) for implementation progress.
+[STATUS.md](STATUS.md) for implementation progress. Package consumers should
+also read [installation and rollback](docs/installation.md); maintainers should
+use the [release qualification](docs/release.md) procedure.
+
+Phase 4 produces `CsAssay.Analyzers` and the `CsAssay.Tool` global/local tool.
+The stable workflow verifies the repository, proves package reproducibility,
+qualifies both packages from an isolated local feed, uploads SARIF, and attaches
+keyless provenance on `main`. Preview SDK probing is intentionally separate and
+cannot turn an unavailable or changing preview into stable release authority.

@@ -6,7 +6,13 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>CsAssay.Analyzers</PackageId>
+    <Version>0.1.0</Version>
+    <Title>CSharpAssay analyzers</Title>
+    <PackageTags>csharp;roslyn;analyzer;functional-programming;null-safety</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../CsAssay.Domain/CsAssay.Domain.csproj" />
@@ -17,5 +23,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="$(TargetPath)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(TargetDir)CsAssay.Catalogue.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(TargetDir)CsAssay.Domain.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(TargetDir)CsAssay.SdkAdapter.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="../../docs/packaging/analyzers/README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

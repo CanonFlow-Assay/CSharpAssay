@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Good.cs" />
+    <Compile Include="Violation.cs"
+             Condition="'$(QualificationViolation)' == 'true'" />
+    <PackageReference Include="CsAssay.Analyzers"
+                      Version="0.1.0"
+                      PrivateAssets="all" />
+  </ItemGroup>
+</Project>
