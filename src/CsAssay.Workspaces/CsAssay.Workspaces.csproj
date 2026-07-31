@@ -7,6 +7,8 @@
     <ProjectReference Include="../CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
     <ProjectReference Include="../CsAssay.SdkAdapter/CsAssay.SdkAdapter.csproj" />
     <ProjectReference Include="../CsAssay.Analyzers/CsAssay.Analyzers.csproj" />
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.Build.Locator" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />

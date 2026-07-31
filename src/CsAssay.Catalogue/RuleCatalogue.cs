@@ -9,6 +9,17 @@ public static class RuleCatalogue
     private const string CompatPositive = "specimens/Compat.Good/";
     private const string CompatNegative = "specimens/Compat.Bad/";
 
+    private static readonly ImmutableHashSet<string> AdmittedRuleIds =
+        ImmutableHashSet.Create(
+            StringComparer.Ordinal,
+            RuleIds.UnauthorizedSuppression,
+            RuleIds.NullableDisabled,
+            RuleIds.NullForgiving,
+            RuleIds.NullValueIntroduction,
+            RuleIds.NullableCoreContract,
+            RuleIds.MutableSetter,
+            RuleIds.MutableCollectionExposure);
+
     public static ImmutableArray<RuleRecord> All { get; } =
     [
         Rule(
@@ -187,7 +198,9 @@ public static class RuleCatalogue
             Id: id,
             Title: title,
             Category: category,
-            Status: RuleStatus.Prototype,
+            Status: AdmittedRuleIds.Contains(id)
+                ? RuleStatus.Admitted
+                : RuleStatus.Prototype,
             Certainty: certainty,
             Disposition: disposition,
             Profiles: profiles,

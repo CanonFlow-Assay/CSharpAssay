@@ -1,102 +1,176 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "allowedVerdicts": [
     "true-positive",
     "false-positive",
     "contextual-needs-policy",
     "tool-failure",
-    "not-run"
+    "run-clean"
   ],
   "repositories": [
     {
-      "id": "csassay-self",
-      "path": ".",
-      "commit": "working-tree",
-      "consent": "owner-requested implementation",
+      "id": "functional-csharp-code-2",
+      "revision": "8d37775d80a71d09aa8ad8168168bd9c257f4980",
+      "license": "MIT",
+      "consent": "owner-provided local inspiration corpus; public MIT source",
       "categories": [
-        "library",
-        "multi-targeting",
-        "analyzer",
-        "workspace"
+        "functional-library",
+        "data-structures",
+        "examples",
+        "tests",
+        "serialization",
+        "async"
       ],
-      "status": "not-run"
+      "projectsLoaded": 5,
+      "compilerErrors": 0,
+      "missingEvidence": 0,
+      "toolFailures": 0,
+      "evidenceSha256": "864cde15a143cd7e2d5557506208419db6bf60fdf8dd18d1c9c69134126e9df5",
+      "sarifSha256": "d76b5302e7bb2752faed06f27e405f3b7b7a3a7bc3fd8aa13f5dd5f14fddc3d7",
+      "policySha256": "55d5ef7df5e13b73b22fe3b57f773a41afa29d78302d5e1fb7e0bdc73682c45a",
+      "pathRelocationByteIdentical": true
     }
   ],
   "rules": [
     {
       "ruleId": "CSAP0001",
-      "status": "not-run",
-      "findings": []
+      "status": "qualified",
+      "findingCount": 0,
+      "verdict": "run-clean",
+      "precision": "inconclusive",
+      "reason": "No CSharpAssay suppression was present; no precision claim is made."
     },
     {
       "ruleId": "CSAN0001",
-      "status": "not-run",
-      "findings": []
+      "status": "qualified",
+      "findingCount": 3,
+      "groups": [
+        {
+          "disposition": "advise",
+          "verdict": "contextual-needs-policy",
+          "count": 3,
+          "fingerprintsSha256": "de96a62654c9ab8882a22fecd1983b6cd15f39978550eddd7dbf05fc3beddf29",
+          "reason": "Nullable was disabled only in projects explicitly declared as examples, exercises, or tests."
+        }
+      ]
     },
     {
       "ruleId": "CSAN0002",
-      "status": "not-run",
-      "findings": []
+      "status": "qualified",
+      "findingCount": 19,
+      "groups": [
+        {
+          "disposition": "block",
+          "verdict": "true-positive",
+          "count": 19,
+          "fingerprintsSha256": "ed9a4cba36f39951a359e612f50fde9877b1ab942139c19e251eb4c1964b5849",
+          "reason": "Every finding erased compiler null-flow evidence inside a declared functional core project."
+        }
+      ]
     },
     {
       "ruleId": "CSAN0003",
-      "status": "not-run",
-      "findings": []
+      "status": "qualified",
+      "findingCount": 30,
+      "groups": [
+        {
+          "disposition": "block",
+          "verdict": "true-positive",
+          "count": 1,
+          "fingerprintsSha256": "508fd512b482dc46657930862559f67da2124231508a779daaf5dad4a68b1a58",
+          "reason": "A reference default was used as hidden success/failure state in the functional core."
+        },
+        {
+          "disposition": "advise",
+          "verdict": "contextual-needs-policy",
+          "count": 29,
+          "fingerprintsSha256": "0752d2d301996b904ac73ae3f5a4a5d30fbbfb29f2fb28120c232183e40305ba",
+          "reason": "The remaining findings were confined to declared examples, exercises, tests, or serialization shells."
+        }
+      ]
     },
     {
       "ruleId": "CSAN0004",
-      "status": "not-run",
-      "findings": []
+      "status": "qualified",
+      "findingCount": 4,
+      "groups": [
+        {
+          "disposition": "block",
+          "verdict": "true-positive",
+          "count": 2,
+          "fingerprintsSha256": "ce4fc6b0118193e791a3b54648cf71ac17348bc6b7ac05db3ea74c142ae517f4",
+          "reason": "Owned public functional-core contracts accepted nullable values."
+        },
+        {
+          "disposition": "advise",
+          "verdict": "contextual-needs-policy",
+          "count": 2,
+          "fingerprintsSha256": "2923ad006c76722917c31ba34f4e586c2e6faa754c827ef0ee9b8afe8ece0e9a",
+          "reason": "The contracts were in declared example or nullable-conversion boundaries."
+        }
+      ]
     },
     {
       "ruleId": "CSAI0001",
-      "status": "not-run",
-      "findings": []
+      "status": "qualified",
+      "findingCount": 0,
+      "verdict": "run-clean",
+      "precision": "inconclusive",
+      "reason": "No public mutable setter on a record was found; no precision claim is made."
     },
     {
       "ruleId": "CSAI0002",
-      "status": "not-run",
-      "findings": []
+      "status": "qualified",
+      "findingCount": 0,
+      "verdict": "run-clean",
+      "precision": "inconclusive",
+      "reason": "No known mutable collection was exposed by a record; no precision claim is made."
     },
     {
       "ruleId": "CSAE0001",
-      "status": "not-run",
-      "findings": []
+      "status": "observed-not-admitted",
+      "findingCount": 3
     },
     {
       "ruleId": "CSAA0001",
-      "status": "not-run",
-      "findings": []
+      "status": "observed-not-admitted",
+      "findingCount": 15
     },
     {
       "ruleId": "CSAA0002",
-      "status": "not-run",
-      "findings": []
+      "status": "observed-not-admitted",
+      "findingCount": 4
     },
     {
       "ruleId": "CSAU0001",
-      "status": "not-run",
-      "findings": []
+      "status": "observed-not-admitted",
+      "findingCount": 0
     },
     {
       "ruleId": "CSAU0002",
-      "status": "not-run",
-      "findings": []
+      "status": "observed-not-admitted",
+      "findingCount": 0
     },
     {
       "ruleId": "CSAU0003",
-      "status": "not-run",
-      "findings": []
+      "status": "observed-not-admitted",
+      "findingCount": 0
     },
     {
       "ruleId": "CSAU0004",
-      "status": "not-run",
-      "findings": []
+      "status": "native-preview-unavailable",
+      "findingCount": 0
     }
   ],
   "summary": {
-    "denominator": 0,
-    "precision": "inconclusive",
-    "reason": "No real-world findings have been adjudicated yet."
+    "allFindings": 78,
+    "admittedRuleFindings": 56,
+    "truePositives": 22,
+    "falsePositives": 0,
+    "contextualNeedsPolicy": 34,
+    "toolFailures": 0,
+    "precisionDenominator": 22,
+    "precision": 1.0,
+    "precisionFormula": "true-positive / (true-positive + false-positive); contextual findings excluded"
   }
 }

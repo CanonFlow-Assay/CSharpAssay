@@ -5,9 +5,10 @@ functional-first C# policy. It reports what it proved, what it could not prove,
 and whether the toolchain itself failed. Missing evidence never becomes a clean
 release verdict.
 
-The project is currently a `0.1` research preview. All implemented rules remain
-`Prototype` until their positive, negative, suppression, fault, performance, and
-real-repository admission obligations are complete.
+The project is currently a `0.1` research preview. Phase 2 admits seven
+stable-lane rules after positive, negative, suppression, fault, semantic
+matrix, performance, and real-repository evidence. The remaining seven rules
+stay `Prototype` and cannot block a release verdict.
 
 ## Current capabilities
 
@@ -16,7 +17,8 @@ real-repository admission obligations are complete.
 - Roslyn diagnostics for the initial null, immutability, error, async, union,
   and suppression trust slice;
 - `.csproj`, `.sln`, and `.slnx` loading through `MSBuildWorkspace`;
-- explicit target-framework enumeration;
+- evaluated target-framework enumeration, including imported MSBuild
+  properties;
 - four-state verdicts: `Pass`, `Fail`, `Inconclusive`, and `ToolFailure`;
 - deterministic JSON and SARIF 2.1.0;
 - conservative `set` to `init` code fix;
@@ -54,8 +56,13 @@ so they remain diagnostic-only until a fix has behavioral qualification.
 ```text
 dotnet restore CSharpAssay.slnx --locked-mode
 dotnet build CSharpAssay.slnx --no-restore --configuration Release
-dotnet test CSharpAssay.slnx --no-build --configuration Release
+dotnet test CSharpAssay.slnx --no-build --configuration Release \
+  --max-parallel-test-modules 1
 ```
+
+Test modules are serialized because the solution includes a wall-clock analyzer
+latency gate. Running that benchmark beside six CPU-heavy test processes
+measures scheduler contention rather than analyzer latency.
 
 ## CLI
 
@@ -68,9 +75,10 @@ dotnet run --project src/CsAssay.Runner -- verify CSharpAssay.slnx \
   --sarif artifacts/csassay.sarif
 ```
 
-`check` is provisional. Only `verify` is structurally capable of release
-authority, and the research preview deliberately returns `Inconclusive` until
-at least one rule has met the admission contract.
+`check` is provisional. `verify` is the release-authority path and can issue an
+authoritative verdict for the seven admitted stable-lane rules when project,
+compiler, analyzer, policy, and target-framework evidence is complete. Native
+preview rules remain unqualified.
 
 See [grandplan.md](grandplan.md) for the full design and
 [STATUS.md](STATUS.md) for implementation progress.

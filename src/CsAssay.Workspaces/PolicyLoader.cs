@@ -118,6 +118,8 @@ public static class PolicyLoader
             ? ParseBoundaries(boundariesElement)
             : new BoundaryPolicy(
                 ImmutableArray<string>.Empty,
+                ImmutableArray<string>.Empty,
+                ImmutableArray<string>.Empty,
                 ImmutableArray<string>.Empty);
         var representations = root.TryGetProperty(
             "representations",
@@ -184,9 +186,24 @@ public static class PolicyLoader
         var value = RequireObject(element, "$.boundaries");
         EnsureUniqueAndAllowed(
             value,
-            ["coreNamespaces", "shellNamespaces"],
+            [
+                "coreProjects",
+                "shellProjects",
+                "coreNamespaces",
+                "shellNamespaces"
+            ],
             "$.boundaries");
         return new BoundaryPolicy(
+            value.TryGetProperty("coreProjects", out var coreProjects)
+                ? ParseStringArray(
+                    coreProjects,
+                    "$.boundaries.coreProjects")
+                : ImmutableArray<string>.Empty,
+            value.TryGetProperty("shellProjects", out var shellProjects)
+                ? ParseStringArray(
+                    shellProjects,
+                    "$.boundaries.shellProjects")
+                : ImmutableArray<string>.Empty,
             value.TryGetProperty("coreNamespaces", out var core)
                 ? ParseStringArray(core, "$.boundaries.coreNamespaces")
                 : ImmutableArray<string>.Empty,

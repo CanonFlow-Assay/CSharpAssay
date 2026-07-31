@@ -1,0 +1,15 @@
+{
+  "profile": "compat",
+  "boundaries": {
+    "coreProjects": [],
+    "shellProjects": [
+      "BoundaryScope.csproj"
+    ],
+    "coreNamespaces": [
+      "Qualification.Core"
+    ],
+    "shellNamespaces": [
+      "Qualification.Shell"
+    ]
+  }
+}

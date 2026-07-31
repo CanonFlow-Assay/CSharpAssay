@@ -8,6 +8,25 @@
     ]
   },
   "boundaries": {
+    "coreProjects": [
+      "src/CsAssay.Domain/CsAssay.Domain.csproj",
+      "src/CsAssay.Catalogue/CsAssay.Catalogue.csproj"
+    ],
+    "shellProjects": [
+      "src/CsAssay.SdkAdapter/CsAssay.SdkAdapter.csproj",
+      "src/CsAssay.Analyzers/CsAssay.Analyzers.csproj",
+      "src/CsAssay.CodeFixes/CsAssay.CodeFixes.csproj",
+      "src/CsAssay.Workspaces/CsAssay.Workspaces.csproj",
+      "src/CsAssay.Reporting/CsAssay.Reporting.csproj",
+      "src/CsAssay.Runner/CsAssay.Runner.csproj",
+      "tests/CsAssay.Domain.Tests/CsAssay.Domain.Tests.csproj",
+      "tests/CsAssay.Analyzers.Tests/CsAssay.Analyzers.Tests.csproj",
+      "tests/CsAssay.Workspaces.Tests/CsAssay.Workspaces.Tests.csproj",
+      "tests/CsAssay.Runner.Tests/CsAssay.Runner.Tests.csproj",
+      "tests/CsAssay.Integration.Tests/CsAssay.Integration.Tests.csproj",
+      "tests/CsAssay.Performance.Tests/CsAssay.Performance.Tests.csproj",
+      "typegym/CsAssay.TypeGym/CsAssay.TypeGym.csproj"
+    ],
     "coreNamespaces": [
       "CsAssay.Domain",
       "CsAssay.Catalogue"

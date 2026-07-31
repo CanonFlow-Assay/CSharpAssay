@@ -95,12 +95,18 @@ public sealed record ToolchainEvidence(
     string RoslynVersion,
     string OperatingSystem);
 
+public sealed record PolicyEvidence(
+    string Origin,
+    string Path,
+    string Sha256);
+
 public sealed record EvidenceBundle(
     string SchemaVersion,
     string ToolVersion,
     string Input,
     EffectiveProfile Profile,
     bool IsAuthoritative,
+    PolicyEvidence Policy,
     ToolchainEvidence Toolchain,
     ImmutableArray<ProjectEvidence> Projects,
     ImmutableArray<RuleEvidence> Rules,
@@ -118,6 +124,10 @@ public sealed record EvidenceBundle(
         Input: input,
         Profile: EffectiveProfile.Compat,
         IsAuthoritative: isAuthoritative,
+        Policy: new PolicyEvidence(
+            "built-in-observe",
+            string.Empty,
+            "6889293b67ae1c51b40448fbe0e2f3578b663b04eab0bbdf6c537f5f26f7e273"),
         Toolchain: new ToolchainEvidence(
             string.Empty,
             Environment.Version.ToString(),

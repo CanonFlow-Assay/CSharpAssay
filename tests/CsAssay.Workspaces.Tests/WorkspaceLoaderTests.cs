@@ -26,6 +26,29 @@ public sealed class WorkspaceLoaderTests
         Assert.Equal("netstandard2.0", compilation.TargetFramework);
         Assert.NotEmpty(compilation.Compilation.SyntaxTrees);
     }
+
+    [Fact]
+    public async Task Evaluates_target_framework_inherited_from_directory_build_props()
+    {
+        var root = RepositoryRoot.Find();
+        var project = Path.Combine(
+            root,
+            "src",
+            "CsAssay.Workspaces",
+            "CsAssay.Workspaces.csproj");
+
+        var result = await WorkspaceLoader.LoadAsync(
+            project,
+            TestContext.Current.CancellationToken);
+
+        var compilation = Assert.Single(result.Compilations);
+        Assert.Equal("net10.0", compilation.TargetFramework);
+        Assert.DoesNotContain(
+            result.Messages,
+            message => message.Message.StartsWith(
+                "Could not evaluate target frameworks:",
+                StringComparison.Ordinal));
+    }
 }
 
 internal static class RepositoryRoot

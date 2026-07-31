@@ -15,11 +15,28 @@ public sealed class CatalogueTests
     }
 
     [Fact]
-    public void Research_slice_is_not_prematurely_admitted()
+    public void Only_the_proven_phase_two_slice_is_admitted()
     {
-        Assert.All(
+        var admitted = RuleCatalogue.All
+            .Where(rule => rule.Status == RuleStatus.Admitted)
+            .Select(rule => rule.Id)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(
+            [
+                RuleIds.MutableSetter,
+                RuleIds.MutableCollectionExposure,
+                RuleIds.NullableDisabled,
+                RuleIds.NullForgiving,
+                RuleIds.NullValueIntroduction,
+                RuleIds.NullableCoreContract,
+                RuleIds.UnauthorizedSuppression
+            ],
+            admitted);
+        Assert.DoesNotContain(
             RuleCatalogue.All,
-            rule => Assert.Equal(RuleStatus.Prototype, rule.Status));
+            rule => rule.Status == RuleStatus.Retired);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using CsAssay.Catalogue;
+using Microsoft.CodeAnalysis;
 
 namespace CsAssay.Analyzers.Tests;
 
@@ -14,6 +15,34 @@ public sealed class FunctionalPolicyAnalyzerTests
             """);
 
         Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullableDisabled);
+    }
+
+    [Theory]
+    [InlineData(NullableContextOptions.Disable)]
+    [InlineData(NullableContextOptions.Warnings)]
+    [InlineData(NullableContextOptions.Annotations)]
+    public async Task Reports_incomplete_project_nullable_context(
+        NullableContextOptions nullableContext)
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            "public sealed class Sample { }",
+            new Dictionary<string, string>(),
+            nullableContext);
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullableDisabled);
+    }
+
+    [Fact]
+    public async Task Accepts_fully_enabled_project_nullable_context()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            "public sealed class Sample { }");
+
+        Assert.DoesNotContain(
             diagnostics,
             diagnostic => diagnostic.Id == RuleIds.NullableDisabled);
     }
@@ -59,12 +88,77 @@ public sealed class FunctionalPolicyAnalyzerTests
             {
                 internal static bool IsMissing(string? input) =>
                     input is null;
+
+                internal static bool IsPresent(string? input) =>
+                    input != null;
             }
             """);
 
         Assert.DoesNotContain(
             diagnostics,
             diagnostic => diagnostic.Id == RuleIds.NullValueIntroduction);
+    }
+
+    [Fact]
+    public async Task Internal_surface_is_not_a_public_nullable_contract()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            internal sealed class InternalBoundary
+            {
+                public string? Read(string? input) => input;
+            }
+            """);
+
+        Assert.DoesNotContain(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullableCoreContract);
+    }
+
+    [Fact]
+    public async Task Positional_record_property_is_part_of_the_public_contract()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public sealed record Envelope(string? Value);
+            """);
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullableCoreContract);
+    }
+
+    [Fact]
+    public async Task Inherited_framework_contract_is_not_redeclared_as_owned()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public interface IBoundary
+            {
+                string? Read(string? value);
+            }
+
+            public sealed class Boundary : IBoundary
+            {
+                public string? Read(string? value) => value;
+                public override bool Equals(object? other) =>
+                    other is Boundary;
+                public override int GetHashCode() => 0;
+            }
+            """);
+
+        Assert.Equal(
+            2,
+            diagnostics.Count(diagnostic =>
+                diagnostic.Id == RuleIds.NullableCoreContract));
+        Assert.All(
+            diagnostics.Where(diagnostic =>
+                diagnostic.Id == RuleIds.NullableCoreContract),
+            diagnostic => Assert.Contains(
+                "IBoundary",
+                diagnostic.GetMessage(
+                    System.Globalization.CultureInfo.InvariantCulture),
+                StringComparison.Ordinal));
     }
 
     [Fact]
@@ -104,6 +198,20 @@ public sealed class FunctionalPolicyAnalyzerTests
         Assert.Contains(
             diagnostics,
             diagnostic => diagnostic.Id == RuleIds.MutableSetter);
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.MutableCollectionExposure);
+    }
+
+    [Fact]
+    public async Task Reports_positional_mutable_collection_surface()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            using System.Collections.Generic;
+            public sealed record Order(List<string> Lines);
+            """);
+
         Assert.Contains(
             diagnostics,
             diagnostic => diagnostic.Id == RuleIds.MutableCollectionExposure);

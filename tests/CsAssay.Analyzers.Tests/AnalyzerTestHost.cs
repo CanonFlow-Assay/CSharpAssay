@@ -6,6 +6,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace CsAssay.Analyzers.Tests;
 
+internal sealed record AnalyzerSource(string Path, string Text);
+
 internal static class AnalyzerTestHost
 {
     public static Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string source) =>
@@ -13,19 +15,35 @@ internal static class AnalyzerTestHost
 
     public static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(
         string source,
-        IReadOnlyDictionary<string, string> options)
+        IReadOnlyDictionary<string, string> options,
+        NullableContextOptions nullableContext =
+            NullableContextOptions.Enable,
+        bool concurrentAnalysis = true) =>
+        await AnalyzeAsync(
+            [new AnalyzerSource("Test.cs", source)],
+            options,
+            nullableContext,
+            concurrentAnalysis);
+
+    public static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(
+        ImmutableArray<AnalyzerSource> sources,
+        IReadOnlyDictionary<string, string> options,
+        NullableContextOptions nullableContext =
+            NullableContextOptions.Enable,
+        bool concurrentAnalysis = true)
     {
-        var syntaxTree = CSharpSyntaxTree.ParseText(
-            source,
-            new CSharpParseOptions(LanguageVersion.CSharp14),
-            path: "Test.cs");
+        var syntaxTrees = sources.Select(source =>
+            CSharpSyntaxTree.ParseText(
+                source.Text,
+                new CSharpParseOptions(LanguageVersion.CSharp14),
+                path: source.Path));
         var compilation = CSharpCompilation.Create(
             "AnalyzerTest",
-            [syntaxTree],
+            syntaxTrees,
             References,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
-                nullableContextOptions: NullableContextOptions.Enable));
+                nullableContextOptions: nullableContext));
         var analyzerOptions = new AnalyzerOptions(
             ImmutableArray<AdditionalText>.Empty,
             new TestOptionsProvider(options));
@@ -34,7 +52,7 @@ internal static class AnalyzerTestHost
             new CompilationWithAnalyzersOptions(
                 analyzerOptions,
                 onAnalyzerException: (_, _, _) => { },
-                concurrentAnalysis: true,
+                concurrentAnalysis: concurrentAnalysis,
                 logAnalyzerExecutionTime: false,
                 reportSuppressedDiagnostics: true));
 

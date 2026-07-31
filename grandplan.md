@@ -5,7 +5,7 @@ product:        CSharpAssay
 executable:     cs-assay
 assemblies:     CsAssay.*
 plan version:   1.0.0
-status:         ready-for-phase-0
+status:         phase-2-complete-on-stable-lane
 date:           2026-07-31
 stable floor:   C# 14 / .NET 10 LTS
 preview lane:   C# 15 working set / .NET 11 Preview 6
@@ -1177,6 +1177,12 @@ no verifier relies on source substring matching.
 ```
 
 ### Phase 2 — analyzer trust slice
+
+Stable-lane implementation status (2026-07-31): complete. Seven rules are
+Admitted (`CSAP0001`, `CSAN0001`–`CSAN0004`, `CSAI0001`, and `CSAI0002`);
+the remaining seven candidates stay Prototype. The full solution produces an
+authoritative Pass with complete evidence. Native-preview admission remains
+unavailable because no .NET 11 SDK is installed.
 
 Implement candidates in this order:
 

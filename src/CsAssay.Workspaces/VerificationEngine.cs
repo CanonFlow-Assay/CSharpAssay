@@ -82,7 +82,8 @@ public static class VerificationEngine
             workspaceResult.Messages,
             failures,
             missing,
-            workspaceDiagnostics);
+            workspaceDiagnostics,
+            rootPath);
         if (request.IsAuthoritative)
         {
             CheckRequiredTargetFrameworks(
@@ -145,19 +146,6 @@ public static class VerificationEngine
                 unit.Compilation.Options.NullableContextOptions.ToString(),
                 Loaded: true,
                 compilerDiagnostics));
-
-            if (unit.Compilation.Options.NullableContextOptions ==
-                NullableContextOptions.Disable)
-            {
-                findings.Add(CreateFinding(
-                    RuleIds.NullableDisabled,
-                    "Project nullable context is disabled.",
-                    suppressed: false,
-                    unit,
-                    SourceSpan.None,
-                    policy,
-                    rootPath));
-            }
 
             CaptureSourceAndGeneratedEvidence(
                 unit,
@@ -287,6 +275,7 @@ public static class VerificationEngine
             Input: Path.GetFileName(fullInputPath),
             Profile: overallProfile,
             IsAuthoritative: request.IsAuthoritative,
+            Policy: CreatePolicyEvidence(policyResult.Path, rootPath),
             Toolchain: toolchain,
             Projects: projects
                 .OrderBy(project => project.Path, StringComparer.Ordinal)
@@ -345,7 +334,7 @@ public static class VerificationEngine
             _ => throw new InvalidOperationException("Unknown rule: " + ruleId)
         };
         var inCore = IsInCore(
-            unit.Compilation,
+            unit,
             location,
             policy,
             rootPath);
@@ -376,11 +365,28 @@ public static class VerificationEngine
     }
 
     private static bool IsInCore(
-        CSharpCompilation compilation,
+        WorkspaceCompilation unit,
         SourceSpan location,
         AssayPolicy policy,
         string rootPath)
     {
+        var relativeProject = RelativizePath(unit.ProjectPath, rootPath);
+        if (MatchesProject(
+                relativeProject,
+                policy.Boundaries.ShellProjects))
+        {
+            return false;
+        }
+
+        var projectIsCore = MatchesProject(
+            relativeProject,
+            policy.Boundaries.CoreProjects);
+        if (!policy.Boundaries.CoreProjects.IsDefaultOrEmpty &&
+            !projectIsCore)
+        {
+            return false;
+        }
+
         if (policy.Boundaries.CoreNamespaces.IsDefaultOrEmpty)
         {
             return true;
@@ -388,19 +394,22 @@ public static class VerificationEngine
 
         if (string.IsNullOrEmpty(location.Path))
         {
-            return true;
+            return projectIsCore ||
+                CompilationDeclaresCoreNamespace(
+                    unit.Compilation,
+                    policy.Boundaries.CoreNamespaces);
         }
 
         var absolutePath = Path.GetFullPath(
             Path.Combine(rootPath, location.Path.Replace('/', Path.DirectorySeparatorChar)));
-        var tree = compilation.SyntaxTrees.FirstOrDefault(candidate =>
+        var tree = unit.Compilation.SyntaxTrees.FirstOrDefault(candidate =>
             string.Equals(
                 Path.GetFullPath(candidate.FilePath),
                 absolutePath,
                 StringComparison.OrdinalIgnoreCase));
         if (tree is null)
         {
-            return true;
+            return projectIsCore;
         }
 
         var lineSpan = tree.GetText().Lines;
@@ -408,13 +417,13 @@ public static class VerificationEngine
         var character = Math.Max(0, location.StartColumn - 1);
         if (lineIndex >= lineSpan.Count)
         {
-            return true;
+            return projectIsCore;
         }
 
         var position = Math.Min(
             lineSpan[lineIndex].Start + character,
             lineSpan[lineIndex].End);
-        var symbol = compilation.GetSemanticModel(tree)
+        var symbol = unit.Compilation.GetSemanticModel(tree)
             .GetEnclosingSymbol(position);
         var namespaceName = symbol?.ContainingNamespace?.ToDisplayString() ??
             string.Empty;
@@ -428,6 +437,41 @@ public static class VerificationEngine
         return policy.Boundaries.CoreNamespaces.Any(core =>
             string.Equals(namespaceName, core, StringComparison.Ordinal) ||
             namespaceName.StartsWith(core + ".", StringComparison.Ordinal));
+    }
+
+    private static bool MatchesProject(
+        string relativeProject,
+        ImmutableArray<string> configuredProjects) =>
+        configuredProjects.Any(project => string.Equals(
+            Fingerprints.NormalizePath(project),
+            relativeProject,
+            StringComparison.OrdinalIgnoreCase));
+
+    private static bool CompilationDeclaresCoreNamespace(
+        CSharpCompilation compilation,
+        ImmutableArray<string> coreNamespaces) =>
+        EnumerateNamespaces(compilation.Assembly.GlobalNamespace)
+            .Select(@namespace => @namespace.ToDisplayString())
+            .Any(namespaceName => coreNamespaces.Any(core =>
+                string.Equals(
+                    namespaceName,
+                    core,
+                    StringComparison.Ordinal) ||
+                namespaceName.StartsWith(
+                    core + ".",
+                    StringComparison.Ordinal)));
+
+    private static IEnumerable<INamespaceSymbol> EnumerateNamespaces(
+        INamespaceSymbol root)
+    {
+        foreach (var child in root.GetNamespaceMembers())
+        {
+            yield return child;
+            foreach (var nested in EnumerateNamespaces(child))
+            {
+                yield return nested;
+            }
+        }
     }
 
     private static void CaptureSourceAndGeneratedEvidence(
@@ -527,15 +571,24 @@ public static class VerificationEngine
         ImmutableArray<WorkspaceMessage> messages,
         ImmutableArray<EvaluationFailure>.Builder failures,
         ImmutableArray<MissingEvidence>.Builder missing,
-        ImmutableArray<WorkspaceDiagnosticEvidence>.Builder diagnostics)
+        ImmutableArray<WorkspaceDiagnosticEvidence>.Builder diagnostics,
+        string rootPath)
     {
         foreach (var message in messages)
         {
-            var project = OptionalText(message.ProjectPath);
+            var project = message.ProjectPath switch
+            {
+                Presence<string>.Present present =>
+                    RelativizePath(present.Value, rootPath),
+                _ => string.Empty
+            };
             var targetFramework = OptionalText(message.TargetFramework);
+            var normalizedMessage = NormalizeWorkspaceMessage(
+                message.Message,
+                rootPath);
             diagnostics.Add(new WorkspaceDiagnosticEvidence(
                 message.Kind,
-                message.Message,
+                normalizedMessage,
                 project,
                 targetFramework,
                 message.AffectsCompleteness));
@@ -544,7 +597,7 @@ public static class VerificationEngine
             {
                 failures.Add(new EvaluationFailure(
                     "CSASSAY-WORKSPACE-FAILURE",
-                    message.Message,
+                    normalizedMessage,
                     project.Length > 0
                         ? project
                         : "MSBuildWorkspace",
@@ -554,11 +607,33 @@ public static class VerificationEngine
             {
                 missing.Add(new MissingEvidence(
                     "CSASSAY-WORKSPACE-WARNING",
-                    message.Message,
+                    normalizedMessage,
                     project,
                     targetFramework));
             }
         }
+    }
+
+    private static string NormalizeWorkspaceMessage(
+        string message,
+        string rootPath)
+    {
+        var windowsRoot = rootPath
+            .Replace('/', '\\')
+            .TrimEnd('\\') + "\\";
+        var unixRoot = rootPath
+            .Replace('\\', '/')
+            .TrimEnd('/') + "/";
+        return Fingerprints.NormalizePath(
+            message
+                .Replace(
+                    windowsRoot,
+                    string.Empty,
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace(
+                    unixRoot,
+                    string.Empty,
+                    StringComparison.OrdinalIgnoreCase));
     }
 
     private static void CheckRequiredTargetFrameworks(
@@ -604,7 +679,33 @@ public static class VerificationEngine
     {
         var fullPath = Path.GetFullPath(path);
         var relative = Path.GetRelativePath(rootPath, fullPath);
-        return Fingerprints.NormalizePath(relative);
+        var normalized = Fingerprints.NormalizePath(relative);
+        if (!Path.IsPathRooted(relative) &&
+            !string.Equals(normalized, "..", StringComparison.Ordinal) &&
+            !normalized.StartsWith("../", StringComparison.Ordinal))
+        {
+            return normalized;
+        }
+
+        return NormalizeExternalPath(fullPath);
+    }
+
+    private static string NormalizeExternalPath(string fullPath)
+    {
+        var normalized = Fingerprints.NormalizePath(fullPath);
+        const string nugetMarker = "/.nuget/packages/";
+        var nugetIndex = normalized.IndexOf(
+            nugetMarker,
+            StringComparison.OrdinalIgnoreCase);
+        if (nugetIndex >= 0)
+        {
+            return "nuget/" + normalized[(nugetIndex + nugetMarker.Length)..];
+        }
+
+        var fileName = Path.GetFileName(fullPath);
+        return File.Exists(fullPath)
+            ? "external/" + HashFile(fullPath)[..16] + "/" + fileName
+            : "external/" + fileName;
     }
 
     private static string HashFile(string path)
@@ -613,6 +714,23 @@ public static class VerificationEngine
         var hash = SHA256.HashData(stream);
         return Convert.ToHexStringLower(hash);
     }
+
+    private static PolicyEvidence CreatePolicyEvidence(
+        Presence<string> policyPath,
+        string rootPath) =>
+        policyPath switch
+        {
+            Presence<string>.Present present => new PolicyEvidence(
+                "file",
+                RelativizePath(present.Value, rootPath),
+                HashFile(present.Value)),
+            _ => new PolicyEvidence(
+                "built-in-observe",
+                string.Empty,
+                Convert.ToHexStringLower(SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes(
+                        "csassay:built-in-observe:v1"))))
+        };
 
     private static string OptionalText(Presence<string> value) =>
         value is Presence<string>.Present present

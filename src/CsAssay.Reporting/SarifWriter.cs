@@ -42,6 +42,15 @@ public static class SarifWriter
             writer.WriteBoolean(
                 "authoritative",
                 verdict.Evidence.IsAuthoritative);
+            writer.WriteString(
+                "policyOrigin",
+                verdict.Evidence.Policy.Origin);
+            writer.WriteString(
+                "policyPath",
+                verdict.Evidence.Policy.Path);
+            writer.WriteString(
+                "policySha256",
+                verdict.Evidence.Policy.Sha256);
             writer.WriteEndObject();
             writer.WriteEndObject();
             writer.WriteEndArray();

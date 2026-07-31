@@ -15,6 +15,7 @@
     <Project Path="tests/CsAssay.Workspaces.Tests/CsAssay.Workspaces.Tests.csproj" />
     <Project Path="tests/CsAssay.Runner.Tests/CsAssay.Runner.Tests.csproj" />
     <Project Path="tests/CsAssay.Integration.Tests/CsAssay.Integration.Tests.csproj" />
+    <Project Path="tests/CsAssay.Performance.Tests/CsAssay.Performance.Tests.csproj" />
   </Folder>
   <Folder Name="/typegym/">
     <Project Path="typegym/CsAssay.TypeGym/CsAssay.TypeGym.csproj" />

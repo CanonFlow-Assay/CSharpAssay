@@ -150,16 +150,12 @@ public sealed class SpecimenClosureTests
             .ToArray();
 
         Assert.Equal(expected, ids);
-        Assert.Equal(
-            0,
-            document.RootElement.GetProperty("summary")
-                .GetProperty("denominator")
-                .GetInt32());
-        Assert.Equal(
-            "inconclusive",
-            RequiredString(
-                document.RootElement.GetProperty("summary"),
-                "precision"));
+        var summary = document.RootElement.GetProperty("summary");
+        Assert.True(
+            summary.GetProperty("precisionDenominator").GetInt32() > 0);
+        Assert.Equal(0, summary.GetProperty("falsePositives").GetInt32());
+        Assert.Equal(0, summary.GetProperty("toolFailures").GetInt32());
+        Assert.Equal(1.0, summary.GetProperty("precision").GetDouble());
     }
 
     private static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(

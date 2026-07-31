@@ -82,7 +82,8 @@ public sealed class VerdictTests
     [Fact]
     public void Prototype_finding_cannot_fail_release()
     {
-        var prototype = RuleCatalogue.All[0];
+        var prototype = RuleCatalogue.All.First(
+            rule => rule.Status == RuleStatus.Prototype);
         var location = new SourceSpan("File.cs", 1, 1, 1, 2);
         var finding = new Finding(
             prototype.Id,

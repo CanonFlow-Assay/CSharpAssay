@@ -16,6 +16,8 @@ public sealed class PolicyLoaderTests
                 "requiredTargetFrameworks": ["net10.0"]
               },
               "boundaries": {
+                "coreProjects": ["src/Acme.Domain/Acme.Domain.csproj"],
+                "shellProjects": ["src/Acme.Web/Acme.Web.csproj"],
                 "coreNamespaces": ["Acme.Domain"],
                 "shellNamespaces": ["Acme.Web"]
               },
@@ -33,6 +35,12 @@ public sealed class PolicyLoaderTests
 
         Assert.Equal(AssayProfile.Compat, policy.Profile);
         Assert.Equal(["net10.0"], policy.Release.RequiredTargetFrameworks);
+        Assert.Equal(
+            ["src/Acme.Domain/Acme.Domain.csproj"],
+            policy.Boundaries.CoreProjects);
+        Assert.Equal(
+            ["src/Acme.Web/Acme.Web.csproj"],
+            policy.Boundaries.ShellProjects);
         Assert.Equal(["Acme.Outcome"], policy.Representations.ClosedTypes);
     }
 

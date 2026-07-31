@@ -36,6 +36,12 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "coreProjects": {
+          "$ref": "#/$defs/nonEmptyStrings"
+        },
+        "shellProjects": {
+          "$ref": "#/$defs/nonEmptyStrings"
+        },
         "coreNamespaces": {
           "$ref": "#/$defs/nonEmptyStrings"
         },

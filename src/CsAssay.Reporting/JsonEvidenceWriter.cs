@@ -51,6 +51,12 @@ public static class JsonEvidenceWriter
         writer.WriteString("input", evidence.Input);
         writer.WriteString("profile", ToText(evidence.Profile));
         writer.WriteBoolean("authoritative", evidence.IsAuthoritative);
+        writer.WritePropertyName("policy");
+        writer.WriteStartObject();
+        writer.WriteString("origin", evidence.Policy.Origin);
+        writer.WriteString("path", evidence.Policy.Path);
+        writer.WriteString("sha256", evidence.Policy.Sha256);
+        writer.WriteEndObject();
         WriteToolchain(writer, evidence.Toolchain);
 
         writer.WritePropertyName("projects");

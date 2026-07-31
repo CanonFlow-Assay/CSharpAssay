@@ -40,6 +40,7 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
             GeneratedCodeAnalysisFlags.Analyze |
             GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
+        context.RegisterCompilationAction(AnalyzeNullableCompilation);
         context.RegisterSyntaxNodeAction(
             AnalyzeNullableDirective,
             SyntaxKind.NullableDirectiveTrivia);
@@ -80,6 +81,23 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         context.RegisterOperationAction(
             AnalyzeDefaultValue,
             OperationKind.DefaultValue);
+    }
+
+    private static void AnalyzeNullableCompilation(
+        CompilationAnalysisContext context)
+    {
+        if (context.Compilation.Options is not CSharpCompilationOptions options ||
+            options.NullableContextOptions == NullableContextOptions.Enable)
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.NullableDisabled,
+            Location.None,
+            "compilation nullable context is " +
+                options.NullableContextOptions.ToString());
     }
 
     private static void AnalyzeNullableDirective(SyntaxNodeAnalysisContext context)
@@ -185,7 +203,8 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeProperty(SymbolAnalysisContext context)
     {
         var property = (IPropertySymbol)context.Symbol;
-        if (property.IsImplicitlyDeclared)
+        if (property.IsImplicitlyDeclared &&
+            !property.Locations.Any(location => location.IsInSource))
         {
             return;
         }
@@ -226,7 +245,7 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethod(SymbolAnalysisContext context)
     {
         var method = (IMethodSymbol)context.Symbol;
-        if (IsPublicApi(method))
+        if (IsPublicApi(method) && !ImplementsInheritedContract(method))
         {
             if (!method.ReturnsVoid && ContainsNullableValue(method.ReturnType))
             {
@@ -357,7 +376,7 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         if (literal.IsImplicit ||
             !literal.ConstantValue.HasValue ||
             literal.ConstantValue.Value is not null ||
-            IsNullPatternCheck(literal))
+            IsNullObservation(literal))
         {
             return;
         }
@@ -557,7 +576,9 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         ISymbol symbol,
         ITypeSymbol type)
     {
-        if (!IsPublicApi(symbol) || !ContainsNullableValue(type))
+        if (!IsPublicApi(symbol) ||
+            ImplementsInheritedContract(symbol) ||
+            !ContainsNullableValue(type))
         {
             return;
         }
@@ -597,13 +618,82 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         return named.TypeArguments.Any(ContainsNullableValue);
     }
 
-    private static bool IsPublicApi(ISymbol symbol) =>
-        symbol.DeclaredAccessibility is
+    private static bool IsPublicApi(ISymbol symbol)
+    {
+        if (!IsExternallyVisible(symbol.DeclaredAccessibility))
+        {
+            return false;
+        }
+
+        var containingType = symbol.ContainingType;
+        while (containingType is not null)
+        {
+            if (!IsExternallyVisible(containingType.DeclaredAccessibility))
+            {
+                return false;
+            }
+
+            containingType = containingType.ContainingType;
+        }
+
+        return true;
+    }
+
+    private static bool IsExternallyVisible(Accessibility accessibility) =>
+        accessibility is
             Accessibility.Public or
             Accessibility.Protected or
             Accessibility.ProtectedOrInternal;
 
-    private static bool IsNullPatternCheck(ILiteralOperation literal)
+    private static bool ImplementsInheritedContract(ISymbol symbol)
+    {
+        if (symbol is IMethodSymbol
+            {
+                IsOverride: true
+            } or IMethodSymbol
+            {
+                ExplicitInterfaceImplementations.Length: > 0
+            } ||
+            symbol is IPropertySymbol
+            {
+                IsOverride: true
+            } or IPropertySymbol
+            {
+                ExplicitInterfaceImplementations.Length: > 0
+            } ||
+            symbol is IEventSymbol
+            {
+                IsOverride: true
+            } or IEventSymbol
+            {
+                ExplicitInterfaceImplementations.Length: > 0
+            })
+        {
+            return true;
+        }
+
+        if (symbol.ContainingType is not INamedTypeSymbol containingType)
+        {
+            return false;
+        }
+
+        foreach (var @interface in containingType.AllInterfaces)
+        {
+            foreach (var member in @interface.GetMembers(symbol.Name))
+            {
+                if (SymbolEqualityComparer.Default.Equals(
+                    containingType.FindImplementationForInterfaceMember(member),
+                    symbol))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsNullObservation(ILiteralOperation literal)
     {
         IOperation? current = literal.Parent;
         while (current is IConversionOperation)
@@ -611,7 +701,13 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
             current = current.Parent;
         }
 
-        return current is IConstantPatternOperation;
+        return current is IConstantPatternOperation or
+            IBinaryOperation
+            {
+                OperatorKind:
+                    BinaryOperatorKind.Equals or
+                    BinaryOperatorKind.NotEquals
+            };
     }
 
     private static bool IsOneOfExtraction(IPropertyReferenceOperation operation)
@@ -817,6 +913,16 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
 
     private static void Report(
         OperationAnalysisContext context,
+        string ruleId,
+        Location location,
+        string detail) =>
+        context.ReportDiagnostic(Diagnostic.Create(
+            DescriptorProvider.Get(ruleId),
+            location,
+            detail));
+
+    private static void Report(
+        CompilationAnalysisContext context,
         string ruleId,
         Location location,
         string detail) =>

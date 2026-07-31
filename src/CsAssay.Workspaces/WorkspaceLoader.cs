@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
-using System.Xml.Linq;
 using CsAssay.Domain;
+using Microsoft.Build.Evaluation;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -88,8 +88,15 @@ public static class WorkspaceLoader
             }
         }
 
+        var loadedProjectPaths = compilations
+            .Select(compilation => compilation.ProjectPath)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToImmutableArray();
         var classifiedMessages = messages
-            .Select(message => ClassifyReferenceMessage(message, projectPaths))
+            .Select(message => ClassifyMessage(
+                message,
+                projectPaths,
+                loadedProjectPaths))
             .ToImmutableArray();
         return new WorkspaceLoadResult(
             compilations
@@ -304,55 +311,40 @@ public static class WorkspaceLoader
         string projectPath,
         ImmutableArray<WorkspaceMessage>.Builder messages)
     {
+        using var projectCollection = new ProjectCollection();
         try
         {
-            var project = XDocument.Load(
-                projectPath,
-                LoadOptions.PreserveWhitespace | LoadOptions.SetLineInfo);
-            var values = project.Descendants()
-                .Where(element =>
-                    string.Equals(
-                        element.Name.LocalName,
-                        "TargetFramework",
-                        StringComparison.Ordinal) ||
-                    string.Equals(
-                        element.Name.LocalName,
-                        "TargetFrameworks",
-                        StringComparison.Ordinal))
-                .SelectMany(element => element.Value.Split(
+            var project = projectCollection.LoadProject(projectPath);
+            var targetFrameworks = project.GetPropertyValue("TargetFrameworks");
+            var evaluatedValue = string.IsNullOrWhiteSpace(targetFrameworks)
+                ? project.GetPropertyValue("TargetFramework")
+                : targetFrameworks;
+            return evaluatedValue
+                .Split(
                     [';'],
-                    StringSplitOptions.RemoveEmptyEntries))
+                    StringSplitOptions.RemoveEmptyEntries)
                 .Select(value => value.Trim())
                 .Where(value => value.Length > 0)
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(value => value, StringComparer.Ordinal)
                 .ToImmutableArray();
-
-            if (values.Any(value => value.Contains("$(", StringComparison.Ordinal)))
-            {
-                messages.Add(new WorkspaceMessage(
-                    "Failure",
-                    "Target framework expression could not be enumerated deterministically.",
-                    Presence.Of(projectPath),
-                    Presence.Missing<string>(),
-                    AffectsCompleteness: true));
-                return ImmutableArray<string>.Empty;
-            }
-
-            return values;
         }
         catch (Exception exception) when (
-            exception is IOException or
-            UnauthorizedAccessException or
-            System.Xml.XmlException)
+            exception is InvalidOperationException or
+            IOException or
+            UnauthorizedAccessException)
         {
             messages.Add(new WorkspaceMessage(
                 "Failure",
-                "Could not enumerate target frameworks: " + exception.Message,
+                "Could not evaluate target frameworks: " + exception.Message,
                 Presence.Of(projectPath),
                 Presence.Missing<string>(),
                 AffectsCompleteness: true));
             return ImmutableArray<string>.Empty;
+        }
+        finally
+        {
+            projectCollection.UnloadAllProjects();
         }
     }
 
@@ -361,27 +353,66 @@ public static class WorkspaceLoader
             ? present.Value
             : string.Empty;
 
-    private static WorkspaceMessage ClassifyReferenceMessage(
+    private static WorkspaceMessage ClassifyMessage(
         WorkspaceMessage message,
+        ImmutableArray<string> discoveredProjectPaths,
         ImmutableArray<string> loadedProjectPaths)
     {
         const string prefix =
             "Found project reference without a matching metadata reference: ";
-        if (!message.Message.StartsWith(prefix, StringComparison.Ordinal))
+        if (message.Message.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            var referencedPath = Path.GetFullPath(
+                message.Message.Substring(prefix.Length));
+            var discovered = discoveredProjectPaths.Any(path => string.Equals(
+                Path.GetFullPath(path),
+                referencedPath,
+                StringComparison.OrdinalIgnoreCase));
+            return discovered
+                ? message with
+                {
+                    Kind = "ProjectGraphInformation",
+                    AffectsCompleteness = false
+                }
+                : message;
+        }
+
+        const string evaluationPrefix =
+            "Msbuild failed when processing the file '";
+        const string messageSeparator = "' with message: ";
+        if (!message.Message.StartsWith(
+                evaluationPrefix,
+                StringComparison.OrdinalIgnoreCase) ||
+            !message.Message.Contains(
+                "has a known ",
+                StringComparison.OrdinalIgnoreCase) ||
+            !message.Message.Contains(
+                " severity vulnerability, https://github.com/advisories/",
+                StringComparison.OrdinalIgnoreCase))
         {
             return message;
         }
 
-        var referencedPath = Path.GetFullPath(
-            message.Message.Substring(prefix.Length));
+        var separatorIndex = message.Message.IndexOf(
+            messageSeparator,
+            evaluationPrefix.Length,
+            StringComparison.Ordinal);
+        if (separatorIndex < 0)
+        {
+            return message;
+        }
+
+        var evaluatedPath = message.Message.Substring(
+            evaluationPrefix.Length,
+            separatorIndex - evaluationPrefix.Length);
         var loaded = loadedProjectPaths.Any(path => string.Equals(
             Path.GetFullPath(path),
-            referencedPath,
+            Path.GetFullPath(evaluatedPath),
             StringComparison.OrdinalIgnoreCase));
         return loaded
             ? message with
             {
-                Kind = "ProjectGraphInformation",
+                Kind = "NuGetAuditInformation",
                 AffectsCompleteness = false
             }
             : message;

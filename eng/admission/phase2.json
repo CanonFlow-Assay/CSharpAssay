@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "phase": 2,
+  "minimumAdmittedRules": 6,
+  "admittedRules": [
+    "CSAP0001",
+    "CSAN0001",
+    "CSAN0002",
+    "CSAN0003",
+    "CSAN0004",
+    "CSAI0001",
+    "CSAI0002"
+  ],
+  "proof": {
+    "positiveNegativeSuppressionFaultClosure": "CsAssay.TypeGym.SpecimenClosureTests",
+    "semanticAdmissionMatrix": "CsAssay.Analyzers.Tests.AdmissionMatrixTests",
+    "ideBuildAgreement": "AdmissionMatrixTests.Ide_and_build_execution_modes_agree",
+    "analyzerCrashCapture": "SpecimenClosureTests.Analyzer_exception_is_captured_as_tool_evidence",
+    "performanceGate": "CsAssay.Performance.Tests.AnalyzerPerformanceTests",
+    "realWorldAdjudication": "specimens/RealWorld/adjudication.json",
+    "boundaryQualificationFixture": "specimens/Projects/BoundaryScope/BoundaryScope.csproj"
+  },
+  "obligations": [
+    {
+      "ruleId": "CSAP0001",
+      "positive": true,
+      "negative": true,
+      "suppression": true,
+      "fault": true,
+      "matrix": true,
+      "realWorld": true
+    },
+    {
+      "ruleId": "CSAN0001",
+      "positive": true,
+      "negative": true,
+      "suppression": true,
+      "fault": true,
+      "matrix": true,
+      "realWorld": true
+    },
+    {
+      "ruleId": "CSAN0002",
+      "positive": true,
+      "negative": true,
+      "suppression": true,
+      "fault": true,
+      "matrix": true,
+      "realWorld": true
+    },
+    {
+      "ruleId": "CSAN0003",
+      "positive": true,
+      "negative": true,
+      "suppression": true,
+      "fault": true,
+      "matrix": true,
+      "realWorld": true
+    },
+    {
+      "ruleId": "CSAN0004",
+      "positive": true,
+      "negative": true,
+      "suppression": true,
+      "fault": true,
+      "matrix": true,
+      "realWorld": true
+    },
+    {
+      "ruleId": "CSAI0001",
+      "positive": true,
+      "negative": true,
+      "suppression": true,
+      "fault": true,
+      "matrix": true,
+      "realWorld": true
+    },
+    {
+      "ruleId": "CSAI0002",
+      "positive": true,
+      "negative": true,
+      "suppression": true,
+      "fault": true,
+      "matrix": true,
+      "realWorld": true
+    }
+  ],
+  "performance": {
+    "representativeDocumentP95BudgetMilliseconds": 50,
+    "deterministicRepeatedAnalysis": true,
+    "testModuleIsolation": "--max-parallel-test-modules 1",
+    "fullSolutionOverheadBudget": "measurement-pending; not claimed by admitted rules"
+  },
+  "authoritativeSelfAssay": {
+    "verdict": "pass",
+    "projects": 15,
+    "findings": 0,
+    "missingEvidence": 0,
+    "toolFailures": 0,
+    "repeatByteIdentical": true,
+    "jsonSha256": "d82f4c8c710f1e8fa836f9c02654e0de54c81e4e6369c4dcb58e19a68344b480",
+    "sarifSha256": "89768292c5e55a43dac18b9fbc67c8afd128485116534c8cd721272f47c4dad1",
+    "policySha256": "67efc09fb27bdc18ad2a48a57a3dece4972e9c05928258bd7822cad5a99542c3"
+  },
+  "nativePreview": {
+    "available": false,
+    "admittedRules": [],
+    "reason": "No .NET 11 preview SDK is installed; native-only rules remain Prototype."
+  }
+}

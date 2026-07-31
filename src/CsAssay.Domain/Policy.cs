@@ -7,6 +7,8 @@ public sealed record ReleasePolicy(
     ImmutableArray<string> RequiredTargetFrameworks);
 
 public sealed record BoundaryPolicy(
+    ImmutableArray<string> CoreProjects,
+    ImmutableArray<string> ShellProjects,
     ImmutableArray<string> CoreNamespaces,
     ImmutableArray<string> ShellNamespaces);
 
@@ -36,6 +38,8 @@ public sealed record AssayPolicy(
             AllowPreviewToolchain: false,
             RequiredTargetFrameworks: ImmutableArray<string>.Empty),
         new BoundaryPolicy(
+            CoreProjects: ImmutableArray<string>.Empty,
+            ShellProjects: ImmutableArray<string>.Empty,
             CoreNamespaces: ImmutableArray<string>.Empty,
             ShellNamespaces: ImmutableArray<string>.Empty),
         new RepresentationPolicy(

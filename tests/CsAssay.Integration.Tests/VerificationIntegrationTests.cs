@@ -35,7 +35,7 @@ public sealed class VerificationIntegrationTests
     }
 
     [Fact]
-    public async Task Authoritative_preview_cannot_pass_without_admitted_rules()
+    public async Task Authoritative_self_assay_can_pass_with_admitted_rules()
     {
         var root = FindRoot();
         var solution = Path.Combine(root, "CSharpAssay.slnx");
@@ -48,8 +48,8 @@ public sealed class VerificationIntegrationTests
                 ProfileOverride: Presence.Of(AssayProfile.Compat)),
             TestContext.Current.CancellationToken);
 
-        Assert.NotEqual(AssayVerdictKind.Pass, result.Verdict.Kind);
-        Assert.Contains(
+        Assert.Equal(AssayVerdictKind.Pass, result.Verdict.Kind);
+        Assert.DoesNotContain(
             result.Verdict.Evidence.Missing,
             item => item.Code == "CSASSAY-NO-ADMITTED-RULES");
         Assert.DoesNotContain(
@@ -59,6 +59,44 @@ public sealed class VerificationIntegrationTests
         Assert.All(
             result.Verdict.Evidence.WorkspaceDiagnostics,
             diagnostic => Assert.False(diagnostic.AffectsCompleteness));
+        Assert.All(
+            result.Verdict.Evidence.Sources,
+            source =>
+            {
+                Assert.False(Path.IsPathRooted(source.Path));
+                Assert.False(
+                    source.Path.StartsWith("../", StringComparison.Ordinal));
+            });
+    }
+
+    [Fact]
+    public async Task Project_level_nullable_evidence_respects_shell_scope()
+    {
+        var root = FindRoot();
+        var project = Path.Combine(
+            root,
+            "specimens",
+            "Projects",
+            "BoundaryScope",
+            "BoundaryScope.csproj");
+
+        var result = await VerificationEngine.VerifyAsync(
+            new VerificationRequest(
+                project,
+                PolicyPath: Presence.Missing<string>(),
+                IsAuthoritative: false,
+                ProfileOverride: Presence.Of(AssayProfile.Compat)),
+            TestContext.Current.CancellationToken);
+
+        var nullableDisabled = Assert.Single(
+            result.Verdict.Evidence.Findings,
+            finding => finding.RuleId == "CSAN0001");
+        Assert.Equal(RuleDisposition.Advise, nullableDisabled.Disposition);
+        Assert.DoesNotContain(
+            result.Verdict.Evidence.Findings,
+            finding =>
+                finding.RuleId == "CSAN0003" &&
+                finding.Disposition == RuleDisposition.Block);
     }
 
     private static string FindRoot()
