@@ -111,6 +111,35 @@ public sealed class VerificationIntegrationTests
     }
 
     [Fact]
+    public async Task Policy_domain_glossary_reaches_advisory_analysis_without_blocking()
+    {
+        var root = FindRoot();
+        var project = Path.Combine(
+            root,
+            "specimens",
+            "Projects",
+            "GuidancePolicy",
+            "GuidancePolicy.csproj");
+
+        var result = await VerificationEngine.VerifyAsync(
+            new VerificationRequest(
+                project,
+                PolicyPath: Presence.Missing<string>(),
+                IsAuthoritative: false,
+                ExecuteTests: false,
+                ProfileOverride: Presence.Of(AssayProfile.Compat)),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(AssayVerdictKind.Pass, result.Verdict.Kind);
+        var finding = Assert.Single(
+            result.Verdict.Evidence.Findings,
+            item => item.RuleId == "CSAD0001");
+        Assert.Equal(RuleCertainty.Contextual, finding.Certainty);
+        Assert.Equal(RuleDisposition.Advise, finding.Disposition);
+        Assert.Equal(FindingSeverity.Info, finding.Severity);
+    }
+
+    [Fact]
     public async Task Compiler_error_is_inconclusive_and_cannot_pass()
     {
         var result = await VerifyFixtureAsync(
@@ -147,6 +176,26 @@ public sealed class VerificationIntegrationTests
         Assert.Contains(
             result.Verdict.Evidence.Failures,
             item => item.Code == "CSASSAY-REQUIRED-TFM-MISSING");
+    }
+
+    [Fact]
+    public async Task Prototype_advisory_rule_cannot_be_promoted_by_consumer_policy()
+    {
+        var root = FindRoot();
+        var policy = Path.Combine(
+            root,
+            "tests",
+            "CsAssay.Integration.Tests",
+            "Policies",
+            "advisory-rule-required.json");
+        var result = await VerifyFixtureAsync(
+            "BoundaryScope",
+            Presence.Of(policy));
+
+        Assert.Equal(AssayVerdictKind.Inconclusive, result.Verdict.Kind);
+        Assert.Contains(
+            result.Verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-REQUIRED-RULE-NOT-ADMITTED");
     }
 
     [Fact]

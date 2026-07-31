@@ -24,6 +24,7 @@ fi
 "$phase4_dotnet" build \
   CSharpAssay.slnx \
   --no-restore \
+  --no-incremental \
   --configuration Release
 
 mkdir -p "$phase4_scratch/first" "$phase4_scratch/second"

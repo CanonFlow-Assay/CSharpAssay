@@ -160,6 +160,37 @@
       "ruleId": "CSAU0004",
       "status": "native-preview-unavailable",
       "findingCount": 0
+    },
+    {
+      "ruleId": "CSAD0001",
+      "status": "phase6-advisory-unqualified",
+      "findingCount": 0,
+      "reason": "No domain glossary was supplied for the historical run; absence is not a clean precision claim."
+    },
+    {
+      "ruleId": "CSAD0002",
+      "status": "phase6-advisory-unqualified",
+      "findingCount": 0
+    },
+    {
+      "ruleId": "CSAF0001",
+      "status": "phase6-advisory-unqualified",
+      "findingCount": 0
+    },
+    {
+      "ruleId": "CSAF0002",
+      "status": "phase6-advisory-unqualified",
+      "findingCount": 0
+    },
+    {
+      "ruleId": "CSAE0002",
+      "status": "phase6-advisory-unqualified",
+      "findingCount": 0
+    },
+    {
+      "ruleId": "CSAI0003",
+      "status": "phase6-advisory-unqualified",
+      "findingCount": 0
     }
   ],
   "summary": {

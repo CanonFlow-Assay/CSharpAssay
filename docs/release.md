@@ -41,9 +41,11 @@ consumer, and proves the packaged analyzer blocks its negative specimen.
 
 ## Signing order
 
-No NuGet package signing authority is configured. Current packages are
-therefore deliberately unsigned, while main-branch CI attaches signed keyless
-build provenance through GitHub/Sigstore.
+No NuGet package-signing certificate is configured. Current packages are
+therefore deliberately unsigned, while main-branch and publication CI attach
+signed keyless build provenance through GitHub/Sigstore. Registry authentication
+uses NuGet trusted publishing with a one-hour temporary key, not a stored
+long-lived API key.
 
 If the project later supplies an authorized NuGet certificate, the required
 order is:
@@ -52,9 +54,10 @@ order is:
 pack -> normalize -> audit unsigned payload -> sign -> audit without rewriting
 ```
 
-Never normalize or otherwise rewrite a signed package. Publication is outside
-the current workflow until repository policy explicitly supplies registry and
-signing authority.
+Never normalize or otherwise rewrite a signed package. The manual publication
+workflow reruns the entire gate, attests the tested bytes, exchanges GitHub OIDC
+for a temporary NuGet credential, and pushes the two explicit package paths.
+See [publishing.md](publishing.md).
 
 ## CI authority separation
 

@@ -6,6 +6,171 @@ namespace CsAssay.Analyzers.Tests;
 public sealed class FunctionalPolicyAnalyzerTests
 {
     [Fact]
+    public async Task Configured_domain_glossary_advises_on_raw_primitive_parameters()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public readonly record struct CustomerId(System.Guid Value);
+
+            public static class Checkout
+            {
+                public static void Raw(System.Guid customerId) { }
+                public static void Typed(CustomerId customerId) { }
+            }
+            """,
+            new Dictionary<string, string>
+            {
+                ["csassay_domain_primitives"] =
+                    "CustomerId=@customerId"
+            });
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.PrimitiveObsession);
+    }
+
+    [Fact]
+    public async Task Domain_glossary_is_required_for_primitive_guidance()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public static class Checkout
+            {
+                public static void Process(System.Guid customerId) { }
+            }
+            """);
+
+        Assert.DoesNotContain(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.PrimitiveObsession);
+    }
+
+    [Fact]
+    public async Task Advises_on_restricted_behavior_only_type_shapes()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public interface IPriceStrategy
+            {
+                decimal Calculate(decimal value);
+            }
+
+            public interface IRepository
+            {
+                void Save();
+            }
+            """);
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.FunctionCandidate);
+    }
+
+    [Fact]
+    public async Task Advises_on_multiple_state_flags()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public sealed class Session
+            {
+                public bool IsPending { get; init; }
+                public bool IsComplete { get; init; }
+            }
+
+            public sealed class Capability
+            {
+                public bool CanRead { get; init; }
+            }
+            """);
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.StateFlags);
+    }
+
+    [Fact]
+    public async Task Advises_only_on_restricted_accumulation_loops()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            using System.Collections.Generic;
+
+            public static class Projection
+            {
+                public static List<int> Map(IEnumerable<int> source)
+                {
+                    var result = new List<int>();
+                    foreach (var value in source)
+                    {
+                        result.Add(value * 2);
+                    }
+                    return result;
+                }
+
+                public static int Sum(IEnumerable<int> source)
+                {
+                    var total = 0;
+                    foreach (var value in source)
+                    {
+                        total += value;
+                    }
+                    return total;
+                }
+            }
+            """);
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.LoopPipelineOpportunity);
+    }
+
+    [Fact]
+    public async Task Advises_on_expected_exception_at_owned_public_boundary()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public static class Email
+            {
+                public static string Parse(string value) =>
+                    value.Length > 0
+                        ? value
+                        : throw new System.ArgumentException("empty", nameof(value));
+
+                private static string Internal() =>
+                    throw new System.InvalidOperationException();
+
+                public static string Require(string value) =>
+                    value ?? throw new System.ArgumentNullException(nameof(value));
+            }
+            """);
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.CoreBoundaryException);
+    }
+
+    [Fact]
+    public async Task Advises_when_ordinary_public_contract_leaks_mutable_collection()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            using System.Collections.Generic;
+
+            public sealed class Boundary
+            {
+                public List<string> Values { get; } = [];
+            }
+
+            public sealed record ImmutableCarrier(
+                System.Collections.Immutable.ImmutableArray<string> Values);
+            """);
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.MutableShellLeakage);
+    }
+
+    [Fact]
     public async Task Reports_nullable_disable()
     {
         var diagnostics = await AnalyzerTestHost.AnalyzeAsync(

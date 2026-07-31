@@ -1,0 +1,14 @@
+{
+  "profile": "compat",
+  "release": {
+    "requiredTargetFrameworks": ["net10.0"],
+    "requiredRules": ["CSAD0001"],
+    "tests": []
+  },
+  "boundaries": {
+    "coreProjects": [],
+    "shellProjects": ["BoundaryScope.csproj"],
+    "coreNamespaces": [],
+    "shellNamespaces": ["Qualification.Shell"]
+  }
+}

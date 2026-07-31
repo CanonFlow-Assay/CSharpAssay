@@ -1,7 +1,7 @@
 {
   "challenge": "TG08-loop-pipeline-judgment",
   "bad": {
-    "diagnostics": [],
+    "diagnostics": ["CSAF0002"],
     "golden": "20,40"
   },
   "compat": {

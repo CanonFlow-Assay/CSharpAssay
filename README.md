@@ -1,15 +1,19 @@
 # CSharpAssay
 
+[![Stable lane](https://github.com/CanonFlow-Assay/CSharpAssay/actions/workflows/dotnet.yml/badge.svg)](https://github.com/CanonFlow-Assay/CSharpAssay/actions/workflows/dotnet.yml)
+[![Playground evidence](https://github.com/CanonFlow-Assay/CSharpAssay.Playground/actions/workflows/playground.yml/badge.svg)](https://github.com/CanonFlow-Assay/CSharpAssay.Playground/actions/workflows/playground.yml)
+
 CSharpAssay is a deterministic Roslyn-based verifier for explicitly selected
 functional-first C# policy. It reports what it proved, what it could not prove,
 and whether the toolchain itself failed. Missing evidence never becomes a clean
 release verdict.
 
-The project is currently a `0.1` research preview. Phase 5 provides the
-report-only migration inventory, Phase 4 provides packaging and CI, Phase 3
+The project is currently a `0.1` research preview. Phase 6 adds six explicitly
+non-blocking contextual guidance families and staged adoption templates. Phase
+5 provides the report-only migration inventory, Phase 4 provides packaging and CI, Phase 3
 provides the authoritative CLI, and Phase 2 admits seven
 stable-lane rules after positive, negative, suppression, fault, semantic
-matrix, performance, and real-repository evidence. The remaining seven rules
+matrix, performance, and real-repository evidence. The remaining thirteen rules
 stay `Prototype` and cannot block a release verdict.
 
 ## Current capabilities
@@ -28,6 +32,10 @@ stay `Prototype` and cannot block a release verdict.
 - deterministic JSON and SARIF 2.1.0;
 - conservative `set` to `init` code fix;
 - deterministic, evidence-linked, report-only OneOf/ValueOf migration inventory;
+- advisory domain-glossary, state-flag, behavior-type, loop, exception-boundary,
+  and mutable-shell-leak guidance that cannot block in `0.1`;
+- a transitive MSBuild gate that rejects disabled analyzers and `NoWarn`
+  suppression of admitted blocking rules;
 - xUnit v3 on Microsoft Testing Platform.
 
 Null safety is the first offence family. Core code must not disable nullable
@@ -35,7 +43,8 @@ analysis, use the null-forgiving operator, introduce null/default reference
 values, or expose nullable public contracts. Shell code may receive and check
 null only to convert it immediately into an explicit domain representation.
 CSharpAssay's owned contracts use `Presence<T>` or a closed outcome instead of
-nullable state. The full solution currently self-assays with zero findings.
+nullable state. The full solution currently self-assays with zero blocking
+findings while retaining ten Phase 6 advisory observations.
 
 ## What CSharpAssay does not claim
 
@@ -72,6 +81,10 @@ dotnet test CSharpAssay.slnx --no-build --configuration Release \
 Test modules are serialized because the solution includes a wall-clock analyzer
 latency gate. Running that benchmark beside six CPU-heavy test processes
 measures scheduler contention rather than analyzer latency.
+
+For rollout profiles, see the [adoption guide](docs/adoption.md). For the
+playground, agent/MCP, container, community, and case-study sequence, see the
+[ecosystem roadmap](docs/ecosystem.md).
 
 ## CLI
 
@@ -119,8 +132,10 @@ rules, and fixed test inputs:
 
 See [grandplan.md](grandplan.md) for the full design and
 [STATUS.md](STATUS.md) for implementation progress. Package consumers should
-also read [installation and rollback](docs/installation.md); maintainers should
-use the [release qualification](docs/release.md) procedure.
+also read [installation and rollback](docs/installation.md) and the
+[staged adoption guide](docs/adoption.md); maintainers should use the
+[release qualification](docs/release.md) and [NuGet publishing](docs/publishing.md)
+procedures.
 
 Phase 4 produces `CsAssay.Analyzers` and the `CsAssay.Tool` global/local tool.
 The stable workflow verifies the repository, proves package reproducibility,

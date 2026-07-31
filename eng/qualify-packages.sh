@@ -56,4 +56,41 @@ if ! grep -q "CSAN0001" "$phase4_scratch/analyzer-negative.log"; then
   exit 1
 fi
 
+if "$phase4_dotnet" build \
+    eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
+    --no-restore \
+    --configuration Release \
+    -p:RunAnalyzers=false \
+    > "$phase4_scratch/analyzer-disabled.log" 2>&1; then
+  echo "Analyzer package allowed its build gate to be disabled silently." >&2
+  exit 1
+fi
+if ! grep -q "CSASSAY-BUILD-GATE-DISABLED" \
+    "$phase4_scratch/analyzer-disabled.log"; then
+  echo "Analyzer-disabled build did not report the CSharpAssay gate error." >&2
+  exit 1
+fi
+
+if "$phase4_dotnet" build \
+    eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
+    --no-restore \
+    --configuration Release \
+    -p:NoWarn=CSAN0001 \
+    > "$phase4_scratch/analyzer-suppressed.log" 2>&1; then
+  echo "Analyzer package allowed an admitted rule through NoWarn." >&2
+  exit 1
+fi
+if ! grep -q "CSASSAY-BUILD-GATE-SUPPRESSED" \
+    "$phase4_scratch/analyzer-suppressed.log"; then
+  echo "NoWarn build did not report the CSharpAssay suppression error." >&2
+  exit 1
+fi
+
+"$phase4_dotnet" build \
+  eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
+  --no-restore \
+  --configuration Release \
+  -p:CsAssayEnforceOnBuild=false \
+  -p:RunAnalyzers=false
+
 echo "Fresh tool install and analyzer package qualification passed."

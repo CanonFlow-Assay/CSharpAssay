@@ -26,6 +26,8 @@
     <None Include="$(TargetDir)CsAssay.Catalogue.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(TargetDir)CsAssay.Domain.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(TargetDir)CsAssay.SdkAdapter.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="buildTransitive/CsAssay.Analyzers.props" Pack="true" PackagePath="buildTransitive" Visible="false" />
+    <None Include="buildTransitive/CsAssay.Analyzers.targets" Pack="true" PackagePath="buildTransitive" Visible="false" />
     <None Include="../../docs/packaging/analyzers/README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

@@ -62,12 +62,20 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(
             AnalyzeSwitchStatement,
             SyntaxKind.SwitchStatement);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeForEachStatement,
+            SyntaxKind.ForEachStatement);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeThrowSyntax,
+            SyntaxKind.ThrowStatement,
+            SyntaxKind.ThrowExpression);
 
         context.RegisterSymbolAction(AnalyzeProperty, SymbolKind.Property);
         context.RegisterSymbolAction(AnalyzeMethod, SymbolKind.Method);
         context.RegisterSymbolAction(AnalyzeField, SymbolKind.Field);
         context.RegisterSymbolAction(AnalyzeEvent, SymbolKind.Event);
         context.RegisterSymbolAction(AnalyzeClosedType, SymbolKind.NamedType);
+        context.RegisterSymbolAction(AnalyzeGuidanceType, SymbolKind.NamedType);
 
         context.RegisterOperationAction(
             AnalyzePropertyReference,
@@ -211,6 +219,19 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
 
         ReportNullableContract(context, property, property.Type);
 
+        if (IsPublicApi(property) &&
+            !property.ContainingType.IsRecord &&
+            !ImplementsInheritedContract(property) &&
+            IsKnownMutableCollection(property.Type))
+        {
+            Report(
+                context,
+                RuleIds.MutableShellLeakage,
+                FirstSourceLocation(property),
+                property.ToDisplayString() + " exposes " +
+                    property.Type.ToDisplayString());
+        }
+
         if (
             property.DeclaredAccessibility != Accessibility.Public ||
             !property.ContainingType.IsRecord)
@@ -245,6 +266,8 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethod(SymbolAnalysisContext context)
     {
         var method = (IMethodSymbol)context.Symbol;
+        AnalyzeConfiguredDomainPrimitives(context, method);
+
         if (IsPublicApi(method) && !ImplementsInheritedContract(method))
         {
             if (!method.ReturnsVoid && ContainsNullableValue(method.ReturnType))
@@ -265,6 +288,18 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
                     FirstSourceLocation(parameter),
                     method.ToDisplayString() + " has nullable parameter " +
                         parameter.Name);
+            }
+
+            if (method.MethodKind == MethodKind.Ordinary &&
+                !method.ReturnsVoid &&
+                IsKnownMutableCollection(method.ReturnType))
+            {
+                Report(
+                    context,
+                    RuleIds.MutableShellLeakage,
+                    FirstSourceLocation(method),
+                    method.ToDisplayString() + " returns " +
+                        method.ReturnType.ToDisplayString());
             }
         }
 
@@ -318,6 +353,89 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
             RuleIds.ExtensibleClosedHierarchy,
             FirstSourceLocation(externallyCallableConstructor),
             type.ToDisplayString() + " has an externally callable constructor");
+    }
+
+    private static void AnalyzeGuidanceType(SymbolAnalysisContext context)
+    {
+        var type = (INamedTypeSymbol)context.Symbol;
+        if (type.IsImplicitlyDeclared ||
+            !type.Locations.Any(location => location.IsInSource))
+        {
+            return;
+        }
+
+        var stateMembers = type.GetMembers()
+            .Where(member => !member.IsStatic && member.DeclaredAccessibility != Accessibility.Private)
+            .Where(member => member switch
+            {
+                IPropertySymbol property =>
+                    property.Type.SpecialType == SpecialType.System_Boolean,
+                IFieldSymbol field =>
+                    !field.IsImplicitlyDeclared &&
+                    field.Type.SpecialType == SpecialType.System_Boolean,
+                _ => false
+            })
+            .Select(member => member.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        if (stateMembers.Length >= 2)
+        {
+            Report(
+                context,
+                RuleIds.StateFlags,
+                FirstSourceLocation(type),
+                type.ToDisplayString() + " owns boolean state members: " +
+                    string.Join(", ", stateMembers));
+        }
+
+        if (IsBehaviorTypeCandidate(type))
+        {
+            Report(
+                context,
+                RuleIds.FunctionCandidate,
+                FirstSourceLocation(type),
+                type.ToDisplayString() +
+                    " has a restricted strategy/visitor/builder shape");
+        }
+    }
+
+    private static void AnalyzeConfiguredDomainPrimitives(
+        SymbolAnalysisContext context,
+        IMethodSymbol method)
+    {
+        if (method.MethodKind != MethodKind.Ordinary ||
+            !IsPublicApi(method) ||
+            !context.Options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue(
+                "csassay_domain_primitives",
+                out var encoded) ||
+            string.IsNullOrWhiteSpace(encoded))
+        {
+            return;
+        }
+
+        foreach (var entry in ParseDomainPrimitiveGlossary(encoded))
+        {
+            foreach (var parameter in method.Parameters.Where(parameter =>
+                         string.Equals(
+                             parameter.Name,
+                             entry.ParameterName,
+                             StringComparison.OrdinalIgnoreCase) &&
+                         IsRawDomainPrimitive(parameter.Type) &&
+                         !string.Equals(
+                             parameter.Type.GetFullMetadataName(),
+                             entry.ExpectedType,
+                             StringComparison.Ordinal)))
+            {
+                Report(
+                    context,
+                    RuleIds.PrimitiveObsession,
+                    FirstSourceLocation(parameter),
+                    method.ToDisplayString() + " uses raw " +
+                        parameter.Type.ToDisplayString() + " for " +
+                        parameter.Name + "; glossary type is " +
+                        entry.ExpectedType);
+            }
+        }
     }
 
     private static void AnalyzePropertyReference(OperationAnalysisContext context)
@@ -405,6 +523,61 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
             RuleIds.NullValueIntroduction,
             defaultValue.Syntax.GetLocation(),
             "reference-typed default introduces a null value");
+    }
+
+    private static void AnalyzeThrowSyntax(SyntaxNodeAnalysisContext context)
+    {
+        ExpressionSyntax expression;
+        switch (context.Node)
+        {
+            case ThrowStatementSyntax
+            {
+                Expression: ExpressionSyntax statementExpression
+            }:
+                expression = statementExpression;
+                break;
+            case ThrowExpressionSyntax throwExpression:
+                expression = throwExpression.Expression;
+                break;
+            default:
+                return;
+        }
+
+        var methodDeclaration = context.Node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        if (methodDeclaration is null ||
+            context.SemanticModel.GetDeclaredSymbol(
+                methodDeclaration,
+                context.CancellationToken) is not IMethodSymbol method ||
+            !IsPublicApi(method) ||
+            context.SemanticModel.GetTypeInfo(
+                expression,
+                context.CancellationToken).Type is not INamedTypeSymbol exceptionType ||
+            !IsExpectedFailureException(exceptionType))
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.CoreBoundaryException,
+            context.Node.GetLocation(),
+            method.ToDisplayString() + " explicitly throws " +
+                exceptionType.ToDisplayString());
+    }
+
+    private static void AnalyzeForEachStatement(SyntaxNodeAnalysisContext context)
+    {
+        var statement = (ForEachStatementSyntax)context.Node;
+        if (!IsSimpleAccumulation(statement.Statement))
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.LoopPipelineOpportunity,
+            statement.ForEachKeyword.GetLocation(),
+            "simple foreach accumulation may be expressible as Select/Where");
     }
 
     private static void AnalyzeSwitchExpression(SyntaxNodeAnalysisContext context)
@@ -847,6 +1020,169 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
             }
         }
     }
+
+    private static bool IsKnownMutableCollection(ITypeSymbol type) =>
+        type.TypeKind == TypeKind.Array ||
+        MutableCollectionTypes.Contains(
+            type.OriginalDefinition.GetFullMetadataName());
+
+    private static bool IsBehaviorTypeCandidate(INamedTypeSymbol type)
+    {
+        var ordinaryMethods = type.GetMembers()
+            .OfType<IMethodSymbol>()
+            .Where(method =>
+                !method.IsStatic &&
+                !method.IsImplicitlyDeclared &&
+                method.MethodKind == MethodKind.Ordinary)
+            .ToArray();
+
+        if (type.TypeKind == TypeKind.Interface &&
+            type.Name.EndsWith("Strategy", StringComparison.Ordinal) &&
+            ordinaryMethods.Length == 1 &&
+            !type.GetMembers().Any(member => member is IPropertySymbol or IEventSymbol))
+        {
+            return true;
+        }
+
+        if (type.TypeKind == TypeKind.Interface &&
+            type.Name.EndsWith("Visitor", StringComparison.Ordinal) &&
+            ordinaryMethods.Length >= 2)
+        {
+            return true;
+        }
+
+        return type.TypeKind == TypeKind.Class &&
+            type.Name.EndsWith("Builder", StringComparison.Ordinal) &&
+            ordinaryMethods.Any(method =>
+                string.Equals(method.Name, "Build", StringComparison.Ordinal)) &&
+            ordinaryMethods.All(method =>
+                string.Equals(method.Name, "Build", StringComparison.Ordinal) ||
+                method.Name.StartsWith("With", StringComparison.Ordinal) ||
+                method.Name.StartsWith("Add", StringComparison.Ordinal) ||
+                method.Name.StartsWith("Set", StringComparison.Ordinal));
+    }
+
+    private static IEnumerable<DomainPrimitiveGlossaryEntry>
+        ParseDomainPrimitiveGlossary(string encoded)
+    {
+        foreach (var entry in encoded.Split(
+                     [';'],
+                     StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = entry.IndexOf('=');
+            if (separator <= 0 || separator == entry.Length - 1)
+            {
+                continue;
+            }
+
+            var expectedType = entry.Substring(0, separator).Trim();
+            foreach (var parameterName in entry.Substring(separator + 1).Split(
+                         [','],
+                         StringSplitOptions.RemoveEmptyEntries))
+            {
+                var trimmed = parameterName.Trim();
+                if (trimmed.Length > 0)
+                {
+                    yield return new DomainPrimitiveGlossaryEntry(
+                        expectedType,
+                        trimmed[0] == '@'
+                            ? trimmed.Substring(1)
+                            : trimmed);
+                }
+            }
+        }
+    }
+
+    private static bool IsRawDomainPrimitive(ITypeSymbol type) =>
+        type.SpecialType is
+            SpecialType.System_String or
+            SpecialType.System_Boolean or
+            SpecialType.System_Byte or
+            SpecialType.System_SByte or
+            SpecialType.System_Int16 or
+            SpecialType.System_UInt16 or
+            SpecialType.System_Int32 or
+            SpecialType.System_UInt32 or
+            SpecialType.System_Int64 or
+            SpecialType.System_UInt64 or
+            SpecialType.System_Single or
+            SpecialType.System_Double or
+            SpecialType.System_Decimal or
+            SpecialType.System_Char ||
+        string.Equals(
+            type.GetFullMetadataName(),
+            "System.Guid",
+            StringComparison.Ordinal);
+
+    private static bool IsExpectedFailureException(INamedTypeSymbol type)
+    {
+        if (type.GetFullMetadataName() is
+            "System.ArgumentNullException" or
+            "System.ArgumentOutOfRangeException")
+        {
+            return false;
+        }
+
+        for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            if (current.GetFullMetadataName() is
+                "System.ArgumentException" or
+                "System.InvalidOperationException" or
+                "System.FormatException" or
+                "System.Collections.Generic.KeyNotFoundException")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsSimpleAccumulation(StatementSyntax statement)
+    {
+        var single = statement switch
+        {
+            BlockSyntax { Statements.Count: 1 } block => block.Statements[0],
+            _ => statement
+        };
+
+        if (IsSingleAdd(single))
+        {
+            return true;
+        }
+
+        if (single is not IfStatementSyntax
+            {
+                Else: null
+            } conditional)
+        {
+            return false;
+        }
+
+        return conditional.Statement switch
+        {
+            BlockSyntax { Statements.Count: 1 } block =>
+                IsSingleAdd(block.Statements[0]),
+            StatementSyntax nested => IsSingleAdd(nested)
+        };
+    }
+
+    private static bool IsSingleAdd(StatementSyntax statement) =>
+        statement is ExpressionStatementSyntax
+        {
+            Expression: InvocationExpressionSyntax
+            {
+                Expression: MemberAccessExpressionSyntax
+                {
+                    Name.Identifier.ValueText: "Add"
+                },
+                ArgumentList.Arguments.Count: 1
+            }
+        };
+
+    private readonly record struct DomainPrimitiveGlossaryEntry(
+        string ExpectedType,
+        string ParameterName);
 
     private static bool IsConfiguredClosedType(
         INamedTypeSymbol type,

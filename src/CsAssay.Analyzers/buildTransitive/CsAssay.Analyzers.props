@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <CsAssayEnforceOnBuild Condition="'$(CsAssayEnforceOnBuild)' == ''">true</CsAssayEnforceOnBuild>
+    <RunAnalyzersDuringBuild Condition="'$(CsAssayEnforceOnBuild)' == 'true'">true</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+</Project>

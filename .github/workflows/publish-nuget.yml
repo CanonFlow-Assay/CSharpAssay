@@ -1,0 +1,89 @@
+name: Publish NuGet packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type publish-0.1.0 to release both packages
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  publish:
+    name: Qualify and publish 0.1.0
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      inputs.confirm == 'publish-0.1.0'
+    runs-on: ubuntu-latest
+    environment: nuget.org
+
+    steps:
+      - name: Checkout exact release commit
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.301
+
+      - name: Locked restore
+        run: dotnet restore CSharpAssay.slnx --locked-mode
+
+      - name: Release build
+        run: dotnet build CSharpAssay.slnx --no-restore --no-incremental --configuration Release
+
+      - name: Complete serialized test suite
+        run: >-
+          dotnet test CSharpAssay.slnx
+          --no-build
+          --no-restore
+          --configuration Release
+          --max-parallel-test-modules 1
+
+      - name: Authoritative self-verification
+        run: >-
+          dotnet src/CsAssay.Runner/bin/Release/net10.0/cs-assay.dll
+          verify CSharpAssay.slnx
+          --profile compat
+          --json artifacts/release/csassay.json
+          --sarif artifacts/release/csassay.sarif
+
+      - name: Reproducible pack and fresh-install qualification
+        run: |
+          ./eng/pack-release.sh
+          ./eng/qualify-packages.sh
+
+      - name: Attest tested package bytes
+        uses: actions/attest@v4
+        with:
+          subject-path: artifacts/packages/*.nupkg
+
+      - name: Exchange GitHub OIDC token for temporary NuGet key
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Publish analyzer and tool packages
+        run: |
+          dotnet nuget push artifacts/packages/CsAssay.Analyzers.0.1.0.nupkg --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
+          dotnet nuget push artifacts/packages/CsAssay.Tool.0.1.0.nupkg --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
+
+      - name: Upload release evidence
+        if: always() && hashFiles('artifacts/**/*') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: csharp-assay-nuget-0.1.0
+          path: |
+            artifacts/packages/
+            artifacts/release/
+          if-no-files-found: error
+          retention-days: 30

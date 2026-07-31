@@ -13,6 +13,8 @@
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <DebugType>portable</DebugType>
+    <UseArtifactsOutput Condition="'$(CsAssayPreviewBuild)' == 'true'">true</UseArtifactsOutput>
+    <ArtifactsPath Condition="'$(CsAssayPreviewBuild)' == 'true'">$(MSBuildThisFileDirectory)artifacts/preview/build</ArtifactsPath>
     <RepositoryUrl>https://github.com/CanonFlow-Assay/CSharpAssay</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

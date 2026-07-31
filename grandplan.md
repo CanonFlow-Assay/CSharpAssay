@@ -5,7 +5,7 @@ product:        CSharpAssay
 executable:     cs-assay
 assemblies:     CsAssay.*
 plan version:   1.0.0
-status:         phase-5-complete-on-stable-lane
+status:         phase-6-complete-on-stable-lane
 date:           2026-07-31
 stable floor:   C# 14 / .NET 10 LTS
 preview lane:   C# 15 working set / .NET 11 Preview 6
@@ -1180,7 +1180,7 @@ no verifier relies on source substring matching.
 
 Stable-lane implementation status (2026-07-31): complete. Seven rules are
 Admitted (`CSAP0001`, `CSAN0001`–`CSAN0004`, `CSAI0001`, and `CSAI0002`);
-the remaining seven candidates stay Prototype. The full solution produces an
+the remaining seven candidates in the Phase 2 catalogue stayed Prototype. The full solution produces an
 authoritative Pass with complete evidence. Native-preview admission remains
 unavailable because no .NET 11 SDK is installed.
 
@@ -1264,9 +1264,9 @@ archives, binds package metadata and provenance to the exact commit, compares
 the results byte for byte, audits payload/signing state, and qualifies a fresh
 tool and analyzer consumer from a local-only feed. GitHub Actions keeps the
 stable release gate and non-authoritative preview probe in separate jobs,
-uploads SARIF, and attests main-branch package bytes. No NuGet signing authority
-or publication authority is present, so those actions remain deliberately out
-of scope.
+uploads SARIF, and attests main-branch package bytes. Packages remain unsigned
+because no NuGet signing certificate exists. Phase 6 adds a separately gated,
+manual, passwordless NuGet trusted-publishing workflow.
 
 ### Phase 5 — migration report and ecosystem adapters
 
@@ -1308,6 +1308,29 @@ Add advisory rules for:
 - mutable shell leakage.
 
 These remain advisory until a project policy supplies deterministic context.
+
+Implementation status on 2026-07-31: complete on the stable lane. Six new
+prototype advisory diagnostics cover the listed families with deliberately
+restricted shapes. `CSAD0001` emits only when the policy supplies an exact
+domain-primitive glossary; every Phase 6 rule is contextual or heuristic,
+`Advise`, and non-admitted. Consumer policy cannot promote one into release
+authority. The semantic corpus includes positive, negative, suppression,
+malformed, and analyzer-failure specimens for all six rules. Observe/core/strict
+templates, an adoption guide, and a manual NuGet OIDC publication workflow
+harden rollout. Authoritative self-assay passes while retaining its advisory
+inventory as evidence rather than demanding cosmetic silence. The analyzer
+package now carries a qualified transitive MSBuild target: ordinary builds fail
+on admitted findings and reject silent analyzer/`NoWarn` bypasses. The
+playground/badge, evidence-foundry, read-only MCP, container, and community
+sequence is recorded in `docs/ecosystem.md`; MCP is not falsely claimed as a
+`0.1.0` capability.
+
+The local native probe now runs with .NET 11 SDK
+`11.0.100-preview.6.26359.118`. The preview compiler exposes Roslyn 5.9 union
+syntax and `ITypeSymbol.IsUnion`, while the published tool remains bound to the
+public Roslyn 5.6 NuGet graph. The solution builds cleanly under SDK 11, but the
+native check correctly remains Inconclusive with 16 explicit gaps until that
+dependency boundary is qualified.
 
 ---
 

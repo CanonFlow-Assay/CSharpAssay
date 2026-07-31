@@ -1,0 +1,6 @@
+{
+  "ruleId": "CSAF0001",
+  "fault": "analyzer-exception",
+  "expectedVerdict": "toolFailure",
+  "mayBecomePass": false
+}

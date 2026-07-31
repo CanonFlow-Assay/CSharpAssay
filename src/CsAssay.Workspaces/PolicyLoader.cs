@@ -30,6 +30,9 @@ public static class PolicyLoader
     private static readonly Regex ConfigurationRegex = new(
         "^[A-Za-z0-9_.-]+$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    private static readonly Regex DomainPrimitiveNameRegex = new(
+        "^@?[A-Za-z_][A-Za-z0-9_]*$",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly ImmutableHashSet<string> RootKeys =
         ImmutableHashSet.Create(
@@ -381,11 +384,20 @@ public static class PolicyLoader
                     "Invalid metadata name in $.domainPrimitives: " + property.Name);
             }
 
-            builder.Add(
-                property.Name,
-                ParseStringArray(
-                    property.Value,
-                    "$.domainPrimitives." + property.Name));
+            var names = ParseStringArray(
+                property.Value,
+                "$.domainPrimitives." + property.Name);
+            foreach (var name in names)
+            {
+                if (!DomainPrimitiveNameRegex.IsMatch(name))
+                {
+                    throw new InvalidDataException(
+                        "Invalid parameter name in $.domainPrimitives." +
+                        property.Name + ": " + name);
+                }
+            }
+
+            builder.Add(property.Name, names);
         }
 
         return builder.ToImmutable();

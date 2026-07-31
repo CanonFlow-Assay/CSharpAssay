@@ -1,0 +1,12 @@
+{
+  "profile": "compat",
+  "boundaries": {
+    "coreProjects": ["GuidancePolicy.csproj"],
+    "shellProjects": [],
+    "coreNamespaces": ["Qualification.Domain"],
+    "shellNamespaces": []
+  },
+  "domainPrimitives": {
+    "Qualification.Domain.CustomerId": ["customerId"]
+  }
+}

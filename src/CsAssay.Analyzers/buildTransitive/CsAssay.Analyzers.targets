@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <_CsAssayNoWarnNormalized>$([System.String]::Copy('$(NoWarn)').Replace(' ', '').Replace(',', ';').ToUpperInvariant())</_CsAssayNoWarnNormalized>
+  </PropertyGroup>
+
+  <Target Name="CsAssayValidateBuildGate"
+          BeforeTargets="CoreCompile"
+          Condition="'$(CsAssayEnforceOnBuild)' == 'true'">
+    <Error Condition="'$(RunAnalyzers)' == 'false'"
+           Code="CSASSAY-BUILD-GATE-DISABLED"
+           Text="CSharpAssay enforcement is enabled, but RunAnalyzers=false disables its build gate. Set CsAssayEnforceOnBuild=false only as an explicit, reviewed rollback." />
+    <Error Condition="'$(RunAnalyzersDuringBuild)' == 'false'"
+           Code="CSASSAY-BUILD-GATE-DISABLED"
+           Text="CSharpAssay enforcement is enabled, but RunAnalyzersDuringBuild=false disables its build gate. Set CsAssayEnforceOnBuild=false only as an explicit, reviewed rollback." />
+    <Error Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(_CsAssayNoWarnNormalized)', '(^|;)(CSAP0001|CSAN000[1-4]|CSAI000[1-2])($|;)'))"
+           Code="CSASSAY-BUILD-GATE-SUPPRESSED"
+           Text="NoWarn suppresses an admitted CSharpAssay blocking rule. Use a reviewed, fingerprinted CSharpAssay suppression grant instead." />
+  </Target>
+</Project>

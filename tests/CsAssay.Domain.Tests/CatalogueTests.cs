@@ -55,4 +55,32 @@ public sealed class CatalogueTests
                     StringComparison.Ordinal);
             });
     }
+
+    [Fact]
+    public void Phase_six_guidance_is_prototype_advice_and_cannot_block()
+    {
+        var phaseSix = new HashSet<string>(StringComparer.Ordinal)
+        {
+            RuleIds.PrimitiveObsession,
+            RuleIds.StateFlags,
+            RuleIds.FunctionCandidate,
+            RuleIds.LoopPipelineOpportunity,
+            RuleIds.CoreBoundaryException,
+            RuleIds.MutableShellLeakage
+        };
+
+        var rules = RuleCatalogue.All
+            .Where(rule => phaseSix.Contains(rule.Id))
+            .ToArray();
+
+        Assert.Equal(phaseSix.Count, rules.Length);
+        Assert.All(
+            rules,
+            rule =>
+            {
+                Assert.Equal(RuleStatus.Prototype, rule.Status);
+                Assert.Equal(RuleDisposition.Advise, rule.Disposition);
+                Assert.NotEqual(RuleCertainty.Deterministic, rule.Certainty);
+            });
+    }
 }

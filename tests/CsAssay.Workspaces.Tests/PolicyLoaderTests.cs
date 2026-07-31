@@ -5,6 +5,24 @@ namespace CsAssay.Workspaces.Tests;
 
 public sealed class PolicyLoaderTests
 {
+    [Theory]
+    [InlineData("observe.csassay.json")]
+    [InlineData("core.csassay.json")]
+    [InlineData("strict.csassay.json")]
+    public void Phase_six_adoption_templates_are_strictly_parseable(string name)
+    {
+        var root = FindRoot();
+        var json = File.ReadAllText(Path.Combine(
+            root,
+            "eng",
+            "templates",
+            name));
+
+        var policy = PolicyLoader.Parse(json);
+
+        Assert.Equal(AssayProfile.Compat, policy.Profile);
+    }
+
     [Fact]
     public void Parses_strict_policy()
     {
@@ -59,6 +77,9 @@ public sealed class PolicyLoaderTests
             ["src/Acme.Web/Acme.Web.csproj"],
             policy.Boundaries.ShellProjects);
         Assert.Equal(["Acme.Outcome"], policy.Representations.ClosedTypes);
+        Assert.Equal(
+            ["customerId"],
+            policy.DomainPrimitives["Acme.CustomerId"]);
     }
 
     [Fact]
@@ -87,6 +108,24 @@ public sealed class PolicyLoaderTests
                     "resultTypes": ["not a metadata name"],
                     "optionTypes": [],
                     "closedTypes": []
+                  }
+                }
+                """));
+    }
+
+    [Theory]
+    [InlineData("customer-id")]
+    [InlineData("customer id")]
+    [InlineData("customerId;Acme.OrderId=orderId")]
+    public void Rejects_domain_glossary_names_that_cannot_be_parameter_names(
+        string name)
+    {
+        Assert.Throws<InvalidDataException>(() =>
+            PolicyLoader.Parse(
+                $$"""
+                {
+                  "domainPrimitives": {
+                    "Acme.CustomerId": [{{JsonSerializer.Serialize(name)}}]
                   }
                 }
                 """));
@@ -125,5 +164,21 @@ public sealed class PolicyLoaderTests
                   }
                 }
                 """));
+    }
+
+    private static string FindRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "CSharpAssay.slnx")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate repository root.");
     }
 }

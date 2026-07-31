@@ -58,12 +58,63 @@
       "fault": "specimens/Faults/CSAI0002/Malformed.cs"
     },
     {
+      "id": "CSAI0003",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAI0003/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAI0003/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAI0003/Suppression.cs",
+      "fault": "specimens/Faults/CSAI0003/Malformed.cs"
+    },
+    {
       "id": "CSAE0001",
       "capability": "available",
       "violation": "specimens/Compat.Bad/CSAE0001/Violation.cs",
       "compliant": "specimens/Compat.Good/CSAE0001/Compliant.cs",
       "suppression": "specimens/Compat.Bad/CSAE0001/Suppression.cs",
       "fault": "specimens/Faults/CSAE0001/Malformed.cs"
+    },
+    {
+      "id": "CSAE0002",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAE0002/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAE0002/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAE0002/Suppression.cs",
+      "fault": "specimens/Faults/CSAE0002/Malformed.cs"
+    },
+    {
+      "id": "CSAF0001",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAF0001/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAF0001/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAF0001/Suppression.cs",
+      "fault": "specimens/Faults/CSAF0001/Malformed.cs"
+    },
+    {
+      "id": "CSAF0002",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAF0002/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAF0002/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAF0002/Suppression.cs",
+      "fault": "specimens/Faults/CSAF0002/Malformed.cs"
+    },
+    {
+      "id": "CSAD0001",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAD0001/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAD0001/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAD0001/Suppression.cs",
+      "fault": "specimens/Faults/CSAD0001/Malformed.cs",
+      "options": {
+        "csassay_domain_primitives": "Domain.CustomerId=customerId"
+      }
+    },
+    {
+      "id": "CSAD0002",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAD0002/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAD0002/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAD0002/Suppression.cs",
+      "fault": "specimens/Faults/CSAD0002/Malformed.cs"
     },
     {
       "id": "CSAA0001",

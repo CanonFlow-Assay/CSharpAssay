@@ -5,7 +5,7 @@
     "golden": "migrated"
   },
   "compat": {
-    "diagnostics": [],
+    "diagnostics": ["CSAE0002"],
     "golden": "migrated"
   }
 }

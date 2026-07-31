@@ -103,7 +103,7 @@
         "$ref": "#/$defs/metadataName"
       },
       "additionalProperties": {
-        "$ref": "#/$defs/nonEmptyStrings"
+        "$ref": "#/$defs/parameterNames"
       }
     },
     "suppressions": {
@@ -161,6 +161,14 @@
       "uniqueItems": true,
       "items": {
         "$ref": "#/$defs/metadataName"
+      }
+    },
+    "parameterNames": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^@?[A-Za-z_][A-Za-z0-9_]*$"
       }
     },
     "ruleIds": {

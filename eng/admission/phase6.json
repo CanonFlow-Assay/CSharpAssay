@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "phase": 6,
+  "status": "complete-on-stable-lane",
+  "rules": [
+    {
+      "id": "CSAD0001",
+      "certainty": "contextual",
+      "disposition": "advise",
+      "status": "prototype",
+      "context": "exact policy domain-primitive glossary required"
+    },
+    {
+      "id": "CSAD0002",
+      "certainty": "heuristic",
+      "disposition": "advise",
+      "status": "prototype"
+    },
+    {
+      "id": "CSAF0001",
+      "certainty": "heuristic",
+      "disposition": "advise",
+      "status": "prototype"
+    },
+    {
+      "id": "CSAF0002",
+      "certainty": "heuristic",
+      "disposition": "advise",
+      "status": "prototype"
+    },
+    {
+      "id": "CSAE0002",
+      "certainty": "contextual",
+      "disposition": "advise",
+      "status": "prototype"
+    },
+    {
+      "id": "CSAI0003",
+      "certainty": "contextual",
+      "disposition": "advise",
+      "status": "prototype"
+    }
+  ],
+  "trustBoundary": {
+    "consumerPolicyMayPromote": false,
+    "requiredPrototypeOutcome": "inconclusive",
+    "requiredPrototypeCode": "CSASSAY-REQUIRED-RULE-NOT-ADMITTED",
+    "automaticFixes": 0
+  },
+  "corpus": {
+    "positiveSpecimens": 6,
+    "negativeSpecimens": 6,
+    "suppressionSpecimens": 6,
+    "malformedSpecimens": 6,
+    "analyzerFailureContracts": 6,
+    "typeGymGoldenExpectationsUpdated": [
+      "TG07-function-strategy",
+      "TG08-loop-pipeline-judgment",
+      "TG15-migration"
+    ]
+  },
+  "adoption": {
+    "templates": ["observe", "core", "strict"],
+    "guide": "docs/adoption.md",
+    "publicationGuide": "docs/publishing.md",
+    "ecosystemRoadmap": "docs/ecosystem.md",
+    "msbuildGate": {
+      "packagePath": "buildTransitive/CsAssay.Analyzers.targets",
+      "enabledByDefault": true,
+      "admittedFindingFailsBuild": true,
+      "disabledAnalyzerFailsBuild": true,
+      "admittedNoWarnFailsBuild": true,
+      "explicitRollbackProperty": "CsAssayEnforceOnBuild"
+    }
+  },
+  "qualification": {
+    "sdk": "10.0.301",
+    "configuration": "Release",
+    "projects": 16,
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "testsPassed": 107,
+    "testsFailed": 0,
+    "testsSkipped": 0
+  },
+  "nativePreviewProbe": {
+    "authoritative": false,
+    "sdk": "11.0.100-preview.6.26359.118",
+    "sdkRoslyn": "5.9.0.0",
+    "solutionBuild": "pass",
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "verdict": "inconclusive",
+    "missingEvidence": 16,
+    "toolFailures": 0,
+    "sdkUnionSurface": ["ITypeSymbol.IsUnion", "UnionDeclarationSyntax"],
+    "shippedRoslynNuGet": "5.6.0",
+    "authority": "blocked pending reproducible Roslyn 5.9 dependency qualification"
+  },
+  "authoritativeSelfAssay": {
+    "verdict": "pass",
+    "projects": 16,
+    "requiredTests": 18,
+    "findings": 10,
+    "allFindingsAdvisory": true,
+    "missingEvidence": 0,
+    "toolFailures": 0,
+    "repeatByteIdentical": true,
+    "jsonSha256": "6b7c0afa1767e0a821482cbfae2e30d07f234bb433af253ee666fe406e5f571d",
+    "sarifSha256": "4b68a54dd156f350c6580760844cf107fea7e7cd40de86ae448d74c471cf84eb",
+    "policySha256": "6310130d4ccaacdc4d3f4ad1bac2693deecb17e4e2700d3e3da96c83ee164013"
+  },
+  "nuget": {
+    "version": "0.1.0",
+    "packageIds": ["CsAssay.Analyzers", "CsAssay.Tool"],
+    "idsUnclaimedAtQualification": true,
+    "authentication": "GitHub OIDC trusted publishing",
+    "nugetOwner": "arun6202",
+    "longLivedApiKey": false,
+    "workflow": ".github/workflows/publish-nuget.yml",
+    "registryState": "awaiting owner trusted-publisher setup"
+  }
+}

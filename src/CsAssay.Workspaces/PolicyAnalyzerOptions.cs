@@ -13,7 +13,12 @@ internal sealed class PolicyAnalyzerConfigOptionsProvider(
         {
             ["csassay_closed_types"] = string.Join(
                 ";",
-                policy.Representations.ClosedTypes)
+                policy.Representations.ClosedTypes),
+            ["csassay_domain_primitives"] = string.Join(
+                ";",
+                policy.DomainPrimitives
+                    .OrderBy(item => item.Key, StringComparer.Ordinal)
+                    .Select(item => item.Key + "=" + string.Join(",", item.Value)))
         });
 
     private static readonly AnalyzerConfigOptions Empty =

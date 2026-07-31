@@ -119,21 +119,11 @@ jobs:
       - name: Locked restore
         run: dotnet restore CSharpAssay.slnx --locked-mode
 
-      - name: Preview-language build
-        run: >-
-          dotnet build CSharpAssay.slnx
-          --no-restore
-          --configuration Release
-          -p:LangVersion=preview
-
-      - name: Non-authoritative native profile check
+      - name: Preview build and non-authoritative native profile check
         continue-on-error: true
-        run: >-
-          dotnet src/CsAssay.Runner/bin/Release/net10.0/cs-assay.dll
-          check CSharpAssay.slnx
-          --profile native
-          --json artifacts/preview/csassay.json
-          --sarif artifacts/preview/csassay.sarif
+        env:
+          DOTNET_PREVIEW_COMMAND: dotnet
+        run: ./eng/run-preview.sh
 
       - name: Upload preview evidence
         if: always() && hashFiles('artifacts/preview/csassay.json') != ''

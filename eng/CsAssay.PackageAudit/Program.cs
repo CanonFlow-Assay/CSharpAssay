@@ -139,7 +139,9 @@ public static class Program
                 "analyzers/dotnet/cs/CsAssay.Analyzers.dll",
                 "analyzers/dotnet/cs/CsAssay.Catalogue.dll",
                 "analyzers/dotnet/cs/CsAssay.Domain.dll",
-                "analyzers/dotnet/cs/CsAssay.SdkAdapter.dll");
+                "analyzers/dotnet/cs/CsAssay.SdkAdapter.dll",
+                "buildTransitive/CsAssay.Analyzers.props",
+                "buildTransitive/CsAssay.Analyzers.targets");
         }
         else
         {
