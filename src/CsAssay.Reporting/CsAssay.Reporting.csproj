@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Deterministic JSON, SARIF, console, and HTML projections.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CsAssay.Domain/CsAssay.Domain.csproj" />
+    <ProjectReference Include="../CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
+  </ItemGroup>
+</Project>

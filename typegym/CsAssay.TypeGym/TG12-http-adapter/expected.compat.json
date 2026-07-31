@@ -1,0 +1,11 @@
+{
+  "challenge": "TG12-http-adapter",
+  "bad": {
+    "diagnostics": ["CSAN0003","CSAN0004"],
+    "golden": "200"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "200"
+  }
+}

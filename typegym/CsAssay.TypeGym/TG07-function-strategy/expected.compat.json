@@ -1,0 +1,11 @@
+{
+  "challenge": "TG07-function-strategy",
+  "bad": {
+    "diagnostics": [],
+    "golden": "5"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "5"
+  }
+}

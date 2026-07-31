@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/CsAssay.Analyzers/CsAssay.Analyzers.csproj" />
+    <ProjectReference Include="../../src/CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+</Project>

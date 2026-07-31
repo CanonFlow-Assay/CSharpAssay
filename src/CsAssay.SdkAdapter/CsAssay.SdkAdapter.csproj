@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>Isolated Roslyn compatibility surface for CSharpAssay.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CsAssay.Domain/CsAssay.Domain.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

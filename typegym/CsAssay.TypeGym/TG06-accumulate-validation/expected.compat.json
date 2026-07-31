@@ -1,0 +1,11 @@
+{
+  "challenge": "TG06-accumulate-validation",
+  "bad": {
+    "diagnostics": [],
+    "golden": "name"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "name,age"
+  }
+}

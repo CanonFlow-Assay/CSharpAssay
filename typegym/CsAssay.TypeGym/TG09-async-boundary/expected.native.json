@@ -1,0 +1,8 @@
+{
+  "challenge": "TG09-async-boundary",
+  "native": {
+    "capability": "same",
+    "diagnostics": [],
+    "golden": "async"
+  }
+}

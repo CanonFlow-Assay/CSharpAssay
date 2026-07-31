@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "1.0.0",
+  "policy": "observation-only until an exact package version passes the adapter corpus",
+  "adapters": [
+    {
+      "name": "OneOf",
+      "metadataIdentities": [
+        "OneOf.OneOf`2",
+        "OneOf.OneOfBase`1"
+      ],
+      "version": "unqualified",
+      "status": "observation-only"
+    },
+    {
+      "name": "ErrorOr",
+      "metadataIdentities": [
+        "ErrorOr.ErrorOr`1"
+      ],
+      "version": "unqualified",
+      "status": "observation-only"
+    },
+    {
+      "name": "CSharpFunctionalExtensions",
+      "metadataIdentities": [
+        "CSharpFunctionalExtensions.Result",
+        "CSharpFunctionalExtensions.Result`1",
+        "CSharpFunctionalExtensions.Maybe`1"
+      ],
+      "version": "unqualified",
+      "status": "observation-only"
+    },
+    {
+      "name": "LanguageExt",
+      "metadataIdentities": [
+        "LanguageExt.Option`1",
+        "LanguageExt.Either`2"
+      ],
+      "version": "unqualified",
+      "status": "observation-only"
+    },
+    {
+      "name": "ValueOf",
+      "metadataIdentities": [
+        "ValueOf.ValueOf`2"
+      ],
+      "version": "unqualified",
+      "status": "legacy-observation-only"
+    },
+    {
+      "name": "Vogen",
+      "metadataIdentities": [
+        "Vogen.ValueObjectAttribute"
+      ],
+      "version": "unqualified",
+      "status": "observation-only"
+    },
+    {
+      "name": "dunet",
+      "metadataIdentities": [
+        "Dunet.UnionAttribute"
+      ],
+      "version": "unqualified",
+      "status": "observation-only"
+    },
+    {
+      "name": "Thinktecture.Runtime.Extensions",
+      "metadataIdentities": [
+        "Thinktecture.UnionAttribute",
+        "Thinktecture.ValueObjectAttribute"
+      ],
+      "version": "unqualified",
+      "status": "observation-only"
+    }
+  ]
+}

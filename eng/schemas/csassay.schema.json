@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://canonflowfoundation.github.io/csharp-assay/csassay.schema.json",
+  "title": "CSharpAssay policy",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "profile": {
+      "enum": [
+        "auto",
+        "compat",
+        "native"
+      ]
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowPreviewToolchain": {
+          "type": "boolean"
+        },
+        "requiredTargetFrameworks": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^net[0-9]+(?:\\.[0-9]+)?(?:-[A-Za-z0-9.-]+)?$"
+          }
+        }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coreNamespaces": {
+          "$ref": "#/$defs/nonEmptyStrings"
+        },
+        "shellNamespaces": {
+          "$ref": "#/$defs/nonEmptyStrings"
+        }
+      }
+    },
+    "representations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resultTypes": {
+          "$ref": "#/$defs/metadataNames"
+        },
+        "optionTypes": {
+          "$ref": "#/$defs/metadataNames"
+        },
+        "closedTypes": {
+          "$ref": "#/$defs/metadataNames"
+        }
+      }
+    },
+    "domainPrimitives": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/metadataName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/nonEmptyStrings"
+      }
+    },
+    "suppressions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ruleId",
+          "owner",
+          "reason",
+          "expires",
+          "fingerprint"
+        ],
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "pattern": "^CSA[NUIEFDAP][0-9]{4}$"
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expires": {
+            "type": "string",
+            "format": "date"
+          },
+          "fingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyStrings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "metadataName": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*|\\+[A-Za-z_][A-Za-z0-9_]*)*(?:`[1-9][0-9]*)?$"
+    },
+    "metadataNames": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/metadataName"
+      }
+    }
+  }
+}

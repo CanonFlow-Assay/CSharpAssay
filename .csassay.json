@@ -1,0 +1,32 @@
+{
+  "$schema": "./eng/schemas/csassay.schema.json",
+  "profile": "auto",
+  "release": {
+    "allowPreviewToolchain": false,
+    "requiredTargetFrameworks": [
+      "net10.0"
+    ]
+  },
+  "boundaries": {
+    "coreNamespaces": [
+      "CsAssay.Domain",
+      "CsAssay.Catalogue"
+    ],
+    "shellNamespaces": [
+      "CsAssay.SdkAdapter",
+      "CsAssay.Analyzers",
+      "CsAssay.Workspaces",
+      "CsAssay.Reporting",
+      "CsAssay.Runner",
+      "CsAssay.Domain.Tests",
+      "CsAssay.TypeGym"
+    ]
+  },
+  "representations": {
+    "resultTypes": [],
+    "optionTypes": [],
+    "closedTypes": []
+  },
+  "domainPrimitives": {},
+  "suppressions": []
+}

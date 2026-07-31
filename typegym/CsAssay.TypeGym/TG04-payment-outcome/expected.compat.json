@@ -1,0 +1,14 @@
+{
+  "challenge": "TG04-payment-outcome",
+  "bad": {
+    "diagnostics": ["CSAU0001","CSAU0002"],
+    "golden": "P-1"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "P-1"
+  },
+  "options": {
+    "csassay_closed_types": "TypeGym.PaymentOutcome"
+  }
+}

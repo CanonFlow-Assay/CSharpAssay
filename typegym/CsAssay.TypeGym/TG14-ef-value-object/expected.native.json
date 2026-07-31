@@ -1,0 +1,8 @@
+{
+  "challenge": "TG14-ef-value-object",
+  "native": {
+    "capability": "same",
+    "diagnostics": [],
+    "golden": "O-9"
+  }
+}

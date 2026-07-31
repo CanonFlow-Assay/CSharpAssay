@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/CsAssay.Runner/CsAssay.Runner.csproj" />
+    <ProjectReference Include="../../src/CsAssay.Reporting/CsAssay.Reporting.csproj" />
+  </ItemGroup>
+</Project>

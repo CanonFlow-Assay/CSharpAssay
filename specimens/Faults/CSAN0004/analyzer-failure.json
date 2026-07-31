@@ -1,0 +1,6 @@
+{
+  "ruleId": "CSAN0004",
+  "fault": "analyzer-exception",
+  "expectedVerdict": "toolFailure",
+  "mayBecomePass": false
+}

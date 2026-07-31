@@ -1,0 +1,11 @@
+{
+  "challenge": "TG15-migration",
+  "bad": {
+    "diagnostics": ["CSAU0003"],
+    "golden": "migrated"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "migrated"
+  }
+}

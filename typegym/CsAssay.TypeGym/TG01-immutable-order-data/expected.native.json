@@ -1,0 +1,8 @@
+{
+  "challenge": "TG01-immutable-order-data",
+  "native": {
+    "capability": "same",
+    "diagnostics": [],
+    "golden": "A:2"
+  }
+}

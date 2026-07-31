@@ -1,0 +1,11 @@
+{
+  "challenge": "TG13-serialization",
+  "bad": {
+    "diagnostics": [],
+    "golden": "created"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "created:order"
+  }
+}

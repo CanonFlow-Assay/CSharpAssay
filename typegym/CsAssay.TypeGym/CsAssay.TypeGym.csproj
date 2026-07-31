@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Harness/**/*.cs" />
+    <Compile Include="TG*/Challenge.Tests.cs" />
+    <ProjectReference Include="../../src/CsAssay.Analyzers/CsAssay.Analyzers.csproj" />
+    <ProjectReference Include="../../src/CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
+    <ProjectReference Include="../../src/CsAssay.SdkAdapter/CsAssay.SdkAdapter.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TG*/README.md" />
+    <None Include="TG*/Bad.cs" />
+    <None Include="TG*/Compat.cs" />
+    <None Include="TG*/Native.cs" />
+    <None Include="TG*/expected.compat.json" />
+    <None Include="TG*/expected.native.json" />
+  </ItemGroup>
+</Project>

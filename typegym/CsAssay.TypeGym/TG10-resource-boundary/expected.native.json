@@ -1,0 +1,8 @@
+{
+  "challenge": "TG10-resource-boundary",
+  "native": {
+    "capability": "same",
+    "diagnostics": [],
+    "golden": "missing"
+  }
+}

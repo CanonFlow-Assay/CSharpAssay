@@ -1,0 +1,11 @@
+{
+  "challenge": "TG01-immutable-order-data",
+  "bad": {
+    "diagnostics": ["CSAI0001","CSAI0002"],
+    "golden": "A:2"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "A:2"
+  }
+}

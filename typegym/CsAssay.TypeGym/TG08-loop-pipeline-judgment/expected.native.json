@@ -1,0 +1,8 @@
+{
+  "challenge": "TG08-loop-pipeline-judgment",
+  "native": {
+    "capability": "same",
+    "diagnostics": [],
+    "golden": "20,40"
+  }
+}

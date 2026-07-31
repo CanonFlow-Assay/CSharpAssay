@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "allowedVerdicts": [
+    "true-positive",
+    "false-positive",
+    "contextual-needs-policy",
+    "tool-failure",
+    "not-run"
+  ],
+  "repositories": [
+    {
+      "id": "csassay-self",
+      "path": ".",
+      "commit": "working-tree",
+      "consent": "owner-requested implementation",
+      "categories": [
+        "library",
+        "multi-targeting",
+        "analyzer",
+        "workspace"
+      ],
+      "status": "not-run"
+    }
+  ],
+  "rules": [
+    {
+      "ruleId": "CSAP0001",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAN0001",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAN0002",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAN0003",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAN0004",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAI0001",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAI0002",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAE0001",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAA0001",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAA0002",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAU0001",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAU0002",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAU0003",
+      "status": "not-run",
+      "findings": []
+    },
+    {
+      "ruleId": "CSAU0004",
+      "status": "not-run",
+      "findings": []
+    }
+  ],
+  "summary": {
+    "denominator": 0,
+    "precision": "inconclusive",
+    "reason": "No real-world findings have been adjudicated yet."
+  }
+}

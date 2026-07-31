@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Authoritative MSBuildWorkspace loading and verification orchestration.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CsAssay.Domain/CsAssay.Domain.csproj" />
+    <ProjectReference Include="../CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
+    <ProjectReference Include="../CsAssay.SdkAdapter/CsAssay.SdkAdapter.csproj" />
+    <ProjectReference Include="../CsAssay.Analyzers/CsAssay.Analyzers.csproj" />
+    <PackageReference Include="Microsoft.Build.Locator" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
+  </ItemGroup>
+</Project>

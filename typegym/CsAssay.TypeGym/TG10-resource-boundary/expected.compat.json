@@ -1,0 +1,11 @@
+{
+  "challenge": "TG10-resource-boundary",
+  "bad": {
+    "diagnostics": ["CSAE0001"],
+    "golden": "missing"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "missing"
+  }
+}

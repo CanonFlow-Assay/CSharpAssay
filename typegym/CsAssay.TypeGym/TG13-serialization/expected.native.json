@@ -1,0 +1,8 @@
+{
+  "challenge": "TG13-serialization",
+  "native": {
+    "capability": "unavailable",
+    "diagnostics": [],
+    "golden": "native-preview-unavailable"
+  }
+}

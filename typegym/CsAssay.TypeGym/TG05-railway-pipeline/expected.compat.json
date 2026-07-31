@@ -1,0 +1,11 @@
+{
+  "challenge": "TG05-railway-pipeline",
+  "bad": {
+    "diagnostics": [],
+    "golden": "40"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "40"
+  }
+}

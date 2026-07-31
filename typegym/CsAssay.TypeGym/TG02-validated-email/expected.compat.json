@@ -1,0 +1,11 @@
+{
+  "challenge": "TG02-validated-email",
+  "bad": {
+    "diagnostics": ["CSAN0003","CSAN0004"],
+    "golden": "a@example.test"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "a@example.test"
+  }
+}

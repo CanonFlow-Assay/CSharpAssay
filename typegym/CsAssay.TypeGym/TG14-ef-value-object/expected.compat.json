@@ -1,0 +1,11 @@
+{
+  "challenge": "TG14-ef-value-object",
+  "bad": {
+    "diagnostics": [],
+    "golden": "O-9"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "O-9"
+  }
+}

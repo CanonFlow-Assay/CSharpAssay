@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>cs-assay</AssemblyName>
+    <RootNamespace>CsAssay.Runner</RootNamespace>
+    <Description>Authoritative CSharpAssay command-line verifier.</Description>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>cs-assay</ToolCommandName>
+    <PackageId>CsAssay.Tool</PackageId>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CsAssay.Domain/CsAssay.Domain.csproj" />
+    <ProjectReference Include="../CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
+    <ProjectReference Include="../CsAssay.Workspaces/CsAssay.Workspaces.csproj" />
+    <ProjectReference Include="../CsAssay.Reporting/CsAssay.Reporting.csproj" />
+  </ItemGroup>
+</Project>

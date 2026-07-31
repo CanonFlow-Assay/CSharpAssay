@@ -1,0 +1,8 @@
+{
+  "challenge": "TG07-function-strategy",
+  "native": {
+    "capability": "same",
+    "diagnostics": [],
+    "golden": "5"
+  }
+}

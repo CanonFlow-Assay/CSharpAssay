@@ -1,0 +1,304 @@
+using CsAssay.Catalogue;
+
+namespace CsAssay.Analyzers.Tests;
+
+public sealed class FunctionalPolicyAnalyzerTests
+{
+    [Fact]
+    public async Task Reports_nullable_disable()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            #nullable disable
+            public sealed class Sample { }
+            """);
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullableDisabled);
+    }
+
+    [Fact]
+    public async Task Null_is_the_first_offence_family()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public sealed class CoreService
+            {
+                public string? Name { get; init; }
+
+                public string? Transform(string? input) => input;
+
+                public string NullValue() => null!;
+
+                public string DefaultValue() => default;
+
+                private static bool BoundaryCheck(string? input) =>
+                    input is null;
+            }
+            """);
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullForgiving);
+        Assert.Equal(
+            2,
+            diagnostics.Count(diagnostic =>
+                diagnostic.Id == RuleIds.NullValueIntroduction));
+        Assert.True(
+            diagnostics.Count(diagnostic =>
+                diagnostic.Id == RuleIds.NullableCoreContract) >= 3);
+    }
+
+    [Fact]
+    public async Task Null_pattern_check_does_not_introduce_null()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            internal static class Boundary
+            {
+                internal static bool IsMissing(string? input) =>
+                    input is null;
+            }
+            """);
+
+        Assert.DoesNotContain(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullValueIntroduction);
+    }
+
+    [Fact]
+    public async Task Omitted_optional_null_does_not_introduce_source_null()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            using System.Text.Json;
+
+            public sealed record Message(string Value);
+
+            public static class Boundary
+            {
+                public static string Write(Message value) =>
+                    JsonSerializer.Serialize(value);
+            }
+            """);
+
+        Assert.DoesNotContain(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullValueIntroduction);
+    }
+
+    [Fact]
+    public async Task Reports_mutable_record_surface()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            using System.Collections.Generic;
+            public sealed record Order
+            {
+                public string Id { get; set; } = "";
+                public List<string> Lines { get; init; } = [];
+            }
+            """);
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.MutableSetter);
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.MutableCollectionExposure);
+    }
+
+    [Fact]
+    public async Task Accepts_immutable_record_surface()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            using System.Collections.Immutable;
+            public sealed record Order(
+                string Id,
+                ImmutableArray<string> Lines);
+            """);
+
+        Assert.DoesNotContain(
+            diagnostics,
+            diagnostic => diagnostic.Id is
+                RuleIds.MutableSetter or
+                RuleIds.MutableCollectionExposure);
+    }
+
+    [Fact]
+    public async Task Reports_empty_catch_and_not_observable_handling()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            using System;
+            public static class Sample
+            {
+                public static void Bad()
+                {
+                    try { throw new InvalidOperationException(); }
+                    catch { }
+                }
+
+                public static void Good()
+                {
+                    try { throw new InvalidOperationException(); }
+                    catch (Exception exception) { Console.Error.WriteLine(exception); }
+                }
+            }
+            """);
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.SwallowedException);
+    }
+
+    [Fact]
+    public async Task Reports_async_void_but_allows_event_handler()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            using System;
+            using System.Threading.Tasks;
+            public sealed class Sample
+            {
+                public async void Bad() { await Task.Yield(); }
+                public async void OnClick(object sender, EventArgs args)
+                {
+                    await Task.Yield();
+                }
+            }
+            """);
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.AsyncVoid);
+    }
+
+    [Fact]
+    public async Task Reports_blocking_awaitables_in_async_flow()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            using System.Threading.Tasks;
+            public static class Sample
+            {
+                public static async Task<int> Bad(Task<int> input)
+                {
+                    input.Wait();
+                    await Task.Yield();
+                    return input.Result;
+                }
+            }
+            """);
+
+        Assert.Equal(
+            2,
+            diagnostics.Count(diagnostic => diagnostic.Id == RuleIds.BlockingAsync));
+    }
+
+    [Fact]
+    public async Task Reports_csharp_assay_pragma()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            #pragma warning disable CSAN0001
+            public sealed class Sample { }
+            #pragma warning restore CSAN0001
+            """);
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.UnauthorizedSuppression);
+    }
+
+    [Fact]
+    public async Task Oneof_extraction_requires_matching_semantic_guard()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            namespace OneOf
+            {
+                public readonly struct OneOf<T0, T1>
+                {
+                    public bool IsT0 => true;
+                    public T0 AsT0 => default!;
+                }
+            }
+
+            public static class Sample
+            {
+                public static string Bad(OneOf.OneOf<string, int> value) =>
+                    value.AsT0;
+
+                public static string Good(OneOf.OneOf<string, int> value)
+                {
+                    if (value.IsT0)
+                    {
+                        return value.AsT0;
+                    }
+
+                    return "";
+                }
+            }
+            """);
+
+        Assert.Single(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.UnguardedOneOfExtraction);
+    }
+
+    [Fact]
+    public async Task Configured_closed_hierarchy_is_checked()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            namespace Domain;
+
+            public abstract record Outcome
+            {
+                protected Outcome() { }
+            }
+
+            public sealed record Good : Outcome;
+            public sealed record Bad : Outcome;
+
+            public static class Consumer
+            {
+                public static string Show(Outcome value) => value switch
+                {
+                    Good => "good",
+                    _ => "other"
+                };
+            }
+            """,
+            new Dictionary<string, string>
+            {
+                ["csassay_closed_types"] = "Domain.Outcome"
+            });
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.ExtensibleClosedHierarchy);
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.IncompleteClosedHierarchySwitch);
+    }
+
+    [Fact]
+    public async Task Malformed_source_does_not_crash_analyzer()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public record Broken
+            {
+                public string Name { get; set;
+                catch {
+            """);
+
+        Assert.DoesNotContain(
+            diagnostics,
+            diagnostic => diagnostic.Id == "AD0001");
+    }
+}

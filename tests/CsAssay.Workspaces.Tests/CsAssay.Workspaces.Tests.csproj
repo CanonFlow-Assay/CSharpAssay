@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/CsAssay.Workspaces/CsAssay.Workspaces.csproj" />
+  </ItemGroup>
+</Project>

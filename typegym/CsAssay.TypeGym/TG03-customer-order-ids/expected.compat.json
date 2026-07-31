@@ -1,0 +1,11 @@
+{
+  "challenge": "TG03-customer-order-ids",
+  "bad": {
+    "diagnostics": [],
+    "golden": "C-3/O-7"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "C-3/O-7"
+  }
+}

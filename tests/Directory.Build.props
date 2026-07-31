@@ -1,0 +1,15 @@
+<Project>
+  <Import Project="../Directory.Build.props" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalUsings.cs"
+             Link="GlobalUsings.cs" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+</Project>

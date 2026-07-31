@@ -1,0 +1,8 @@
+{
+  "challenge": "TG15-migration",
+  "native": {
+    "capability": "unavailable",
+    "diagnostics": [],
+    "golden": "native-preview-unavailable"
+  }
+}

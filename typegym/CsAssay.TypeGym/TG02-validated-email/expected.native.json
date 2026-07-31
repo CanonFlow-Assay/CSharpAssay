@@ -1,0 +1,8 @@
+{
+  "challenge": "TG02-validated-email",
+  "native": {
+    "capability": "unavailable",
+    "diagnostics": [],
+    "golden": "native-preview-unavailable"
+  }
+}

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>Conservative local code fixes for CSharpAssay diagnostics.</Description>
+    <IsRoslynComponent>true</IsRoslynComponent>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="System.Composition.AttributedModel" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+{
+  "challenge": "TG09-async-boundary",
+  "bad": {
+    "diagnostics": ["CSAA0001","CSAA0002"],
+    "golden": "async"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "async"
+  }
+}

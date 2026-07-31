@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {
+      "id": "CSAP0001",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAP0001/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAP0001/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAP0001/Suppression.cs",
+      "fault": "specimens/Faults/CSAP0001/Malformed.cs"
+    },
+    {
+      "id": "CSAN0001",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAN0001/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAN0001/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAN0001/Suppression.cs",
+      "fault": "specimens/Faults/CSAN0001/Malformed.cs"
+    },
+    {
+      "id": "CSAN0002",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAN0002/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAN0002/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAN0002/Suppression.cs",
+      "fault": "specimens/Faults/CSAN0002/Malformed.cs"
+    },
+    {
+      "id": "CSAN0003",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAN0003/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAN0003/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAN0003/Suppression.cs",
+      "fault": "specimens/Faults/CSAN0003/Malformed.cs"
+    },
+    {
+      "id": "CSAN0004",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAN0004/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAN0004/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAN0004/Suppression.cs",
+      "fault": "specimens/Faults/CSAN0004/Malformed.cs"
+    },
+    {
+      "id": "CSAI0001",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAI0001/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAI0001/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAI0001/Suppression.cs",
+      "fault": "specimens/Faults/CSAI0001/Malformed.cs"
+    },
+    {
+      "id": "CSAI0002",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAI0002/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAI0002/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAI0002/Suppression.cs",
+      "fault": "specimens/Faults/CSAI0002/Malformed.cs"
+    },
+    {
+      "id": "CSAE0001",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAE0001/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAE0001/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAE0001/Suppression.cs",
+      "fault": "specimens/Faults/CSAE0001/Malformed.cs"
+    },
+    {
+      "id": "CSAA0001",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAA0001/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAA0001/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAA0001/Suppression.cs",
+      "fault": "specimens/Faults/CSAA0001/Malformed.cs"
+    },
+    {
+      "id": "CSAA0002",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAA0002/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAA0002/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAA0002/Suppression.cs",
+      "fault": "specimens/Faults/CSAA0002/Malformed.cs"
+    },
+    {
+      "id": "CSAU0001",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAU0001/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAU0001/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAU0001/Suppression.cs",
+      "fault": "specimens/Faults/CSAU0001/Malformed.cs",
+      "options": {
+        "csassay_closed_types": "ClosedShape"
+      }
+    },
+    {
+      "id": "CSAU0002",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAU0002/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAU0002/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAU0002/Suppression.cs",
+      "fault": "specimens/Faults/CSAU0002/Malformed.cs",
+      "options": {
+        "csassay_closed_types": "ClosedOutcome"
+      }
+    },
+    {
+      "id": "CSAU0003",
+      "capability": "available",
+      "violation": "specimens/Compat.Bad/CSAU0003/Violation.cs",
+      "compliant": "specimens/Compat.Good/CSAU0003/Compliant.cs",
+      "suppression": "specimens/Compat.Bad/CSAU0003/Suppression.cs",
+      "fault": "specimens/Faults/CSAU0003/Malformed.cs"
+    },
+    {
+      "id": "CSAU0004",
+      "capability": "native-preview-unavailable",
+      "violation": "specimens/Native.Bad/CSAU0004/Violation.cs",
+      "compliant": "specimens/Native.Good/CSAU0004/Compliant.cs",
+      "suppression": "specimens/Native.Bad/CSAU0004/Suppression.cs",
+      "fault": "specimens/Faults/CSAU0004/Malformed.cs"
+    }
+  ]
+}

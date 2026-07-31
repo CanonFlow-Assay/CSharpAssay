@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/CsAssay.Domain/CsAssay.Domain.csproj" />
+    <ProjectReference Include="../../src/CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+{
+  "challenge": "TG11-state-transition",
+  "bad": {
+    "diagnostics": [],
+    "golden": "7"
+  },
+  "compat": {
+    "diagnostics": [],
+    "golden": "7"
+  }
+}

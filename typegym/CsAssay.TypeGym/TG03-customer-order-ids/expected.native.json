@@ -1,0 +1,8 @@
+{
+  "challenge": "TG03-customer-order-ids",
+  "native": {
+    "capability": "same",
+    "diagnostics": [],
+    "golden": "C-3/O-7"
+  }
+}

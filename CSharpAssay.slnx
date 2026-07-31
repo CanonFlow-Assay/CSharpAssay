@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CsAssay.Domain/CsAssay.Domain.csproj" />
+    <Project Path="src/CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
+    <Project Path="src/CsAssay.SdkAdapter/CsAssay.SdkAdapter.csproj" />
+    <Project Path="src/CsAssay.Analyzers/CsAssay.Analyzers.csproj" />
+    <Project Path="src/CsAssay.CodeFixes/CsAssay.CodeFixes.csproj" />
+    <Project Path="src/CsAssay.Workspaces/CsAssay.Workspaces.csproj" />
+    <Project Path="src/CsAssay.Reporting/CsAssay.Reporting.csproj" />
+    <Project Path="src/CsAssay.Runner/CsAssay.Runner.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CsAssay.Domain.Tests/CsAssay.Domain.Tests.csproj" />
+    <Project Path="tests/CsAssay.Analyzers.Tests/CsAssay.Analyzers.Tests.csproj" />
+    <Project Path="tests/CsAssay.Workspaces.Tests/CsAssay.Workspaces.Tests.csproj" />
+    <Project Path="tests/CsAssay.Runner.Tests/CsAssay.Runner.Tests.csproj" />
+    <Project Path="tests/CsAssay.Integration.Tests/CsAssay.Integration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/typegym/">
+    <Project Path="typegym/CsAssay.TypeGym/CsAssay.TypeGym.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,8 @@
+{
+  "challenge": "TG11-state-transition",
+  "native": {
+    "capability": "unavailable",
+    "diagnostics": [],
+    "golden": "native-preview-unavailable"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "challenge": "TG12-http-adapter",
+  "native": {
+    "capability": "unavailable",
+    "diagnostics": [],
+    "golden": "native-preview-unavailable"
+  }
+}

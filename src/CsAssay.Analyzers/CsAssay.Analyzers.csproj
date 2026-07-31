@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>Editor and build diagnostics for CSharpAssay.</Description>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>CsAssay.Analyzers</PackageId>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CsAssay.Domain/CsAssay.Domain.csproj" />
+    <ProjectReference Include="../CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
+    <ProjectReference Include="../CsAssay.SdkAdapter/CsAssay.SdkAdapter.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(TargetPath)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+</Project>
