@@ -22,7 +22,10 @@ The workflow follows Microsoft’s
    Enter only the workflow filename, not `.github/workflows/`.
 3. In GitHub repository settings, create the `nuget.org` environment. Protect
    it with a required reviewer if available.
-4. Add an environment secret named `NUGET_USER` with value `arun6202`.
+
+The public NuGet profile name `arun6202` is declared directly in the workflow.
+No NuGet API key or GitHub secret is required; `NuGet/login@v1` exchanges the
+job's GitHub OIDC identity for a short-lived key after qualification succeeds.
 
 NuGet may show a temporarily active policy while it resolves immutable GitHub
 repository/owner IDs. Run the first publication during that window; a successful
