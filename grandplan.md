@@ -5,7 +5,7 @@ product:        CSharpAssay
 executable:     cs-assay
 assemblies:     CsAssay.*
 plan version:   1.0.0
-status:         phase-4-complete-on-stable-lane
+status:         phase-5-complete-on-stable-lane
 date:           2026-07-31
 stable floor:   C# 14 / .NET 10 LTS
 preview lane:   C# 15 working set / .NET 11 Preview 6
@@ -1286,6 +1286,15 @@ report makes no source change;
 every recommendation links to the exact affected API and evidence;
 no migration is described as find-and-replace.
 ```
+
+Implementation status on 2026-07-31: complete on the stable lane. The
+report-only command inventories public OneOf and ValueOf exposure through
+nested generic, array, base-type, interface, member, and constraint surfaces.
+Every exposure carries exact source, API, metadata/assembly, target-framework,
+risk, compat/native comparison, adapter obligation, and recommendation
+evidence. Framework adapters remain explicitly unqualified until their
+executable corpus passes; Vogen, dunet, and Thinktecture support remains
+disabled because Phase 0 established no qualified package version.
 
 ### Phase 6 — broader contextual guidance
 

@@ -61,11 +61,18 @@ cs-assay check MySolution.slnx --json artifacts/check.json
 cs-assay verify MySolution.slnx \
   --json artifacts/verify.json \
   --sarif artifacts/verify.sarif
+cs-assay migrate --report MySolution.slnx \
+  --json artifacts/migration.json
 ```
 
 `check` is provisional and does not execute configured release tests. `verify`
 is authoritative. Its exit codes are 0 Pass, 1 Fail, 2 Inconclusive, and 3
 ToolFailure. Only exit 0 is a clean release decision.
+
+`migrate --report` is not a release verdict or source rewriter. It inventories
+public OneOf/ValueOf representation exposure and emits unresolved framework
+qualification obligations. Read the [migration guide](migration.md) before
+changing an exposed representation.
 
 ## Artifact verification
 

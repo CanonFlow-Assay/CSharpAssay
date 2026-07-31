@@ -5,8 +5,9 @@ functional-first C# policy. It reports what it proved, what it could not prove,
 and whether the toolchain itself failed. Missing evidence never becomes a clean
 release verdict.
 
-The project is currently a `0.1` research preview. Phase 3 provides the
-authoritative CLI and Phase 2 admits seven
+The project is currently a `0.1` research preview. Phase 5 provides the
+report-only migration inventory, Phase 4 provides packaging and CI, Phase 3
+provides the authoritative CLI, and Phase 2 admits seven
 stable-lane rules after positive, negative, suppression, fault, semantic
 matrix, performance, and real-repository evidence. The remaining seven rules
 stay `Prototype` and cannot block a release verdict.
@@ -26,7 +27,7 @@ stay `Prototype` and cannot block a release verdict.
 - four-state verdicts: `Pass`, `Fail`, `Inconclusive`, and `ToolFailure`;
 - deterministic JSON and SARIF 2.1.0;
 - conservative `set` to `init` code fix;
-- report-only OneOf/ValueOf migration inventory;
+- deterministic, evidence-linked, report-only OneOf/ValueOf migration inventory;
 - xUnit v3 on Microsoft Testing Platform.
 
 Null safety is the first offence family. Core code must not disable nullable
@@ -54,6 +55,10 @@ public record auto-property from `set` to `init`. Async and concurrency edits
 must preserve cancellation, failure, ordering, and synchronization semantics,
 so they remain diagnostic-only until a fix has behavioral qualification.
 `migrate --report` inventories representation risk and never edits source.
+It links every recommendation to the exact public API, source location,
+metadata, representation/API assembly identity, target framework, compat/native behavior contract,
+and applicable serialization/EF/ASP.NET/AOT obligations. See the
+[migration guide](docs/migration.md).
 
 ## Build and test
 
@@ -77,6 +82,8 @@ dotnet run --project src/CsAssay.Runner -- check CSharpAssay.slnx
 dotnet run --project src/CsAssay.Runner -- verify CSharpAssay.slnx \
   --json artifacts/csassay.json \
   --sarif artifacts/csassay.sarif
+dotnet run --project src/CsAssay.Runner -- migrate --report \
+  MySolution.slnx --json artifacts/migration.json
 ```
 
 `check` is provisional. `verify` is the release-authority path and can issue an

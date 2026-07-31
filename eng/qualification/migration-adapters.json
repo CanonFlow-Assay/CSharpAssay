@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "policy": "An adapter is never promoted from syntax or package reputation; an exact version must execute every applicable obligation.",
+  "frameworkAdapters": [
+    {
+      "name": "System.Text.Json",
+      "status": "qualification-contract-ready",
+      "obligations": [
+        "round-trip every case/value, invalid input, and default state",
+        "golden property, discriminator, payload, and error contracts",
+        "source-generated metadata where NativeAOT is claimed"
+      ]
+    },
+    {
+      "name": "EF Core",
+      "status": "qualification-contract-ready",
+      "obligations": [
+        "conversion and comparison",
+        "keys and generated values",
+        "query translation and change tracking",
+        "invalid/default database values cannot silently enter the core"
+      ]
+    },
+    {
+      "name": "ASP.NET Core/OpenAPI",
+      "status": "qualification-contract-ready",
+      "obligations": [
+        "model binding and response mapping for every case",
+        "status, content type, payload, and generated OpenAPI goldens"
+      ]
+    },
+    {
+      "name": "NativeAOT",
+      "status": "qualification-contract-ready",
+      "obligations": [
+        "trimmed NativeAOT publish and execution",
+        "zero unreviewed trim/AOT warnings",
+        "no missing metadata or reflection fallback"
+      ]
+    }
+  ],
+  "ecosystemAdapters": [
+    {
+      "name": "OneOf",
+      "status": "observation-only",
+      "version": "unqualified"
+    },
+    {
+      "name": "ValueOf",
+      "status": "legacy-observation-only",
+      "version": "unqualified"
+    },
+    {
+      "name": "Vogen",
+      "status": "not-enabled",
+      "version": "unqualified"
+    },
+    {
+      "name": "dunet",
+      "status": "not-enabled",
+      "version": "unqualified"
+    },
+    {
+      "name": "Thinktecture.Runtime.Extensions",
+      "status": "not-enabled",
+      "version": "unqualified"
+    }
+  ]
+}

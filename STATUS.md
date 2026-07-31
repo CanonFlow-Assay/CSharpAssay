@@ -14,7 +14,7 @@ release authority: qualified on the stable lane for seven admitted rules
 | 2 — analyzer trust slice | complete on stable lane | 7 admitted / 7 prototype rules; authoritative self-assay Pass at 15 projects, 0 findings, 0 missing, 0 failures; 68/68 tests |
 | 3 — authoritative CLI | complete on stable lane | strict command/policy contract; graph/all-TFM orchestration; compiler/analyzer/generated/suppression/test evidence; 84/84 tests; clean repeatable authority Pass |
 | 4 — packaging and CI | complete on stable lane | analyzer/tool packages; commit-bound reproducible provenance; isolated fresh-install qualification; stable/preview workflow separation; SARIF and keyless attestation |
-| 5 — migration/adapters | started | report-only OneOf/ValueOf public API inventory |
+| 5 — migration/adapters | complete on stable lane | deterministic report-only OneOf/ValueOf inventory; exact evidence; explicit unqualified adapter obligations; 91/91 tests |
 | 6 — contextual guidance | pending | no heuristic rules enabled |
 
 ## Admission position
@@ -30,7 +30,7 @@ Suppression and fault specimens exist for every catalogue rule.
 
 ## Current qualification boundary
 
-The full 16-project solution builds with zero warnings/errors and all 84 tests
+The full 16-project solution builds with zero warnings/errors and all 91 tests
 pass. Two independent authoritative self-assays report 16 project
 compilations, 18 required tests passed, zero findings, zero missing evidence,
 and zero tool failures with byte-identical JSON and SARIF.
@@ -48,6 +48,17 @@ state, and exclusion of source/inspiration content are audited before checksums
 and provenance are emitted. Qualification uses an isolated package cache and a
 local-only feed to install the tool, verify a sample, build a clean analyzer
 consumer, and prove that `CSAN0001` blocks its negative specimen.
+
+Phase 5 adds a deterministic, source-preserving `migrate --report` path. Its
+qualification fixture produces 14 exact public OneOf/ValueOf exposures and
+zero failures; independent JSON runs are byte-identical. Recommendations bind
+the exact API, source span, metadata, representation and declaring assembly
+identity/version, target
+framework, compat/native behavior comparison, representation risks, and the
+applicable System.Text.Json, EF Core, ASP.NET Core/OpenAPI, and NativeAOT
+obligations. Those framework integrations remain unqualified rather than
+being inferred from syntax. Vogen, dunet, and Thinktecture remain disabled
+pending exact-version executable evidence.
 
 Roslyn/MSBuildWorkspace emits 46 “project reference without a matching metadata
 reference” messages while loading the complete `.slnx`. Every referenced

@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "phase": 5,
+  "status": "complete",
+  "command": "migrate --report",
+  "migrationReportSchemaVersion": "1.0.0",
+  "fixtureQualification": {
+    "input": "specimens/Projects/MigrationSurface/MigrationSurface.csproj",
+    "publicExposures": 14,
+    "failures": 0,
+    "sourceChanged": false,
+    "repeatByteIdentical": true,
+    "jsonSha256": "70a3615101e1490fa1d231129e73dd18b6fde66b886b5999b5bdf7d9930b0f87"
+  },
+  "evidencePerExposure": [
+    "exact affected API and role",
+    "source path, line, and column",
+    "exposed type and recognized metadata identity",
+    "representation and declaring API assembly identities and versions",
+    "project and target framework",
+    "representation-specific risk",
+    "compat/native behavior comparison",
+    "framework adapter obligations",
+    "evidence-linked recommendations"
+  ],
+  "frameworkAdapters": {
+    "System.Text.Json": "qualification-contract-ready; not qualified",
+    "EF Core": "qualification-contract-ready; not qualified",
+    "ASP.NET Core/OpenAPI": "qualification-contract-ready; not qualified",
+    "NativeAOT": "qualification-contract-ready; not qualified"
+  },
+  "ecosystemAdapters": {
+    "OneOf": "observation-only; version unqualified",
+    "ValueOf": "legacy-observation-only; version unqualified",
+    "Vogen": "not-enabled; version unqualified",
+    "dunet": "not-enabled; version unqualified",
+    "Thinktecture.Runtime.Extensions": "not-enabled; version unqualified"
+  },
+  "qualification": {
+    "sdk": "10.0.301",
+    "configuration": "Release",
+    "projects": 16,
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "testsPassed": 91,
+    "testsFailed": 0,
+    "testsSkipped": 0
+  },
+  "authoritativeSelfAssay": {
+    "verdict": "pass",
+    "projects": 16,
+    "requiredTests": 18,
+    "findings": 0,
+    "missingEvidence": 0,
+    "toolFailures": 0,
+    "repeatByteIdentical": true,
+    "jsonSha256": "40c72a514fd7bc549e618ce6f1bc0d362c25cf4ec017b55c332371cc567a1f33",
+    "sarifSha256": "05db00e5eb8148ed5367b8f307788b41bc69345c3b7a654af51f2a39da7a0be4",
+    "policySha256": "6310130d4ccaacdc4d3f4ad1bac2693deecb17e4e2700d3e3da96c83ee164013"
+  },
+  "exitContract": {
+    "noSourceChanges": true,
+    "exactEvidenceLinks": true,
+    "findAndReplaceClaim": false,
+    "artifactWriteFailureIsToolFailure": true
+  }
+}

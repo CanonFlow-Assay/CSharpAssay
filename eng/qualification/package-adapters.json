@@ -52,7 +52,7 @@
         "Vogen.ValueObjectAttribute"
       ],
       "version": "unqualified",
-      "status": "observation-only"
+      "status": "not-enabled"
     },
     {
       "name": "dunet",
@@ -60,7 +60,7 @@
         "Dunet.UnionAttribute"
       ],
       "version": "unqualified",
-      "status": "observation-only"
+      "status": "not-enabled"
     },
     {
       "name": "Thinktecture.Runtime.Extensions",
@@ -69,7 +69,7 @@
         "Thinktecture.ValueObjectAttribute"
       ],
       "version": "unqualified",
-      "status": "observation-only"
+      "status": "not-enabled"
     }
   ]
 }

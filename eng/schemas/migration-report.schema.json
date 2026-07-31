@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CanonFlow-Assay/CSharpAssay/blob/main/eng/schemas/migration-report.schema.json",
+  "title": "CSharpAssay migration report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "mode",
+    "input",
+    "sources",
+    "exposures",
+    "ecosystemAdapters",
+    "failures"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "mode": { "const": "report-only" },
+    "input": { "type": "string", "minLength": 1 },
+    "sources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/source" }
+    },
+    "exposures": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/exposure" }
+    },
+    "ecosystemAdapters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ecosystemAdapter" }
+    },
+    "failures": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/failure" }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "startLine", "startColumn", "endLine", "endColumn"],
+      "properties": {
+        "path": { "type": "string" },
+        "startLine": { "type": "integer", "minimum": 0 },
+        "startColumn": { "type": "integer", "minimum": 0 },
+        "endLine": { "type": "integer", "minimum": 0 },
+        "endColumn": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "evidence"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^MIG-[A-Z0-9-]+$" },
+        "statement": { "type": "string", "minLength": 1 },
+        "evidence": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "affectedApi", "statement", "evidence", "requiredValidation"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^MIG-[A-Z0-9-]+$" },
+        "affectedApi": { "type": "string", "minLength": 1 },
+        "statement": { "type": "string", "minLength": 1 },
+        "evidence": { "$ref": "#/$defs/stringArray" },
+        "requiredValidation": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["compatibilityRepresentation", "nativeCandidate", "decision", "behaviorsToPreserve"],
+      "properties": {
+        "compatibilityRepresentation": { "type": "string", "minLength": 1 },
+        "nativeCandidate": { "type": "string", "minLength": 1 },
+        "decision": { "type": "string", "minLength": 1 },
+        "behaviorsToPreserve": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "status", "applicability", "requiredEvidence"],
+      "properties": {
+        "adapter": { "enum": ["System.Text.Json", "EF Core", "ASP.NET Core/OpenAPI", "NativeAOT"] },
+        "status": { "enum": ["required-unqualified", "context-required"] },
+        "applicability": { "type": "string", "minLength": 1 },
+        "requiredEvidence": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "exposure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "representation",
+        "api",
+        "apiRole",
+        "exposedType",
+        "metadataIdentity",
+        "assemblyIdentity",
+        "apiAssemblyIdentity",
+        "project",
+        "targetFramework",
+        "location",
+        "evidence",
+        "risks",
+        "comparison",
+        "adapterAssessments",
+        "recommendations"
+      ],
+      "properties": {
+        "representation": { "enum": ["OneOf", "ValueOf"] },
+        "api": { "type": "string", "minLength": 1 },
+        "apiRole": { "type": "string", "minLength": 1 },
+        "exposedType": { "type": "string", "minLength": 1 },
+        "metadataIdentity": { "type": "string", "minLength": 1 },
+        "assemblyIdentity": { "type": "string", "minLength": 1 },
+        "apiAssemblyIdentity": { "type": "string", "minLength": 1 },
+        "project": { "type": "string", "minLength": 1 },
+        "targetFramework": { "type": "string", "minLength": 1 },
+        "location": { "$ref": "#/$defs/span" },
+        "evidence": { "$ref": "#/$defs/stringArray" },
+        "risks": { "type": "array", "items": { "$ref": "#/$defs/risk" } },
+        "comparison": { "$ref": "#/$defs/comparison" },
+        "adapterAssessments": { "type": "array", "items": { "$ref": "#/$defs/adapter" } },
+        "recommendations": { "type": "array", "items": { "$ref": "#/$defs/recommendation" } }
+      }
+    },
+    "ecosystemAdapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "version", "reason"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "required": ["code", "message", "component", "ruleId"],
+      "properties": {
+        "code": { "const": "CSASSAY-MIGRATION-WORKSPACE" },
+        "message": { "type": "string", "minLength": 1 },
+        "component": { "type": "string", "minLength": 1 },
+        "ruleId": { "type": "object" }
+      }
+    },
+    "stringArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

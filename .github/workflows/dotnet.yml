@@ -53,6 +53,13 @@ jobs:
           --json artifacts/evidence/csassay.json
           --sarif artifacts/evidence/csassay.sarif
 
+      - name: Deterministic report-only migration qualification
+        run: |
+          dotnet src/CsAssay.Runner/bin/Release/net10.0/cs-assay.dll migrate --report specimens/Projects/MigrationSurface/MigrationSurface.csproj --json artifacts/migration/first.json
+          dotnet src/CsAssay.Runner/bin/Release/net10.0/cs-assay.dll migrate --report specimens/Projects/MigrationSurface/MigrationSurface.csproj --json artifacts/migration/second.json
+          cmp artifacts/migration/first.json artifacts/migration/second.json
+          git diff --exit-code
+
       - name: Reproducible packages and provenance
         run: ./eng/pack-release.sh
 
@@ -81,6 +88,7 @@ jobs:
           path: |
             artifacts/evidence/csassay.json
             artifacts/evidence/csassay.sarif
+            artifacts/migration/first.json
             artifacts/packages/*.nupkg
             artifacts/packages/checksums.sha256
             artifacts/packages/provenance.json

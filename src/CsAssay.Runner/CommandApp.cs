@@ -254,38 +254,106 @@ public static class CommandApp
             return 64;
         }
 
-        var report = await MigrationInventory
-            .AnalyzeAsync(input.Value, cancellationToken)
-            .ConfigureAwait(false);
+        if (commandLine.JsonPath is Presence<string>.Present requestedPath &&
+            !string.Equals(
+                Path.GetExtension(requestedPath.Value),
+                ".json",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            await error.WriteLineAsync(
+                "migrate --json requires a .json report path.")
+                .ConfigureAwait(false);
+            return 64;
+        }
+
+        MigrationReport report;
+        try
+        {
+            report = await MigrationInventory
+                .AnalyzeAsync(input.Value, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            await error.WriteLineAsync(
+                "CSharpAssay migration reporting was cancelled.")
+                .ConfigureAwait(false);
+            return 3;
+        }
+        catch (Exception exception)
+        {
+            await error.WriteLineAsync(
+                "CSharpAssay migration reporting failed: " + exception.Message)
+                .ConfigureAwait(false);
+            return 3;
+        }
+
         output.WriteLine(
             "Migration report: " + report.Exposures.Length +
-            " public OneOf/ValueOf exposures; no source files changed.");
+            " public OneOf/ValueOf exposures across " +
+            report.Sources.Length +
+            " source files; report-only analysis made no source change.");
         foreach (var exposure in report.Exposures)
         {
             output.WriteLine(
                 exposure.Location.Path + ":" + exposure.Location.StartLine + " " +
-                exposure.Representation + " " + exposure.Api);
+                exposure.Representation + " " + exposure.ApiRole + " " +
+                exposure.Api);
+            output.WriteLine(
+                "  evidence: " + string.Join(" | ", exposure.Evidence));
             foreach (var risk in exposure.Risks)
             {
-                output.WriteLine("  risk: " + risk);
+                output.WriteLine("  risk " + risk.Id + ": " + risk.Statement);
+            }
+
+            output.WriteLine(
+                "  comparison: " + exposure.Comparison.Decision);
+            foreach (var adapter in exposure.AdapterAssessments)
+            {
+                output.WriteLine(
+                    "  adapter " + adapter.Adapter + ": " + adapter.Status);
+            }
+
+            foreach (var recommendation in exposure.Recommendations)
+            {
+                output.WriteLine(
+                    "  recommendation " + recommendation.Id + ": " +
+                    recommendation.Statement);
             }
         }
 
         if (commandLine.JsonPath is Presence<string>.Present jsonPath)
         {
-            var json = JsonSerializer.Serialize(report, MigrationJsonOptions) + "\n";
-            var directory = Path.GetDirectoryName(
-                Path.GetFullPath(jsonPath.Value));
-            if (!string.IsNullOrEmpty(directory))
+            try
             {
-                Directory.CreateDirectory(directory);
-            }
+                var json = JsonSerializer.Serialize(
+                    report,
+                    MigrationJsonOptions) + "\n";
+                var directory = Path.GetDirectoryName(
+                    Path.GetFullPath(jsonPath.Value));
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
 
-            await File.WriteAllTextAsync(
-                jsonPath.Value,
-                json,
-                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
-                cancellationToken).ConfigureAwait(false);
+                await File.WriteAllTextAsync(
+                    jsonPath.Value,
+                    json,
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (
+                exception is not OperationCanceledException &&
+                (exception is IOException or
+                    UnauthorizedAccessException or
+                    ArgumentException or
+                    NotSupportedException))
+            {
+                await error.WriteLineAsync(
+                    "CSharpAssay migration report write failed: " +
+                    exception.Message).ConfigureAwait(false);
+                return 3;
+            }
         }
 
         return report.Failures.IsDefaultOrEmpty ? 0 : 3;
@@ -314,6 +382,7 @@ public static class CommandApp
               cs-assay migrate --report <project-or-solution> [--json path]
 
             Options:
+              --report          Required marker for read-only migration inventory
               --policy <path>   Explicit .csassay.json
               --profile <name>  auto, compat, or native
               --json <path>     Deterministic JSON evidence
