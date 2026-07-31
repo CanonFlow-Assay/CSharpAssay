@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CsAssay.Domain;
 
 namespace CsAssay.Workspaces.Tests;
@@ -13,7 +14,16 @@ public sealed class PolicyLoaderTests
               "profile": "compat",
               "release": {
                 "allowPreviewToolchain": false,
-                "requiredTargetFrameworks": ["net10.0"]
+                "requiredTargetFrameworks": ["net10.0"],
+                "requiredRules": ["CSAN0001"],
+                "tests": [
+                  {
+                    "input": "tests/Acme.Tests/Acme.Tests.csproj",
+                    "configuration": "Release",
+                    "noBuild": true,
+                    "minimumExpectedTests": 12
+                  }
+                ]
               },
               "boundaries": {
                 "coreProjects": ["src/Acme.Domain/Acme.Domain.csproj"],
@@ -35,6 +45,13 @@ public sealed class PolicyLoaderTests
 
         Assert.Equal(AssayProfile.Compat, policy.Profile);
         Assert.Equal(["net10.0"], policy.Release.RequiredTargetFrameworks);
+        Assert.Equal(["CSAN0001"], policy.Release.RequiredRules);
+        var test = Assert.Single(policy.Release.Tests);
+        Assert.Equal(
+            "tests/Acme.Tests/Acme.Tests.csproj",
+            test.Input);
+        Assert.True(test.NoBuild);
+        Assert.Equal(12, test.MinimumExpectedTests);
         Assert.Equal(
             ["src/Acme.Domain/Acme.Domain.csproj"],
             policy.Boundaries.CoreProjects);
@@ -70,6 +87,41 @@ public sealed class PolicyLoaderTests
                     "resultTypes": ["not a metadata name"],
                     "optionTypes": [],
                     "closedTypes": []
+                  }
+                }
+                """));
+    }
+
+    [Theory]
+    [InlineData("../Acme.Tests/Acme.Tests.csproj")]
+    [InlineData("/Acme.Tests/Acme.Tests.csproj")]
+    [InlineData("Acme.Tests/run.sh")]
+    public void Rejects_unsafe_or_non_dotnet_test_inputs(string input)
+    {
+        Assert.Throws<InvalidDataException>(() =>
+            PolicyLoader.Parse(
+                $$"""
+                {
+                  "release": {
+                    "tests": [
+                      {
+                        "input": {{JsonSerializer.Serialize(input)}}
+                      }
+                    ]
+                  }
+                }
+                """));
+    }
+
+    [Fact]
+    public void Rejects_noncanonical_rule_ids()
+    {
+        Assert.Throws<InvalidDataException>(() =>
+            PolicyLoader.Parse(
+                """
+                {
+                  "release": {
+                    "requiredRules": ["csan0001"]
                   }
                 }
                 """));

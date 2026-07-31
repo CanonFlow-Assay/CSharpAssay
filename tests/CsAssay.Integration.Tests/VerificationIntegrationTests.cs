@@ -19,6 +19,7 @@ public sealed class VerificationIntegrationTests
             project,
             PolicyPath: Presence.Missing<string>(),
             IsAuthoritative: false,
+            ExecuteTests: false,
             ProfileOverride: Presence.Of(AssayProfile.Compat));
 
         var first = await VerificationEngine.VerifyAsync(
@@ -29,6 +30,8 @@ public sealed class VerificationIntegrationTests
             TestContext.Current.CancellationToken);
 
         Assert.False(first.Verdict.Evidence.IsAuthoritative);
+        var configuredTest = Assert.Single(first.Verdict.Evidence.Tests);
+        Assert.Equal(TestRunOutcome.NotRun, configuredTest.Outcome);
         Assert.Equal(
             JsonEvidenceWriter.Write(first.Verdict),
             JsonEvidenceWriter.Write(second.Verdict));
@@ -45,6 +48,7 @@ public sealed class VerificationIntegrationTests
                 solution,
                 PolicyPath: Presence.Missing<string>(),
                 IsAuthoritative: true,
+                ExecuteTests: true,
                 ProfileOverride: Presence.Of(AssayProfile.Compat)),
             TestContext.Current.CancellationToken);
 
@@ -56,6 +60,12 @@ public sealed class VerificationIntegrationTests
             result.Verdict.Evidence.Missing,
             item => item.Code == "CSASSAY-WORKSPACE-WARNING");
         Assert.NotEmpty(result.Verdict.Evidence.WorkspaceDiagnostics);
+        Assert.Contains(
+            result.Verdict.Evidence.Projects,
+            project => project.ProjectReferences.Length > 0);
+        var test = Assert.Single(result.Verdict.Evidence.Tests);
+        Assert.Equal(TestRunOutcome.Passed, test.Outcome);
+        Assert.True(test.Total >= 18);
         Assert.All(
             result.Verdict.Evidence.WorkspaceDiagnostics,
             diagnostic => Assert.False(diagnostic.AffectsCompleteness));
@@ -85,6 +95,7 @@ public sealed class VerificationIntegrationTests
                 project,
                 PolicyPath: Presence.Missing<string>(),
                 IsAuthoritative: false,
+                ExecuteTests: false,
                 ProfileOverride: Presence.Of(AssayProfile.Compat)),
             TestContext.Current.CancellationToken);
 
@@ -97,6 +108,82 @@ public sealed class VerificationIntegrationTests
             finding =>
                 finding.RuleId == "CSAN0003" &&
                 finding.Disposition == RuleDisposition.Block);
+    }
+
+    [Fact]
+    public async Task Compiler_error_is_inconclusive_and_cannot_pass()
+    {
+        var result = await VerifyFixtureAsync(
+            "CompilerError",
+            Presence.Missing<string>());
+
+        Assert.Equal(AssayVerdictKind.Inconclusive, result.Verdict.Kind);
+        Assert.Equal(2, result.Verdict.ExitCode);
+        Assert.Contains(
+            result.Verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-COMPILER-ERRORS");
+        Assert.Contains(
+            result.Verdict.Evidence.Projects.SelectMany(
+                project => project.CompilerDiagnostics),
+            diagnostic => diagnostic.Severity == "Error");
+    }
+
+    [Fact]
+    public async Task Required_target_framework_gap_is_a_tool_failure()
+    {
+        var root = FindRoot();
+        var policy = Path.Combine(
+            root,
+            "tests",
+            "CsAssay.Integration.Tests",
+            "Policies",
+            "required-net11.json");
+        var result = await VerifyFixtureAsync(
+            "BoundaryScope",
+            Presence.Of(policy));
+
+        Assert.Equal(AssayVerdictKind.ToolFailure, result.Verdict.Kind);
+        Assert.Equal(3, result.Verdict.ExitCode);
+        Assert.Contains(
+            result.Verdict.Evidence.Failures,
+            item => item.Code == "CSASSAY-REQUIRED-TFM-MISSING");
+    }
+
+    [Fact]
+    public async Task Admitted_blocking_finding_fails()
+    {
+        var result = await VerifyFixtureAsync(
+            "BlockingFinding",
+            Presence.Missing<string>());
+
+        Assert.Equal(AssayVerdictKind.Fail, result.Verdict.Kind);
+        Assert.Equal(1, result.Verdict.ExitCode);
+        Assert.Contains(
+            result.Verdict.Evidence.Findings,
+            finding =>
+                finding.RuleId == "CSAI0001" &&
+                finding.Disposition == RuleDisposition.Block);
+    }
+
+    private static Task<VerificationResult> VerifyFixtureAsync(
+        string name,
+        Presence<string> policyPath)
+    {
+        var root = FindRoot();
+        var project = Path.Combine(
+            root,
+            "specimens",
+            "Projects",
+            name,
+            name + ".csproj");
+        return VerificationEngine.VerifyAsync(
+            new VerificationRequest(
+                project,
+                policyPath,
+                IsAuthoritative: true,
+                ExecuteTests: false,
+                ProfileOverride: Presence.Of(AssayProfile.Compat)),
+            TestContext.Current.CancellationToken);
     }
 
     private static string FindRoot()

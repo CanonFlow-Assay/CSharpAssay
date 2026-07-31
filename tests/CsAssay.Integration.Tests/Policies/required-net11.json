@@ -1,0 +1,11 @@
+{
+  "profile": "compat",
+  "release": {
+    "allowPreviewToolchain": false,
+    "requiredTargetFrameworks": [
+      "net11.0"
+    ],
+    "requiredRules": [],
+    "tests": []
+  }
+}

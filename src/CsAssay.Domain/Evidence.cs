@@ -60,9 +60,11 @@ public sealed record ProjectEvidence(
     string Path,
     string TargetFramework,
     EffectiveProfile Profile,
+    string ProfileEvidence,
     string LanguageVersion,
     string NullableContext,
     bool Loaded,
+    ImmutableArray<string> ProjectReferences,
     ImmutableArray<CompilerEvidence> CompilerDiagnostics);
 
 public sealed record SuppressionEvidence(
@@ -88,6 +90,29 @@ public sealed record SourceEvidence(
     string Path,
     string Sha256);
 
+public sealed record AnalyzerEvidence(
+    string Identity,
+    string AssemblyVersion,
+    string Sha256);
+
+public enum TestRunOutcome
+{
+    Passed,
+    Failed,
+    NotRun
+}
+
+public sealed record TestRunEvidence(
+    string Input,
+    string Configuration,
+    bool Required,
+    TestRunOutcome Outcome,
+    int ExitCode,
+    int Total,
+    int Passed,
+    int Failed,
+    int Skipped);
+
 public sealed record ToolchainEvidence(
     string SdkVersion,
     string RuntimeVersion,
@@ -104,10 +129,12 @@ public sealed record EvidenceBundle(
     string SchemaVersion,
     string ToolVersion,
     string Input,
+    AssayProfile RequestedProfile,
     EffectiveProfile Profile,
     bool IsAuthoritative,
     PolicyEvidence Policy,
     ToolchainEvidence Toolchain,
+    ImmutableArray<AnalyzerEvidence> Analyzers,
     ImmutableArray<ProjectEvidence> Projects,
     ImmutableArray<RuleEvidence> Rules,
     ImmutableArray<Finding> Findings,
@@ -115,13 +142,15 @@ public sealed record EvidenceBundle(
     ImmutableArray<EvaluationFailure> Failures,
     ImmutableArray<SuppressionEvidence> Suppressions,
     ImmutableArray<GeneratedCodeEvidence> GeneratedCode,
+    ImmutableArray<TestRunEvidence> Tests,
     ImmutableArray<WorkspaceDiagnosticEvidence> WorkspaceDiagnostics,
     ImmutableArray<SourceEvidence> Sources)
 {
     public static EvidenceBundle Empty(string input, bool isAuthoritative) => new(
-        SchemaVersion: "1.0.0",
+        SchemaVersion: "1.1.0",
         ToolVersion: "0.1.0",
         Input: input,
+        RequestedProfile: AssayProfile.Compat,
         Profile: EffectiveProfile.Compat,
         IsAuthoritative: isAuthoritative,
         Policy: new PolicyEvidence(
@@ -134,6 +163,7 @@ public sealed record EvidenceBundle(
             string.Empty,
             string.Empty,
             Environment.OSVersion.Platform.ToString()),
+        Analyzers: ImmutableArray<AnalyzerEvidence>.Empty,
         Projects: ImmutableArray<ProjectEvidence>.Empty,
         Rules: ImmutableArray<RuleEvidence>.Empty,
         Findings: ImmutableArray<Finding>.Empty,
@@ -141,6 +171,7 @@ public sealed record EvidenceBundle(
         Failures: ImmutableArray<EvaluationFailure>.Empty,
         Suppressions: ImmutableArray<SuppressionEvidence>.Empty,
         GeneratedCode: ImmutableArray<GeneratedCodeEvidence>.Empty,
+        Tests: ImmutableArray<TestRunEvidence>.Empty,
         WorkspaceDiagnostics: ImmutableArray<WorkspaceDiagnosticEvidence>.Empty,
         Sources: ImmutableArray<SourceEvidence>.Empty);
 }

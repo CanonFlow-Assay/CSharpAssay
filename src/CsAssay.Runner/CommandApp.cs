@@ -171,6 +171,7 @@ public static class CommandApp
                     input.Value,
                     commandLine.PolicyPath,
                     authoritative,
+                    ExecuteTests: authoritative,
                     commandLine.Profile),
                 cancellationToken).ConfigureAwait(false);
         }
@@ -179,38 +180,60 @@ public static class CommandApp
             await error.WriteLineAsync("CSharpAssay was cancelled.").ConfigureAwait(false);
             return 3;
         }
+        catch (Exception exception)
+        {
+            await error.WriteLineAsync(
+                "CSharpAssay verification failed: " + exception.Message)
+                .ConfigureAwait(false);
+            return 3;
+        }
 
         ConsoleReporter.Write(output, result.Verdict);
-        if (commandLine.JsonPath is Presence<string>.Present jsonPath)
+        try
         {
-            await JsonEvidenceWriter.WriteAsync(
-                jsonPath.Value,
-                result.Verdict,
-                cancellationToken).ConfigureAwait(false);
-        }
-
-        if (commandLine.SarifPath is Presence<string>.Present sarifPath)
-        {
-            await SarifWriter.WriteAsync(
-                sarifPath.Value,
-                result.Verdict,
-                cancellationToken).ConfigureAwait(false);
-        }
-
-        if (commandLine.HtmlPath is Presence<string>.Present htmlPath)
-        {
-            var directory = Path.GetDirectoryName(
-                Path.GetFullPath(htmlPath.Value));
-            if (!string.IsNullOrEmpty(directory))
+            if (commandLine.JsonPath is Presence<string>.Present jsonPath)
             {
-                Directory.CreateDirectory(directory);
+                await JsonEvidenceWriter.WriteAsync(
+                    jsonPath.Value,
+                    result.Verdict,
+                    cancellationToken).ConfigureAwait(false);
             }
 
-            await File.WriteAllTextAsync(
-                htmlPath.Value,
-                HtmlWriter.Write(result.Verdict),
-                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
-                cancellationToken).ConfigureAwait(false);
+            if (commandLine.SarifPath is Presence<string>.Present sarifPath)
+            {
+                await SarifWriter.WriteAsync(
+                    sarifPath.Value,
+                    result.Verdict,
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            if (commandLine.HtmlPath is Presence<string>.Present htmlPath)
+            {
+                var directory = Path.GetDirectoryName(
+                    Path.GetFullPath(htmlPath.Value));
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                await File.WriteAllTextAsync(
+                    htmlPath.Value,
+                    HtmlWriter.Write(result.Verdict),
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (Exception exception) when (
+            exception is not OperationCanceledException &&
+            (exception is IOException or
+                UnauthorizedAccessException or
+                ArgumentException or
+                NotSupportedException))
+        {
+            await error.WriteLineAsync(
+                "CSharpAssay artifact write failed: " + exception.Message)
+                .ConfigureAwait(false);
+            return 3;
         }
 
         return result.Verdict.ExitCode;
@@ -296,6 +319,10 @@ public static class CommandApp
               --json <path>     Deterministic JSON evidence
               --sarif <path>    SARIF 2.1.0 results
               --html <path>     Static HTML projection
+
+            Command authority:
+              check   Provisional analysis; configured release tests are not run
+              verify  Authoritative all-TFM analysis; configured release tests run
 
             Verdict exit codes:
               0 Pass, 1 Fail, 2 Inconclusive, 3 ToolFailure

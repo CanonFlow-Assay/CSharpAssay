@@ -15,6 +15,7 @@ public static class ConsoleReporter
         output.WriteLine(
             "Projects: " + verdict.Evidence.Projects.Length +
             "  Findings: " + verdict.Evidence.Findings.Length +
+            "  Tests: " + verdict.Evidence.Tests.Sum(test => test.Total) +
             "  Missing: " + verdict.Evidence.Missing.Length +
             "  Failures: " + verdict.Evidence.Failures.Length);
 
@@ -44,6 +45,14 @@ public static class ConsoleReporter
         foreach (var failure in verdict.Evidence.Failures)
         {
             output.WriteLine("failure " + failure.Code + ": " + failure.Message);
+        }
+
+        foreach (var test in verdict.Evidence.Tests)
+        {
+            output.WriteLine(
+                "test " + test.Outcome + " " + test.Input +
+                " (" + test.Passed + " passed, " + test.Failed +
+                " failed, " + test.Skipped + " skipped)");
         }
     }
 }

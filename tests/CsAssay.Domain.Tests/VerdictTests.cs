@@ -146,6 +146,93 @@ public sealed class VerdictTests
     }
 
     [Fact]
+    public void Required_test_failure_fails_release()
+    {
+        var evidence = EvidenceBundle.Empty("sample.csproj", true) with
+        {
+            Tests =
+            [
+                new TestRunEvidence(
+                    "tests/Sample.Tests/Sample.Tests.csproj",
+                    "Release",
+                    Required: true,
+                    TestRunOutcome.Failed,
+                    ExitCode: 1,
+                    Total: 2,
+                    Passed: 1,
+                    Failed: 1,
+                    Skipped: 0)
+            ],
+            Missing =
+            [
+                new MissingEvidence(
+                    "LOWER-PRECEDENCE",
+                    "A failed required test is decisive.",
+                    "Sample.Tests",
+                    "net10.0")
+            ]
+        };
+
+        var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
+
+        Assert.IsType<FailVerdict>(verdict);
+        Assert.Equal(1, verdict.ExitCode);
+    }
+
+    [Fact]
+    public void Required_skipped_rule_is_inconclusive()
+    {
+        var evidence = EvidenceBundle.Empty("sample.csproj", true) with
+        {
+            Rules =
+            [
+                new RuleEvidence(
+                    "CSAN0001",
+                    Required: true,
+                    RuleOutcome.Skipped,
+                    FindingCount: 0,
+                    Presence.Of("profile mismatch"))
+            ]
+        };
+
+        var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
+
+        Assert.IsType<InconclusiveVerdict>(verdict);
+        Assert.Equal(2, verdict.ExitCode);
+        Assert.Contains(
+            verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-REQUIRED-RULE-SKIPPED");
+    }
+
+    [Fact]
+    public void Authoritative_required_test_not_run_is_inconclusive()
+    {
+        var evidence = EvidenceBundle.Empty("sample.csproj", true) with
+        {
+            Tests =
+            [
+                new TestRunEvidence(
+                    "tests/Sample.Tests/Sample.Tests.csproj",
+                    "Release",
+                    Required: true,
+                    TestRunOutcome.NotRun,
+                    ExitCode: -1,
+                    Total: 0,
+                    Passed: 0,
+                    Failed: 0,
+                    Skipped: 0)
+            ]
+        };
+
+        var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
+
+        Assert.IsType<InconclusiveVerdict>(verdict);
+        Assert.Contains(
+            verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-REQUIRED-TESTS-NOT-RUN");
+    }
+
+    [Fact]
     public void Fingerprints_ignore_platform_path_separator()
     {
         var slash = Fingerprints.Finding(

@@ -13,7 +13,8 @@ public sealed record WorkspaceCompilation(
     string ProjectPath,
     string TargetFramework,
     CSharpCompilation Compilation,
-    ImmutableArray<string> DocumentPaths);
+    ImmutableArray<string> DocumentPaths,
+    ImmutableArray<string> ProjectReferences);
 
 public sealed record WorkspaceMessage(
     string Kind,
@@ -262,6 +263,16 @@ public static class WorkspaceLoader
                 compilation,
                 project.Documents
                     .Select(document => document.FilePath)
+                    .OfType<string>()
+                    .Where(path => !string.IsNullOrWhiteSpace(path))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(path => path, StringComparer.Ordinal)
+                    .ToImmutableArray(),
+                project.ProjectReferences
+                    .Select(reference =>
+                        project.Solution
+                            .GetProject(reference.ProjectId)?
+                            .FilePath)
                     .OfType<string>()
                     .Where(path => !string.IsNullOrWhiteSpace(path))
                     .Distinct(StringComparer.OrdinalIgnoreCase)

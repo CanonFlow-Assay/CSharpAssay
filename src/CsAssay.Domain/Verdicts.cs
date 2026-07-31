@@ -83,9 +83,62 @@ public static class VerdictFactory
             return new FailVerdict(blocking, evidence);
         }
 
-        if (!evidence.Missing.IsDefaultOrEmpty)
+        if (evidence.Tests.Any(test =>
+                test.Required &&
+                test.Outcome == TestRunOutcome.Failed))
         {
-            return new InconclusiveVerdict(evidence.Missing, evidence);
+            return new FailVerdict(blocking, evidence);
+        }
+
+        var missing = evidence.Missing.ToBuilder();
+        if (evidence.IsAuthoritative &&
+            evidence.Tests.Any(test =>
+                test.Required &&
+                test.Outcome == TestRunOutcome.NotRun) &&
+            !missing.Any(item =>
+                string.Equals(
+                    item.Code,
+                    "CSASSAY-REQUIRED-TESTS-NOT-RUN",
+                    StringComparison.Ordinal)))
+        {
+            missing.Add(new MissingEvidence(
+                "CSASSAY-REQUIRED-TESTS-NOT-RUN",
+                "Authoritative verification did not execute required tests.",
+                string.Empty,
+                string.Empty));
+        }
+
+        if (evidence.Rules.Any(rule =>
+                rule.Required &&
+                rule.Outcome == RuleOutcome.Skipped) &&
+            !missing.Any(item =>
+                string.Equals(
+                    item.Code,
+                    "CSASSAY-REQUIRED-RULE-SKIPPED",
+                    StringComparison.Ordinal)))
+        {
+            missing.Add(new MissingEvidence(
+                "CSASSAY-REQUIRED-RULE-SKIPPED",
+                "At least one required rule was skipped.",
+                string.Empty,
+                string.Empty));
+        }
+
+        if (missing.Count > 0)
+        {
+            var orderedMissing = missing
+                .OrderBy(item => item.Code, StringComparer.Ordinal)
+                .ThenBy(item => item.Project, StringComparer.Ordinal)
+                .ThenBy(item => item.TargetFramework, StringComparer.Ordinal)
+                .ThenBy(item => item.Message, StringComparer.Ordinal)
+                .ToImmutableArray();
+            var normalizedEvidence = evidence with
+            {
+                Missing = orderedMissing
+            };
+            return new InconclusiveVerdict(
+                orderedMissing,
+                normalizedEvidence);
         }
 
         return new PassVerdict(evidence);

@@ -1,0 +1,23 @@
+{
+  "profile": "compat",
+  "release": {
+    "allowPreviewToolchain": false,
+    "requiredTargetFrameworks": [
+      "net10.0"
+    ],
+    "requiredRules": [
+      "CSAN0001"
+    ],
+    "tests": []
+  },
+  "boundaries": {
+    "coreProjects": [
+      "CompilerError.csproj"
+    ],
+    "shellProjects": [],
+    "coreNamespaces": [
+      "Qualification.CompilerError"
+    ],
+    "shellNamespaces": []
+  }
+}

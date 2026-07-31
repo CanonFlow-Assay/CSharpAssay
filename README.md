@@ -5,7 +5,8 @@ functional-first C# policy. It reports what it proved, what it could not prove,
 and whether the toolchain itself failed. Missing evidence never becomes a clean
 release verdict.
 
-The project is currently a `0.1` research preview. Phase 2 admits seven
+The project is currently a `0.1` research preview. Phase 3 provides the
+authoritative CLI and Phase 2 admits seven
 stable-lane rules after positive, negative, suppression, fault, semantic
 matrix, performance, and real-repository evidence. The remaining seven rules
 stay `Prototype` and cannot block a release verdict.
@@ -17,8 +18,11 @@ stay `Prototype` and cannot block a release verdict.
 - Roslyn diagnostics for the initial null, immutability, error, async, union,
   and suppression trust slice;
 - `.csproj`, `.sln`, and `.slnx` loading through `MSBuildWorkspace`;
-- evaluated target-framework enumeration, including imported MSBuild
-  properties;
+- explicit project-reference graph evidence and evaluated all-target-framework
+  enumeration, including imported MSBuild properties;
+- allowlisted required-rule and required-test release policy;
+- compiler, analyzer, source, generated-code, suppression, workspace, and
+  stable test-count evidence;
 - four-state verdicts: `Pass`, `Fail`, `Inconclusive`, and `ToolFailure`;
 - deterministic JSON and SARIF 2.1.0;
 - conservative `set` to `init` code fix;
@@ -77,8 +81,34 @@ dotnet run --project src/CsAssay.Runner -- verify CSharpAssay.slnx \
 
 `check` is provisional. `verify` is the release-authority path and can issue an
 authoritative verdict for the seven admitted stable-lane rules when project,
-compiler, analyzer, policy, and target-framework evidence is complete. Native
-preview rules remain unqualified.
+compiler, analyzer, policy, target-framework, and configured test evidence is
+complete. `check` records configured tests as `NotRun`; `verify` executes them.
+The current test-evidence runner is qualified for xUnit v3 on Microsoft Testing
+Platform and parses only stable TRX counts. Timestamps, host names, durations,
+and temporary result paths never enter deterministic artifacts. Other test
+stacks currently produce `ToolFailure` unless they expose the qualified
+reporter contract; they are not silently treated as passing. Native preview
+rules remain unqualified.
+
+The release section of `.csassay.json` can require target frameworks, admitted
+rules, and fixed test inputs:
+
+```json
+{
+  "release": {
+    "requiredTargetFrameworks": ["net10.0"],
+    "requiredRules": ["CSAN0001", "CSAN0002"],
+    "tests": [
+      {
+        "input": "tests/Acme.Tests/Acme.Tests.csproj",
+        "configuration": "Release",
+        "noBuild": false,
+        "minimumExpectedTests": 1
+      }
+    ]
+  }
+}
+```
 
 See [grandplan.md](grandplan.md) for the full design and
 [STATUS.md](STATUS.md) for implementation progress.

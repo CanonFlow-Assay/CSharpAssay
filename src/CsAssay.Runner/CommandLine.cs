@@ -52,23 +52,43 @@ public sealed record CommandLine(
                     help = true;
                     break;
                 case "--report":
+                    if (report)
+                    {
+                        throw new ArgumentException(
+                            "Duplicate option: " + argument);
+                    }
+
                     report = true;
                     break;
                 case "--json":
-                    json = Presence.Of(Next(args, ref index, argument));
+                    json = Once(
+                        json,
+                        Next(args, ref index, argument),
+                        argument);
                     break;
                 case "--sarif":
-                    sarif = Presence.Of(Next(args, ref index, argument));
+                    sarif = Once(
+                        sarif,
+                        Next(args, ref index, argument),
+                        argument);
                     break;
                 case "--html":
-                    html = Presence.Of(Next(args, ref index, argument));
+                    html = Once(
+                        html,
+                        Next(args, ref index, argument),
+                        argument);
                     break;
                 case "--policy":
-                    policy = Presence.Of(Next(args, ref index, argument));
+                    policy = Once(
+                        policy,
+                        Next(args, ref index, argument),
+                        argument);
                     break;
                 case "--profile":
-                    profile = Presence.Of(
-                        ParseProfile(Next(args, ref index, argument)));
+                    profile = Once(
+                        profile,
+                        ParseProfile(Next(args, ref index, argument)),
+                        argument);
                     break;
                 default:
                     if (argument.StartsWith('-'))
@@ -95,7 +115,7 @@ public sealed record CommandLine(
             }
         }
 
-        return new CommandLine(
+        var result = new CommandLine(
             command,
             input,
             ruleId,
@@ -106,7 +126,87 @@ public sealed record CommandLine(
             profile,
             report,
             help);
+        ValidateCommandShape(result);
+        return result;
     }
+
+    private static Presence<T> Once<T>(
+        Presence<T> current,
+        T value,
+        string option)
+        where T : notnull =>
+        current is Presence<T>.Present
+            ? throw new ArgumentException("Duplicate option: " + option)
+            : Presence.Of(value);
+
+    private static void ValidateCommandShape(CommandLine commandLine)
+    {
+        if (commandLine.Help)
+        {
+            return;
+        }
+
+        var invalid = commandLine.Command switch
+        {
+            "doctor" when
+                Has(commandLine.Input) ||
+                Has(commandLine.RuleId) ||
+                HasAnyOutput(commandLine) ||
+                Has(commandLine.PolicyPath) ||
+                Has(commandLine.Profile) ||
+                commandLine.Report =>
+                "doctor does not accept arguments.",
+            "catalog" when
+                Has(commandLine.Input) ||
+                Has(commandLine.RuleId) ||
+                HasAnyOutput(commandLine) ||
+                Has(commandLine.PolicyPath) ||
+                commandLine.Report =>
+                "catalog accepts only --profile.",
+            "explain" when
+                Has(commandLine.Input) ||
+                HasAnyOutput(commandLine) ||
+                Has(commandLine.PolicyPath) ||
+                Has(commandLine.Profile) ||
+                commandLine.Report =>
+                "explain accepts exactly one rule ID.",
+            "check" or "verify" when
+                Has(commandLine.RuleId) ||
+                commandLine.Report =>
+                commandLine.Command +
+                    " accepts an input and verification options only.",
+            "migrate" when
+                Has(commandLine.RuleId) ||
+                Has(commandLine.SarifPath) ||
+                Has(commandLine.HtmlPath) ||
+                Has(commandLine.PolicyPath) ||
+                Has(commandLine.Profile) =>
+                "migrate accepts --report and --json only.",
+            "help" when
+                Has(commandLine.Input) ||
+                Has(commandLine.RuleId) ||
+                HasAnyOutput(commandLine) ||
+                Has(commandLine.PolicyPath) ||
+                Has(commandLine.Profile) ||
+                commandLine.Report =>
+                "help does not accept arguments.",
+            _ => string.Empty
+        };
+
+        if (invalid.Length > 0)
+        {
+            throw new ArgumentException(invalid);
+        }
+    }
+
+    private static bool HasAnyOutput(CommandLine commandLine) =>
+        Has(commandLine.JsonPath) ||
+        Has(commandLine.SarifPath) ||
+        Has(commandLine.HtmlPath);
+
+    private static bool Has<T>(Presence<T> value)
+        where T : notnull =>
+        value is Presence<T>.Present;
 
     private static string Next(string[] args, ref int index, string option)
     {

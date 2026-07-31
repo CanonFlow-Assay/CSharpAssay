@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "phase": 3,
+  "status": "complete",
+  "commands": [
+    "doctor",
+    "catalog",
+    "check",
+    "verify",
+    "explain"
+  ],
+  "authority": {
+    "check": "provisional; configured release tests are recorded but not run",
+    "verify": "authoritative; all project/TFM compilations and configured release tests are required"
+  },
+  "evidenceSchemaVersion": "1.1.0",
+  "evidence": [
+    "policy identity and SHA-256",
+    "requested and negotiated profiles",
+    "SDK, runtime, MSBuild, and Roslyn identities",
+    "analyzer identity, version, and SHA-256",
+    "project graph references and every evaluated target framework",
+    "compiler and analyzer diagnostics",
+    "source SHA-256 and generated-code classification",
+    "suppression authorization",
+    "required-rule outcome",
+    "stable required-test counts",
+    "workspace completeness diagnostics"
+  ],
+  "verdictContract": {
+    "pass": 0,
+    "fail": 1,
+    "inconclusive": 2,
+    "toolFailure": 3
+  },
+  "exitProof": {
+    "compilerErrorCannotPass": "VerificationIntegrationTests.Compiler_error_is_inconclusive_and_cannot_pass",
+    "requiredTfmGapIsToolFailure": "VerificationIntegrationTests.Required_target_framework_gap_is_a_tool_failure",
+    "requiredRuleSkipIsInconclusive": "VerdictTests.Required_skipped_rule_is_inconclusive",
+    "admittedBlockIsFail": "VerificationIntegrationTests.Admitted_blocking_finding_fails",
+    "cleanCompleteIsPass": "VerificationIntegrationTests.Authoritative_self_assay_can_pass_with_admitted_rules",
+    "exactCliExitCodes": "CommandExitTests.Check_and_verify_expose_all_four_exit_codes",
+    "artifactFailureIsContained": "CommandExitTests.Artifact_write_failure_returns_tool_failure_exit"
+  },
+  "qualification": {
+    "sdk": "10.0.301",
+    "configuration": "Release",
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "testsPassed": 84,
+    "testsFailed": 0,
+    "testsSkipped": 0
+  },
+  "authoritativeSelfAssay": {
+    "verdict": "pass",
+    "projects": 15,
+    "requiredTests": 18,
+    "findings": 0,
+    "missingEvidence": 0,
+    "toolFailures": 0,
+    "repeatByteIdentical": true,
+    "jsonSha256": "4e5ba155593f0076c4bd2ed6274d71895ff115ec6a83797b7866e6f55439866e",
+    "sarifSha256": "f762374d56e1241c1b975bc62c88338bcc8c8b2dc33a56f3b4c4bbbf006c959a",
+    "policySha256": "3d1483130b591248ef3b71ef74ea255220876013b6187fac8d2e1ea61a4853ce"
+  },
+  "testEvidenceBoundary": {
+    "qualifiedRunner": "xUnit v3 on Microsoft Testing Platform",
+    "qualifiedReporter": "--report-xunit-trx",
+    "storedFields": [
+      "input",
+      "configuration",
+      "outcome",
+      "exitCode",
+      "total",
+      "passed",
+      "failed",
+      "skipped"
+    ],
+    "excludedAsNondeterministic": [
+      "TRX timestamps",
+      "host identity",
+      "temporary result path",
+      "wall-clock duration"
+    ]
+  }
+}

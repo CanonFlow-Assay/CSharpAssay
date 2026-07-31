@@ -4,7 +4,15 @@ namespace CsAssay.Domain;
 
 public sealed record ReleasePolicy(
     bool AllowPreviewToolchain,
-    ImmutableArray<string> RequiredTargetFrameworks);
+    ImmutableArray<string> RequiredTargetFrameworks,
+    ImmutableArray<string> RequiredRules,
+    ImmutableArray<TestRequirement> Tests);
+
+public sealed record TestRequirement(
+    string Input,
+    string Configuration,
+    bool NoBuild,
+    int MinimumExpectedTests);
 
 public sealed record BoundaryPolicy(
     ImmutableArray<string> CoreProjects,
@@ -36,7 +44,9 @@ public sealed record AssayPolicy(
         AssayProfile.Auto,
         new ReleasePolicy(
             AllowPreviewToolchain: false,
-            RequiredTargetFrameworks: ImmutableArray<string>.Empty),
+            RequiredTargetFrameworks: ImmutableArray<string>.Empty,
+            RequiredRules: ImmutableArray<string>.Empty,
+            Tests: ImmutableArray<TestRequirement>.Empty),
         new BoundaryPolicy(
             CoreProjects: ImmutableArray<string>.Empty,
             ShellProjects: ImmutableArray<string>.Empty,

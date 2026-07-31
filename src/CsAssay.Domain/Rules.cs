@@ -73,6 +73,7 @@ public sealed record RuleRecord(
 
 public sealed record RuleEvidence(
     string RuleId,
+    bool Required,
     RuleOutcome Outcome,
     int FindingCount,
     Presence<string> Reason);

@@ -49,6 +49,9 @@ public static class JsonEvidenceWriter
         writer.WriteStartObject();
         writer.WriteString("toolVersion", evidence.ToolVersion);
         writer.WriteString("input", evidence.Input);
+        writer.WriteString(
+            "requestedProfile",
+            ToText(evidence.RequestedProfile));
         writer.WriteString("profile", ToText(evidence.Profile));
         writer.WriteBoolean("authoritative", evidence.IsAuthoritative);
         writer.WritePropertyName("policy");
@@ -59,6 +62,19 @@ public static class JsonEvidenceWriter
         writer.WriteEndObject();
         WriteToolchain(writer, evidence.Toolchain);
 
+        writer.WritePropertyName("analyzers");
+        writer.WriteStartArray();
+        foreach (var analyzer in evidence.Analyzers)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("identity", analyzer.Identity);
+            writer.WriteString("assemblyVersion", analyzer.AssemblyVersion);
+            writer.WriteString("sha256", analyzer.Sha256);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+
         writer.WritePropertyName("projects");
         writer.WriteStartArray();
         foreach (var project in evidence.Projects)
@@ -68,9 +84,18 @@ public static class JsonEvidenceWriter
             writer.WriteString("path", project.Path);
             writer.WriteString("targetFramework", project.TargetFramework);
             writer.WriteString("profile", ToText(project.Profile));
+            writer.WriteString("profileEvidence", project.ProfileEvidence);
             writer.WriteString("languageVersion", project.LanguageVersion);
             writer.WriteString("nullableContext", project.NullableContext);
             writer.WriteBoolean("loaded", project.Loaded);
+            writer.WritePropertyName("projectReferences");
+            writer.WriteStartArray();
+            foreach (var reference in project.ProjectReferences)
+            {
+                writer.WriteStringValue(reference);
+            }
+
+            writer.WriteEndArray();
             writer.WritePropertyName("compilerDiagnostics");
             writer.WriteStartArray();
             foreach (var diagnostic in project.CompilerDiagnostics)
@@ -95,6 +120,7 @@ public static class JsonEvidenceWriter
         {
             writer.WriteStartObject();
             writer.WriteString("id", rule.RuleId);
+            writer.WriteBoolean("required", rule.Required);
             writer.WriteString("outcome", ToText(rule.Outcome));
             writer.WriteNumber("findingCount", rule.FindingCount);
             if (rule.Reason is Presence<string>.Present reason)
@@ -187,6 +213,25 @@ public static class JsonEvidenceWriter
 
         writer.WriteEndArray();
 
+        writer.WritePropertyName("tests");
+        writer.WriteStartArray();
+        foreach (var test in evidence.Tests)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("input", test.Input);
+            writer.WriteString("configuration", test.Configuration);
+            writer.WriteBoolean("required", test.Required);
+            writer.WriteString("outcome", ToText(test.Outcome));
+            writer.WriteNumber("exitCode", test.ExitCode);
+            writer.WriteNumber("total", test.Total);
+            writer.WriteNumber("passed", test.Passed);
+            writer.WriteNumber("failed", test.Failed);
+            writer.WriteNumber("skipped", test.Skipped);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+
         writer.WritePropertyName("workspaceDiagnostics");
         writer.WriteStartArray();
         foreach (var diagnostic in evidence.WorkspaceDiagnostics)
@@ -268,6 +313,30 @@ public static class JsonEvidenceWriter
                 nameof(value),
                 value,
                 "Unsupported effective profile.")
+        };
+
+    private static string ToText(AssayProfile value) =>
+        value switch
+        {
+            AssayProfile.Auto => "auto",
+            AssayProfile.Compat => "compat",
+            AssayProfile.Native => "native",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unsupported requested profile.")
+        };
+
+    private static string ToText(TestRunOutcome value) =>
+        value switch
+        {
+            TestRunOutcome.Passed => "passed",
+            TestRunOutcome.Failed => "failed",
+            TestRunOutcome.NotRun => "notRun",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unsupported test outcome.")
         };
 
     private static string ToText(RuleOutcome value) =>

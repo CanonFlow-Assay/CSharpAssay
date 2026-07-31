@@ -23,10 +23,12 @@ public static class PolicyLoader
     private static readonly Regex RuleIdRegex = new(
         "^CSA[NUIEFDAP][0-9]{4}$",
         RegexOptions.CultureInvariant |
-        RegexOptions.IgnoreCase |
         RegexOptions.Compiled);
     private static readonly Regex Sha256Regex = new(
         "^[0-9a-f]{64}$",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    private static readonly Regex ConfigurationRegex = new(
+        "^[A-Za-z0-9_.-]+$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly ImmutableHashSet<string> RootKeys =
@@ -113,7 +115,11 @@ public static class PolicyLoader
 
         var release = root.TryGetProperty("release", out var releaseElement)
             ? ParseRelease(releaseElement)
-            : new ReleasePolicy(false, ImmutableArray<string>.Empty);
+            : new ReleasePolicy(
+                false,
+                ImmutableArray<string>.Empty,
+                ImmutableArray<string>.Empty,
+                ImmutableArray<TestRequirement>.Empty);
         var boundaries = root.TryGetProperty("boundaries", out var boundariesElement)
             ? ParseBoundaries(boundariesElement)
             : new BoundaryPolicy(
@@ -152,7 +158,12 @@ public static class PolicyLoader
         var value = RequireObject(element, "$.release");
         EnsureUniqueAndAllowed(
             value,
-            ["allowPreviewToolchain", "requiredTargetFrameworks"],
+            [
+                "allowPreviewToolchain",
+                "requiredTargetFrameworks",
+                "requiredRules",
+                "tests"
+            ],
             "$.release");
 
         var allowPreview = value.TryGetProperty(
@@ -178,7 +189,112 @@ public static class PolicyLoader
             }
         }
 
-        return new ReleasePolicy(allowPreview, frameworks);
+        var requiredRules = value.TryGetProperty(
+            "requiredRules",
+            out var requiredRulesElement)
+            ? ParseStringArray(
+                requiredRulesElement,
+                "$.release.requiredRules")
+            : ImmutableArray<string>.Empty;
+        foreach (var ruleId in requiredRules)
+        {
+            if (!RuleIdPattern().IsMatch(ruleId))
+            {
+                throw new InvalidDataException(
+                    "Invalid rule ID in $.release.requiredRules: " + ruleId);
+            }
+        }
+
+        var tests = value.TryGetProperty("tests", out var testsElement)
+            ? ParseTests(testsElement)
+            : ImmutableArray<TestRequirement>.Empty;
+
+        return new ReleasePolicy(
+            allowPreview,
+            frameworks,
+            requiredRules,
+            tests);
+    }
+
+    private static ImmutableArray<TestRequirement> ParseTests(
+        JsonElement element)
+    {
+        if (element.ValueKind != JsonValueKind.Array)
+        {
+            throw new InvalidDataException("$.release.tests must be an array.");
+        }
+
+        var builder = ImmutableArray.CreateBuilder<TestRequirement>();
+        var inputs = new HashSet<string>(StringComparer.Ordinal);
+        var index = 0;
+        foreach (var item in element.EnumerateArray())
+        {
+            var path = "$.release.tests[" +
+                index.ToString(CultureInfo.InvariantCulture) + "]";
+            var value = RequireObject(item, path);
+            EnsureUniqueAndAllowed(
+                value,
+                [
+                    "input",
+                    "configuration",
+                    "noBuild",
+                    "minimumExpectedTests"
+                ],
+                path);
+
+            var input = RequiredPropertyString(value, "input", path);
+            var normalizedInput = input.Replace('\\', '/');
+            if (Path.IsPathRooted(input) ||
+                normalizedInput.Split('/').Contains(
+                    "..",
+                    StringComparer.Ordinal) ||
+                Path.GetExtension(input) is not (
+                    ".csproj" or ".sln" or ".slnx"))
+            {
+                throw new InvalidDataException(
+                    path + ".input must be a repository-relative .csproj, .sln, or .slnx path.");
+            }
+
+            if (!inputs.Add(normalizedInput))
+            {
+                throw new InvalidDataException(
+                    "$.release.tests cannot contain duplicate inputs.");
+            }
+
+            var configuration = value.TryGetProperty(
+                "configuration",
+                out var configurationElement)
+                ? RequireString(
+                    configurationElement,
+                    path + ".configuration")
+                : "Release";
+            if (!ConfigurationRegex.IsMatch(configuration))
+            {
+                throw new InvalidDataException(
+                    path + ".configuration is invalid.");
+            }
+
+            var noBuild = value.TryGetProperty(
+                "noBuild",
+                out var noBuildElement) &&
+                RequireBoolean(noBuildElement, path + ".noBuild");
+            var minimumExpectedTests = value.TryGetProperty(
+                "minimumExpectedTests",
+                out var minimumElement)
+                ? RequirePositiveInt32(
+                    minimumElement,
+                    path + ".minimumExpectedTests")
+                : 1;
+
+            builder.Add(new TestRequirement(
+                normalizedInput,
+                configuration,
+                noBuild,
+                minimumExpectedTests));
+            index++;
+        }
+
+        return builder.ToImmutable();
     }
 
     private static BoundaryPolicy ParseBoundaries(JsonElement element)
@@ -405,6 +521,19 @@ public static class PolicyLoader
         }
 
         return element.GetBoolean();
+    }
+
+    private static int RequirePositiveInt32(JsonElement element, string path)
+    {
+        if (element.ValueKind != JsonValueKind.Number ||
+            !element.TryGetInt32(out var value) ||
+            value < 1)
+        {
+            throw new InvalidDataException(
+                path + " must be a positive 32-bit integer.");
+        }
+
+        return value;
     }
 
     private static string RequiredPropertyString(

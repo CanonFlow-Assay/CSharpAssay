@@ -42,6 +42,28 @@ public sealed class CommandLineTests
     }
 
     [Fact]
+    public void Rejects_duplicate_options()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            CommandLine.Parse(
+            [
+                "verify",
+                "Sample.csproj",
+                "--json",
+                "one.json",
+                "--json",
+                "two.json"
+            ]));
+    }
+
+    [Fact]
+    public void Rejects_options_not_supported_by_command()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            CommandLine.Parse(["doctor", "--profile", "compat"]));
+    }
+
+    [Fact]
     public async Task Catalog_command_is_operational()
     {
         using var output = new StringWriter();

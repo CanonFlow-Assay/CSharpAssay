@@ -43,6 +43,12 @@ public static class SarifWriter
                 "authoritative",
                 verdict.Evidence.IsAuthoritative);
             writer.WriteString(
+                "requestedProfile",
+                verdict.Evidence.RequestedProfile.ToString());
+            writer.WriteString(
+                "effectiveProfile",
+                verdict.Evidence.Profile.ToString());
+            writer.WriteString(
                 "policyOrigin",
                 verdict.Evidence.Policy.Origin);
             writer.WriteString(
@@ -51,6 +57,32 @@ public static class SarifWriter
             writer.WriteString(
                 "policySha256",
                 verdict.Evidence.Policy.Sha256);
+            writer.WriteNumber(
+                "testsTotal",
+                verdict.Evidence.Tests.Sum(test => test.Total));
+            writer.WriteNumber(
+                "testsPassed",
+                verdict.Evidence.Tests.Sum(test => test.Passed));
+            writer.WriteNumber(
+                "testsFailed",
+                verdict.Evidence.Tests.Sum(test => test.Failed));
+            writer.WriteNumber(
+                "testsSkipped",
+                verdict.Evidence.Tests.Sum(test => test.Skipped));
+            writer.WritePropertyName("analyzers");
+            writer.WriteStartArray();
+            foreach (var analyzer in verdict.Evidence.Analyzers)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("identity", analyzer.Identity);
+                writer.WriteString(
+                    "assemblyVersion",
+                    analyzer.AssemblyVersion);
+                writer.WriteString("sha256", analyzer.Sha256);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
             writer.WriteEndObject();
             writer.WriteEndObject();
             writer.WriteEndArray();

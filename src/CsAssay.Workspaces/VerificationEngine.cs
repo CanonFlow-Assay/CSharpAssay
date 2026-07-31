@@ -14,6 +14,7 @@ public sealed record VerificationRequest(
     string InputPath,
     Presence<string> PolicyPath,
     bool IsAuthoritative,
+    bool ExecuteTests,
     Presence<AssayProfile> ProfileOverride);
 
 public sealed record VerificationResult(
@@ -56,6 +57,7 @@ public static class VerificationEngine
             ImmutableArray.CreateBuilder<WorkspaceDiagnosticEvidence>();
         var sources = new Dictionary<string, SourceEvidence>(StringComparer.Ordinal);
         var profiles = ImmutableArray.CreateBuilder<EffectiveProfile>();
+        var analyzerFailed = false;
 
         WorkspaceLoadResult workspaceResult;
         try
@@ -142,9 +144,14 @@ public static class VerificationEngine
                 RelativizePath(unit.ProjectPath, rootPath),
                 unit.TargetFramework,
                 negotiation.Profile,
+                negotiation.EvidenceName,
                 GetLanguageVersion(unit.Compilation),
                 unit.Compilation.Options.NullableContextOptions.ToString(),
                 Loaded: true,
+                unit.ProjectReferences
+                    .Select(reference => RelativizePath(reference, rootPath))
+                    .OrderBy(reference => reference, StringComparer.Ordinal)
+                    .ToImmutableArray(),
                 compilerDiagnostics));
 
             CaptureSourceAndGeneratedEvidence(
@@ -164,6 +171,7 @@ public static class VerificationEngine
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
+                analyzerFailed = true;
                 failures.Add(new EvaluationFailure(
                     "CSASSAY-ANALYZER-RUN-FAILED",
                     exception.Message,
@@ -174,6 +182,7 @@ public static class VerificationEngine
 
             foreach (var analyzerFailure in analyzerResult.Failures)
             {
+                analyzerFailed = true;
                 failures.Add(new EvaluationFailure(
                     "CSASSAY-ANALYZER-CRASH",
                     analyzerFailure.ExceptionType + ": " + analyzerFailure.Message,
@@ -260,7 +269,27 @@ public static class VerificationEngine
             .ThenBy(finding => finding.Location.StartColumn)
             .ThenBy(finding => finding.Message, StringComparer.Ordinal)
             .ToImmutableArray();
-        var ruleEvidence = BuildRuleEvidence(overallProfile, orderedFindings);
+        AddRequiredRuleGaps(
+            policy.Release.RequiredRules,
+            overallProfile,
+            missing,
+            failures);
+        var ruleEvidence = BuildRuleEvidence(
+            overallProfile,
+            orderedFindings,
+            policy.Release.RequiredRules,
+            analyzerFailed);
+        var testResult = await TestExecutor.ExecuteAsync(
+            rootPath,
+            policyResult.Path,
+            policy.Release.Tests,
+            request.IsAuthoritative,
+            request.ExecuteTests,
+            prerequisitesComplete:
+                failures.Count == 0 && missing.Count == 0,
+            cancellationToken).ConfigureAwait(false);
+        missing.AddRange(testResult.Missing);
+        failures.AddRange(testResult.Failures);
         var toolchain = new ToolchainEvidence(
             workspaceResult.SdkVersion,
             Environment.Version.ToString(),
@@ -270,13 +299,15 @@ public static class VerificationEngine
                 : string.Empty,
             Environment.OSVersion.ToString());
         var evidence = new EvidenceBundle(
-            SchemaVersion: "1.0.0",
+            SchemaVersion: "1.1.0",
             ToolVersion: "0.1.0",
             Input: Path.GetFileName(fullInputPath),
+            RequestedProfile: policy.Profile,
             Profile: overallProfile,
             IsAuthoritative: request.IsAuthoritative,
             Policy: CreatePolicyEvidence(policyResult.Path, rootPath),
             Toolchain: toolchain,
+            Analyzers: CreateAnalyzerEvidence(),
             Projects: projects
                 .OrderBy(project => project.Path, StringComparer.Ordinal)
                 .ThenBy(project => project.TargetFramework, StringComparer.Ordinal)
@@ -305,6 +336,10 @@ public static class VerificationEngine
             GeneratedCode: generatedCode
                 .OrderBy(item => item.Path, StringComparer.Ordinal)
                 .ThenBy(item => item.Reason, StringComparer.Ordinal)
+                .ToImmutableArray(),
+            Tests: testResult.Tests
+                .OrderBy(item => item.Input, StringComparer.Ordinal)
+                .ThenBy(item => item.Configuration, StringComparer.Ordinal)
                 .ToImmutableArray(),
             WorkspaceDiagnostics: workspaceDiagnostics
                 .OrderBy(item => item.Project, StringComparer.Ordinal)
@@ -545,15 +580,25 @@ public static class VerificationEngine
 
     private static ImmutableArray<RuleEvidence> BuildRuleEvidence(
         EffectiveProfile profile,
-        ImmutableArray<Finding> findings) =>
+        ImmutableArray<Finding> findings,
+        ImmutableArray<string> requiredRules,
+        bool analyzerFailed) =>
         RuleCatalogue.All
             .OrderBy(rule => rule.Id, StringComparer.Ordinal)
             .Select(rule =>
             {
                 var applies = rule.Profiles.Contains(profile);
+                var required = requiredRules.Contains(
+                    rule.Id,
+                    StringComparer.Ordinal);
                 return new RuleEvidence(
                     rule.Id,
-                    applies ? RuleOutcome.Completed : RuleOutcome.Skipped,
+                    required,
+                    analyzerFailed && applies
+                        ? RuleOutcome.Failed
+                        : applies
+                            ? RuleOutcome.Completed
+                            : RuleOutcome.Skipped,
                     applies
                         ? findings.Count(finding => string.Equals(
                             finding.RuleId,
@@ -566,6 +611,65 @@ public static class VerificationEngine
                             "Rule does not apply to " + profile + "."));
             })
             .ToImmutableArray();
+
+    private static void AddRequiredRuleGaps(
+        ImmutableArray<string> requiredRules,
+        EffectiveProfile profile,
+        ImmutableArray<MissingEvidence>.Builder missing,
+        ImmutableArray<EvaluationFailure>.Builder failures)
+    {
+        foreach (var ruleId in requiredRules.OrderBy(
+                     item => item,
+                     StringComparer.Ordinal))
+        {
+            if (RuleCatalogue.Find(ruleId) is not
+                Presence<RuleRecord>.Present found)
+            {
+                failures.Add(new EvaluationFailure(
+                    "CSASSAY-REQUIRED-RULE-UNKNOWN",
+                    "Required rule is not in the catalogue: " + ruleId,
+                    "policy",
+                    Presence.Of(ruleId)));
+                continue;
+            }
+
+            if (found.Value.Status != RuleStatus.Admitted)
+            {
+                missing.Add(new MissingEvidence(
+                    "CSASSAY-REQUIRED-RULE-NOT-ADMITTED",
+                    "Required rule is not admitted: " + ruleId,
+                    string.Empty,
+                    string.Empty));
+                continue;
+            }
+
+            if (!found.Value.Profiles.Contains(profile))
+            {
+                missing.Add(new MissingEvidence(
+                    "CSASSAY-REQUIRED-RULE-SKIPPED",
+                    "Required rule does not apply to the effective profile: " +
+                        ruleId,
+                    string.Empty,
+                    string.Empty));
+            }
+        }
+    }
+
+    private static ImmutableArray<AnalyzerEvidence> CreateAnalyzerEvidence()
+    {
+        var assembly = typeof(FunctionalPolicyAnalyzer).Assembly;
+        var name = assembly.GetName();
+        var location = assembly.Location;
+        return
+        [
+            new AnalyzerEvidence(
+                name.FullName ?? name.Name ?? "CsAssay.Analyzers",
+                name.Version?.ToString() ?? string.Empty,
+                string.IsNullOrEmpty(location) || !File.Exists(location)
+                    ? string.Empty
+                    : HashFile(location))
+        ];
+    }
 
     private static void AddWorkspaceMessages(
         ImmutableArray<WorkspaceMessage> messages,

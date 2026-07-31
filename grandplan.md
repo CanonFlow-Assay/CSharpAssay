@@ -1208,6 +1208,13 @@ IDE and build diagnostics agree for the same compilation.
 
 ### Phase 3 — authoritative CLI
 
+Stable-lane implementation status (2026-07-31): complete. The five commands,
+strict policy/profile negotiation, explicit project-reference/all-TFM
+evidence, required-rule enforcement, policy-scoped xUnit v3 test execution,
+four-state exits, and byte-deterministic JSON/SARIF are qualified on .NET 10.
+Other test reporters and the native-preview lane remain explicitly
+unqualified.
+
 Deliver:
 
 - `doctor`, `catalog`, `check`, `verify`, `explain`;

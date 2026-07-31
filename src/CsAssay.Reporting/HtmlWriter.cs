@@ -25,6 +25,8 @@ public static class HtmlWriter
             .Append(" project compilations, ")
             .Append(verdict.Evidence.Findings.Length)
             .Append(" findings, ")
+            .Append(verdict.Evidence.Tests.Sum(test => test.Total))
+            .Append(" tests, ")
             .Append(verdict.Evidence.Missing.Length)
             .Append(" missing-evidence entries, ")
             .Append(verdict.Evidence.Failures.Length)
@@ -39,6 +41,24 @@ public static class HtmlWriter
                     finding.Location.Path + ":" + finding.Location.StartLine))
                 .Append("</td><td>")
                 .Append(WebUtility.HtmlEncode(finding.Message))
+                .AppendLine("</td></tr>");
+        }
+
+        builder.AppendLine("</tbody></table>");
+        builder.AppendLine("<h2>Required tests</h2>");
+        builder.AppendLine("<table><thead><tr><th>Input</th><th>Outcome</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead><tbody>");
+        foreach (var test in verdict.Evidence.Tests)
+        {
+            builder.Append("<tr><td>")
+                .Append(WebUtility.HtmlEncode(test.Input))
+                .Append("</td><td>")
+                .Append(WebUtility.HtmlEncode(test.Outcome.ToString()))
+                .Append("</td><td>")
+                .Append(test.Passed)
+                .Append("</td><td>")
+                .Append(test.Failed)
+                .Append("</td><td>")
+                .Append(test.Skipped)
                 .AppendLine("</td></tr>");
         }
 

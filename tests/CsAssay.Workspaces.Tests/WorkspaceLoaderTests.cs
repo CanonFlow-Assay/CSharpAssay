@@ -49,6 +49,31 @@ public sealed class WorkspaceLoaderTests
                 "Could not evaluate target frameworks:",
                 StringComparison.Ordinal));
     }
+
+    [Fact]
+    public async Task Loads_every_target_framework_from_a_multi_target_project()
+    {
+        var root = RepositoryRoot.Find();
+        var project = Path.Combine(
+            root,
+            "specimens",
+            "Projects",
+            "MultiTarget",
+            "MultiTarget.csproj");
+
+        var result = await WorkspaceLoader.LoadAsync(
+            project,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            ["net10.0", "net8.0"],
+            result.Compilations
+                .Select(compilation => compilation.TargetFramework)
+                .ToArray());
+        Assert.DoesNotContain(
+            result.Messages,
+            message => message.AffectsCompleteness);
+    }
 }
 
 internal static class RepositoryRoot
