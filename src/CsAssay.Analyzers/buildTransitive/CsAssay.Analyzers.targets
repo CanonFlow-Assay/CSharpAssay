@@ -1,6 +1,8 @@
 <Project>
   <PropertyGroup>
+    <_CsAssayBlockingRuleIds>CSAP0001;CSAN0001;CSAN0002;CSAN0003;CSAN0004;CSAI0001;CSAI0002</_CsAssayBlockingRuleIds>
     <_CsAssayNoWarnNormalized>$([System.String]::Copy('$(NoWarn)').Replace(' ', '').Replace(',', ';').ToUpperInvariant())</_CsAssayNoWarnNormalized>
+    <_CsAssayWarningsNotAsErrorsNormalized>$([System.String]::Copy('$(WarningsNotAsErrors)').Replace(' ', '').Replace(',', ';').ToUpperInvariant())</_CsAssayWarningsNotAsErrorsNormalized>
   </PropertyGroup>
 
   <Target Name="CsAssayValidateBuildGate"
@@ -15,5 +17,11 @@
     <Error Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(_CsAssayNoWarnNormalized)', '(^|;)(CSAP0001|CSAN000[1-4]|CSAI000[1-2])($|;)'))"
            Code="CSASSAY-BUILD-GATE-SUPPRESSED"
            Text="NoWarn suppresses an admitted CSharpAssay blocking rule. Use a reviewed, fingerprinted CSharpAssay suppression grant instead." />
+    <Error Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(_CsAssayWarningsNotAsErrorsNormalized)', '(^|;)(CSAP0001|CSAN000[1-4]|CSAI000[1-2])($|;)'))"
+           Code="CSASSAY-BUILD-GATE-SUPPRESSED"
+           Text="WarningsNotAsErrors demotes an admitted CSharpAssay blocking rule. Set CsAssayEnforceOnBuild=false only as an explicit, reviewed rollback." />
+    <PropertyGroup>
+      <WarningsAsErrors>$(WarningsAsErrors);$(_CsAssayBlockingRuleIds)</WarningsAsErrors>
+    </PropertyGroup>
   </Target>
 </Project>

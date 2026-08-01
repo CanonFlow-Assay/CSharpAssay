@@ -58,11 +58,11 @@ for phase4_pack_name in first second; do
 done
 
 cmp \
-  "$phase4_scratch/first/CsAssay.Analyzers.0.1.0.nupkg" \
-  "$phase4_scratch/second/CsAssay.Analyzers.0.1.0.nupkg"
+  "$phase4_scratch/first/CsAssay.Analyzers.0.1.1.nupkg" \
+  "$phase4_scratch/second/CsAssay.Analyzers.0.1.1.nupkg"
 cmp \
-  "$phase4_scratch/first/CsAssay.Tool.0.1.0.nupkg" \
-  "$phase4_scratch/second/CsAssay.Tool.0.1.0.nupkg"
+  "$phase4_scratch/first/CsAssay.Tool.0.1.1.nupkg" \
+  "$phase4_scratch/second/CsAssay.Tool.0.1.1.nupkg"
 cmp \
   "$phase4_scratch/first-provenance/checksums.sha256" \
   "$phase4_scratch/second-provenance/checksums.sha256"

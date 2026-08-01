@@ -39,7 +39,7 @@ public sealed class AdmissionMatrixTests
     }
 
     [Fact]
-    public async Task Generated_source_remains_visible_to_blocking_rules()
+    public async Task Generated_source_is_excluded_from_owned_source_diagnostics()
     {
         var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
             """
@@ -54,21 +54,22 @@ public sealed class AdmissionMatrixTests
             }
             """);
 
-        Assert.Contains(
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public async Task Help_links_target_the_public_repository()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            "public sealed record Order(System.Guid Id, string? CustomerEmail);");
+
+        Assert.NotEmpty(diagnostics);
+        Assert.All(
             diagnostics,
-            diagnostic => diagnostic.Id == RuleIds.NullableDisabled);
-        Assert.Contains(
-            diagnostics,
-            diagnostic => diagnostic.Id == RuleIds.NullForgiving);
-        Assert.Contains(
-            diagnostics,
-            diagnostic => diagnostic.Id == RuleIds.NullValueIntroduction);
-        Assert.Contains(
-            diagnostics,
-            diagnostic => diagnostic.Id == RuleIds.MutableSetter);
-        Assert.Contains(
-            diagnostics,
-            diagnostic => diagnostic.Id == RuleIds.MutableCollectionExposure);
+            diagnostic => Assert.StartsWith(
+                "https://github.com/CanonFlow-Assay/CSharpAssay/blob/main/docs/rules/",
+                diagnostic.Descriptor.HelpLinkUri,
+                StringComparison.Ordinal));
     }
 
     [Fact]

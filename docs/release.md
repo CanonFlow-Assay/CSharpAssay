@@ -2,8 +2,8 @@
 
 Phase 4 produces two release packages:
 
-- `CsAssay.Analyzers.0.1.0.nupkg`;
-- `CsAssay.Tool.0.1.0.nupkg`.
+- `CsAssay.Analyzers.0.1.1.nupkg`;
+- `CsAssay.Tool.0.1.1.nupkg`.
 
 Run the stable release sequence from the repository root:
 
@@ -29,15 +29,18 @@ payload and the embedded commit/identity/license metadata, rejects source,
 both artifact sets byte for byte. It writes:
 
 ```text
-artifacts/packages/CsAssay.Analyzers.0.1.0.nupkg
-artifacts/packages/CsAssay.Tool.0.1.0.nupkg
+artifacts/packages/CsAssay.Analyzers.0.1.1.nupkg
+artifacts/packages/CsAssay.Tool.0.1.1.nupkg
 artifacts/packages/checksums.sha256
 artifacts/packages/provenance.json
 ```
 
 `qualify-packages.sh` installs the tool from a local-only NuGet source, runs
 `doctor`, performs authoritative sample verification, builds a clean analyzer
-consumer, and proves the packaged analyzer blocks its negative specimen.
+consumer with repository-wide warning promotion disabled, and proves the
+packaged target itself promotes an ordinary `CSAN0004` warning into a blocking
+diagnostic. It also rejects `RunAnalyzers=false`, admitted `NoWarn`, and admitted
+`WarningsNotAsErrors`, while retaining the explicit reviewed rollback property.
 
 ## Signing order
 

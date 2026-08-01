@@ -36,9 +36,7 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(
-            GeneratedCodeAnalysisFlags.Analyze |
-            GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterCompilationAction(AnalyzeNullableCompilation);
         context.RegisterSyntaxNodeAction(
@@ -872,6 +870,21 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         while (current is IConversionOperation)
         {
             current = current.Parent;
+        }
+
+        if (current is IArgumentOperation
+            {
+                Parent: IInvocationOperation invocation
+            } &&
+            invocation.TargetMethod is
+            {
+                IsStatic: true,
+                ContainingType.SpecialType: SpecialType.System_Object
+            } method &&
+            (string.Equals(method.Name, "Equals", StringComparison.Ordinal) ||
+             string.Equals(method.Name, "ReferenceEquals", StringComparison.Ordinal)))
+        {
+            return true;
         }
 
         return current is IConstantPatternOperation or

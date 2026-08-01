@@ -265,6 +265,49 @@ public sealed class FunctionalPolicyAnalyzerTests
     }
 
     [Fact]
+    public async Task Object_equality_null_checks_do_not_introduce_null()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public abstract class ValueObject
+            {
+                protected static bool EqualOperator(
+                    ValueObject left,
+                    ValueObject right)
+                {
+                    if (ReferenceEquals(left, null) ^ ReferenceEquals(right, null))
+                    {
+                        return false;
+                    }
+
+                    return object.Equals(left, null) || left.Equals(right);
+                }
+            }
+            """);
+
+        Assert.DoesNotContain(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullValueIntroduction);
+    }
+
+    [Fact]
+    public async Task Null_passed_to_an_arbitrary_method_is_an_introduction()
+    {
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
+            """
+            public static class Core
+            {
+                public static void Enter(string value) { }
+                public static void Poison() => Enter(null);
+            }
+            """);
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic => diagnostic.Id == RuleIds.NullValueIntroduction);
+    }
+
+    [Fact]
     public async Task Internal_surface_is_not_a_public_nullable_contract()
     {
         var diagnostics = await AnalyzerTestHost.AnalyzeAsync(

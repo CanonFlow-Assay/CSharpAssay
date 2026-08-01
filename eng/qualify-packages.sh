@@ -19,7 +19,7 @@ export DOTNET_CLI_HOME="$phase4_dotnet_home"
 export NUGET_PACKAGES="$phase4_nuget_packages"
 
 "$phase4_dotnet" tool install CsAssay.Tool \
-  --version 0.1.0 \
+  --version 0.1.1 \
   --tool-path "$phase4_scratch/tools" \
   --configfile eng/qualification/packaging/NuGet.Config \
   --no-cache
@@ -51,8 +51,8 @@ if "$phase4_dotnet" build \
   echo "Analyzer package failed to block its negative qualification specimen." >&2
   exit 1
 fi
-if ! grep -q "CSAN0001" "$phase4_scratch/analyzer-negative.log"; then
-  echo "Analyzer package negative build did not report CSAN0001." >&2
+if ! grep -q "CSAN0004" "$phase4_scratch/analyzer-negative.log"; then
+  echo "Analyzer package negative build did not report warning-level CSAN0004." >&2
   exit 1
 fi
 
@@ -83,6 +83,21 @@ fi
 if ! grep -q "CSASSAY-BUILD-GATE-SUPPRESSED" \
     "$phase4_scratch/analyzer-suppressed.log"; then
   echo "NoWarn build did not report the CSharpAssay suppression error." >&2
+  exit 1
+fi
+
+if "$phase4_dotnet" build \
+    eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
+    --no-restore \
+    --configuration Release \
+    -p:WarningsNotAsErrors=CSAN0004 \
+    > "$phase4_scratch/analyzer-demoted.log" 2>&1; then
+  echo "Analyzer package allowed an admitted rule through WarningsNotAsErrors." >&2
+  exit 1
+fi
+if ! grep -q "CSASSAY-BUILD-GATE-SUPPRESSED" \
+    "$phase4_scratch/analyzer-demoted.log"; then
+  echo "WarningsNotAsErrors build did not report the CSharpAssay suppression error." >&2
   exit 1
 fi
 

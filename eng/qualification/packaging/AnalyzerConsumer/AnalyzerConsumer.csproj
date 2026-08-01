@@ -4,13 +4,16 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+    <!-- Model an ordinary consumer, not this repository's global strict build. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors></WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Good.cs" />
     <Compile Include="Violation.cs"
              Condition="'$(QualificationViolation)' == 'true'" />
     <PackageReference Include="CsAssay.Analyzers"
-                      Version="0.1.0"
+                      Version="0.1.1"
                       PrivateAssets="all" />
   </ItemGroup>
 </Project>

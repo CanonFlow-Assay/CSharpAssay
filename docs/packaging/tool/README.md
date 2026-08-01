@@ -3,7 +3,7 @@
 `CsAssay.Tool` installs the `cs-assay` command-line verifier.
 
 ```text
-dotnet tool install --global CsAssay.Tool --version 0.1.0
+dotnet tool install --global CsAssay.Tool --version 0.1.1
 cs-assay doctor
 cs-assay check MySolution.slnx
 cs-assay verify MySolution.slnx
@@ -15,4 +15,4 @@ only when the configured compiler, analyzer, target-framework, rule, and test
 evidence is complete and clean. See the repository documentation for full
 installation, adoption, CI, evidence, migration, and rollback guidance.
 `migrate` is a report-only inventory and never changes source. Phase 6 guidance
-is contextual/heuristic advice and cannot block a `0.1.0` release verdict.
+is contextual/heuristic advice and cannot block a `0.1.1` release verdict.

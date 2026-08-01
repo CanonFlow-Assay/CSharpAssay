@@ -41,7 +41,7 @@ supporting signals.
 The MCP boundary must constrain inputs to an allowed repository root, disable
 network access by default, preserve the CLI exit/verdict distinction, return
 artifact paths plus structured summaries, enforce timeouts, and never turn
-missing evidence into success. MCP is not claimed as shipped in `0.1.0`.
+missing evidence into success. MCP is not claimed as shipped in `0.1.1`.
 
 ## Later, when demand proves it
 

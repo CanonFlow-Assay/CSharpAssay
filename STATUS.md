@@ -1,7 +1,7 @@
 # CSharpAssay implementation status
 
 ```text
-version: 0.1.0-research
+version: 0.1.1-research
 stable lane: .NET SDK 10.0.301 / C# 14 / Roslyn 5.6.0
 native lane: .NET 11 SDK Preview 6 probe installed; explicitly unqualified
 release authority: qualified on the stable lane for seven admitted rules
@@ -41,16 +41,22 @@ source hashes, generated code, suppressions, required-rule outcomes, and stable
 test counts. `check` is explicitly provisional and does not run configured
 release tests. `verify` is authoritative and does.
 
-Phase 4 packages `CsAssay.Analyzers` and `CsAssay.Tool` at version 0.1.0. Two
+Phase 4 packages `CsAssay.Analyzers` and `CsAssay.Tool` at version 0.1.1. Two
 independent packs are canonicalized and compared byte for byte; their embedded
 repository commit, identity, version, license, readme, required payload, signing
 state, and exclusion of source/inspiration content are audited before checksums
 and provenance are emitted. Qualification uses an isolated package cache and a
 local-only feed to install the tool, verify a sample, build a clean analyzer
-consumer, and prove that `CSAN0001` blocks its negative specimen.
-The packaged transitive target also proves that disabling analyzers and hiding
-an admitted ID in `NoWarn` fail explicitly, while a named emergency rollback
-property remains available.
+consumer with global warning promotion disabled, and prove that warning-level
+`CSAN0004` blocks its negative specimen solely through the packaged target.
+The packaged transitive target also proves that disabling analyzers or demoting
+an admitted ID through `NoWarn`/`WarningsNotAsErrors` fails explicitly, while a
+named emergency rollback property remains available.
+
+Version 0.1.1 is a real-consumer hotfix prompted by Visual Studio and eShop
+trials. It makes the transitive warning gate effective, excludes generated
+framework sources from owned-source diagnostics, recognizes `object.Equals`
+and `ReferenceEquals` null observations, and regression-tests public help URIs.
 
 Phase 5 adds a deterministic, source-preserving `migrate --report` path. Its
 qualification fixture produces 14 exact public OneOf/ValueOf exposures and

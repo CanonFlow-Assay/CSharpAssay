@@ -1,4 +1,4 @@
-# Publishing `0.1.0` to NuGet.org
+# Publishing `0.1.1` to NuGet.org
 
 Publication is manual, passwordless, and gated by the same source commit that
 produces the package bytes. Do not create or store a long-lived NuGet API key.
@@ -36,7 +36,7 @@ OIDC exchange permanently binds the policy.
 1. Confirm `main` contains the intended release commit and its stable workflow
    is green.
 2. Open **Actions → Publish NuGet packages → Run workflow**.
-3. Select `main` and enter `publish-0.1.0` exactly.
+3. Select `main` and enter `publish-0.1.1` exactly.
 4. Approve the `nuget.org` environment deployment if protection is enabled.
 
 The workflow performs locked restore, warning-clean build, all serialized
@@ -51,12 +51,12 @@ fresh cache:
 
 ```text
 dotnet nuget locals all --clear
-dotnet tool install --global CsAssay.Tool --version 0.1.0
+dotnet tool install --global CsAssay.Tool --version 0.1.1
 cs-assay doctor
 
 dotnet new classlib -n AssayConsumer
 cd AssayConsumer
-dotnet add package CsAssay.Analyzers --version 0.1.0
+dotnet add package CsAssay.Analyzers --version 0.1.1
 dotnet build
 ```
 

@@ -19,33 +19,37 @@ run and place them in a local feed such as `./packages`.
 Add the analyzer privately so it does not flow into consumers of your library:
 
 ```text
-dotnet add package CsAssay.Analyzers --version 0.1.0
+dotnet add package CsAssay.Analyzers --version 0.1.1
 ```
 
 The equivalent project entry is:
 
 ```xml
 <PackageReference Include="CsAssay.Analyzers"
-                  Version="0.1.0"
+                  Version="0.1.1"
                   PrivateAssets="all" />
 ```
 
 Build once and confirm that a known qualification violation is reported before
 relying on the analyzer in CI. The package contains the analyzer plus only its
 three CSharpAssay-owned runtime dependencies. Roslyn is supplied by the host.
+Compiler-generated and source-generator output is retained as evidence by the
+CLI but excluded from owned-source diagnostics; framework generators must not
+make an application fail CSharpAssay policy.
 
 The package includes `buildTransitive` props and targets. Enforcement is on by
 default: admitted blocking diagnostics fail `dotnet build`, and the target
-rejects attempts to turn analyzers off or hide an admitted rule in `NoWarn`.
-This does not replace `cs-assay verify`, whose authority also requires complete
-workspace, policy, target-framework, and configured-test evidence.
+rejects attempts to turn analyzers off, hide an admitted rule in `NoWarn`, or
+demote one through `WarningsNotAsErrors`. This does not replace `cs-assay
+verify`, whose authority also requires complete workspace, policy,
+target-framework, and configured-test evidence.
 
 ## Command-line tool
 
 Global installation:
 
 ```text
-dotnet tool install --global CsAssay.Tool --version 0.1.0
+dotnet tool install --global CsAssay.Tool --version 0.1.1
 cs-assay doctor
 cs-assay catalog --profile compat
 ```
@@ -54,7 +58,7 @@ For a repository-pinned installation, create and commit a tool manifest:
 
 ```text
 dotnet new tool-manifest
-dotnet tool install CsAssay.Tool --version 0.1.0
+dotnet tool install CsAssay.Tool --version 0.1.1
 dotnet tool restore
 dotnet tool run cs-assay doctor
 ```
@@ -86,9 +90,9 @@ run, then verify their bytes:
 
 ```text
 sha256sum --check checksums.sha256
-gh attestation verify CsAssay.Analyzers.0.1.0.nupkg \
+gh attestation verify CsAssay.Analyzers.0.1.1.nupkg \
   --repo CanonFlow-Assay/CSharpAssay
-gh attestation verify CsAssay.Tool.0.1.0.nupkg \
+gh attestation verify CsAssay.Tool.0.1.1.nupkg \
   --repo CanonFlow-Assay/CSharpAssay
 ```
 

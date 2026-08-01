@@ -300,7 +300,7 @@ public static class VerificationEngine
             Environment.OSVersion.ToString());
         var evidence = new EvidenceBundle(
             SchemaVersion: "1.1.0",
-            ToolVersion: "0.1.0",
+            ToolVersion: "0.1.1",
             Input: Path.GetFileName(fullInputPath),
             RequestedProfile: policy.Profile,
             Profile: overallProfile,
@@ -542,7 +542,7 @@ public static class VerificationEngine
                 generatedCode.Add(new GeneratedCodeEvidence(
                     relativePath,
                     "source-generator output",
-                    Excluded: false));
+                    Excluded: true));
                 continue;
             }
 
@@ -553,7 +553,7 @@ public static class VerificationEngine
                 generatedCode.Add(new GeneratedCodeEvidence(
                     relativePath,
                     "compiler-recognized auto-generated header",
-                    Excluded: false));
+                    Excluded: true));
             }
         }
     }

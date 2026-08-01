@@ -7,7 +7,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>cs-assay</ToolCommandName>
     <PackageId>CsAssay.Tool</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Title>CSharpAssay command-line verifier</Title>
     <PackageTags>dotnet-tool;csharp;roslyn;verification;functional-programming</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
