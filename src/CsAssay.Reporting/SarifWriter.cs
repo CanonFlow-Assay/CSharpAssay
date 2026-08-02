@@ -140,8 +140,7 @@ public static class SarifWriter
             writer.WriteEndObject();
             writer.WriteString(
                 "helpUri",
-                "https://github.com/CanonFlow-Assay/CSharpAssay/blob/main/" +
-                    rule.Documentation);
+                RuleCatalogue.DocumentationUrl(rule));
             writer.WritePropertyName("properties");
             writer.WriteStartObject();
             writer.WriteString("status", rule.Status.ToString());

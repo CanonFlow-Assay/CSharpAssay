@@ -101,6 +101,41 @@ if ! grep -q "CSASSAY-BUILD-GATE-SUPPRESSED" \
   exit 1
 fi
 
+if ! "$phase4_dotnet" build \
+    eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
+    --no-restore \
+    --configuration Release \
+    -p:QualificationViolation=true \
+    -p:TreatWarningsAsErrors=true \
+    -p:CsAssayEnforceOnBuild=false \
+    > "$phase4_scratch/analyzer-rollback-wae.log" 2>&1; then
+  cat "$phase4_scratch/analyzer-rollback-wae.log" >&2
+  echo "Reviewed rollback did not neutralize CSharpAssay warning promotion." >&2
+  exit 1
+fi
+if ! grep -q "warning CSAN0004" \
+    "$phase4_scratch/analyzer-rollback-wae.log"; then
+  echo "Reviewed rollback erased the admitted CSharpAssay diagnostic." >&2
+  exit 1
+fi
+
+if "$phase4_dotnet" build \
+    eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
+    --no-restore \
+    --configuration Release \
+    -p:QualificationUnrelatedWarning=true \
+    -p:TreatWarningsAsErrors=true \
+    -p:CsAssayEnforceOnBuild=false \
+    > "$phase4_scratch/analyzer-rollback-unrelated.log" 2>&1; then
+  echo "Reviewed rollback demoted an unrelated compiler warning." >&2
+  exit 1
+fi
+if ! grep -q "CS1030" \
+    "$phase4_scratch/analyzer-rollback-unrelated.log"; then
+  echo "Unrelated warnings-as-errors qualification did not report CS1030." >&2
+  exit 1
+fi
+
 "$phase4_dotnet" build \
   eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
   --no-restore \

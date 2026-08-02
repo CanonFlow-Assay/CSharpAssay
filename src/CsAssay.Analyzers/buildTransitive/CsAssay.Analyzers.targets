@@ -1,6 +1,5 @@
 <Project>
   <PropertyGroup>
-    <_CsAssayBlockingRuleIds>CSAP0001;CSAN0001;CSAN0002;CSAN0003;CSAN0004;CSAI0001;CSAI0002</_CsAssayBlockingRuleIds>
     <_CsAssayNoWarnNormalized>$([System.String]::Copy('$(NoWarn)').Replace(' ', '').Replace(',', ';').ToUpperInvariant())</_CsAssayNoWarnNormalized>
     <_CsAssayWarningsNotAsErrorsNormalized>$([System.String]::Copy('$(WarningsNotAsErrors)').Replace(' ', '').Replace(',', ';').ToUpperInvariant())</_CsAssayWarningsNotAsErrorsNormalized>
   </PropertyGroup>

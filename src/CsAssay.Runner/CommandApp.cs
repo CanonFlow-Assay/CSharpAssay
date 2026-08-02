@@ -144,7 +144,8 @@ public static class CommandApp
         output.WriteLine("Evidence: " + rule.RequiredEvidence);
         output.WriteLine("Mechanism: " + rule.Mechanism);
         output.WriteLine("Suppression: " + rule.SuppressionPolicy);
-        output.WriteLine("Documentation: " + rule.Documentation);
+        output.WriteLine(
+            "Documentation: " + RuleCatalogue.DocumentationUrl(rule));
         return Task.FromResult(0);
     }
 

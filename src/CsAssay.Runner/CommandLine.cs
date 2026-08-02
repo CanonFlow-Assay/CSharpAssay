@@ -31,7 +31,11 @@ public sealed record CommandLine(
                 true);
         }
 
-        var command = args[0].ToLowerInvariant();
+        var command = args[0] switch
+        {
+            "-h" or "--help" => "help",
+            _ => args[0].ToLowerInvariant()
+        };
         Presence<string> input = Presence.Missing<string>();
         Presence<string> ruleId = Presence.Missing<string>();
         Presence<string> json = Presence.Missing<string>();

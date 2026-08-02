@@ -12,6 +12,8 @@
     <Compile Include="Good.cs" />
     <Compile Include="Violation.cs"
              Condition="'$(QualificationViolation)' == 'true'" />
+    <Compile Include="UnrelatedWarning.cs"
+             Condition="'$(QualificationUnrelatedWarning)' == 'true'" />
     <PackageReference Include="CsAssay.Analyzers"
                       Version="0.1.1"
                       PrivateAssets="all" />
