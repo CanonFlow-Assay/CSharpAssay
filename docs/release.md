@@ -46,11 +46,13 @@ nonblocking, and proves an unrelated compiler warning still blocks.
 
 ## Signing order
 
-No NuGet package-signing certificate is configured. Current packages are
-therefore deliberately unsigned, while main-branch and publication CI attach
-signed keyless build provenance through GitHub/Sigstore. Registry authentication
-uses NuGet trusted publishing with a one-hour temporary key, not a stored
-long-lived API key.
+No author package-signing certificate is configured. Workflow package artifacts
+are therefore deliberately unsigned before publication, while main-branch and
+publication CI attach signed keyless build provenance through GitHub/Sigstore.
+NuGet.org adds a repository signature to the published copy; that registry
+signature is distinct from an author signature and changes the whole-package
+hash by adding `.signature.p7s`. Registry authentication uses NuGet trusted
+publishing with a one-hour temporary key, not a stored long-lived API key.
 
 If the project later supplies an authorized NuGet certificate, the required
 order is:

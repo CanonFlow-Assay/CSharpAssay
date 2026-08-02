@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">CSharpAssay mark</title>
+  <defs>
+    <linearGradient id="g" x1="8" y1="6" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#cfbdff"/>
+      <stop offset=".48" stop-color="#9ee8ff"/>
+      <stop offset="1" stop-color="#7cf2c9"/>
+    </linearGradient>
+    <linearGradient id="b" x1="9" y1="4" x2="53" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#29243f"/>
+      <stop offset="1" stop-color="#101522"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#b)" stroke="url(#g)" stroke-width="2" d="M32 3.5 56.7 17.8v28.4L32 60.5 7.3 46.2V17.8L32 3.5Z"/>
+  <path fill="none" stroke="url(#g)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.8" d="m26.8 21.5-10.3 10 10.3 10M37.2 21.5l10.3 10-10.3 10"/>
+  <circle cx="32" cy="31.5" r="3.8" fill="#fff"/>
+</svg>

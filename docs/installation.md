@@ -119,10 +119,23 @@ gh attestation verify CsAssay.Tool.0.1.2.nupkg \
   --repo CanonFlow-Assay/CSharpAssay
 ```
 
-Main-branch CI creates keyless GitHub/Sigstore build-provenance attestations.
-The NuGet packages themselves remain unsigned because the repository supplies
-no NuGet signing certificate or authorized key. Do not interpret “unsigned” as
-“unverified”; match the checksum and provenance to the trusted workflow run.
+Main-branch and publication CI create keyless GitHub/Sigstore build-provenance
+attestations for the workflow artifacts. The repository supplies no author
+signing certificate, so those pre-publication package bytes have no author
+signature. NuGet.org adds its repository signature (`.signature.p7s`) after
+publication. A package downloaded from NuGet.org therefore has a different
+whole-file hash from its attested workflow artifact even though the remaining
+payload entries match byte for byte.
+
+Verify a package downloaded from NuGet.org separately:
+
+```text
+dotnet nuget verify --all CsAssay.Analyzers.0.1.2.nupkg
+dotnet nuget verify --all CsAssay.Tool.0.1.2.nupkg
+```
+
+Treat the NuGet repository signature and the workflow provenance as separate,
+complementary evidence. Do not claim an author signature where none exists.
 
 ## Rollback
 
