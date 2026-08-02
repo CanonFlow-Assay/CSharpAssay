@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: Type publish-0.1.1 to release both packages
+        description: Type publish-0.1.2 to release both packages
         required: true
         type: string
 
@@ -16,10 +16,10 @@ permissions:
 
 jobs:
   publish:
-    name: Qualify and publish 0.1.1
+    name: Qualify and publish 0.1.2
     if: >-
       github.ref == 'refs/heads/main' &&
-      inputs.confirm == 'publish-0.1.1'
+      inputs.confirm == 'publish-0.1.2'
     runs-on: ubuntu-latest
     environment: nuget.org
 
@@ -75,14 +75,14 @@ jobs:
 
       - name: Publish analyzer and tool packages
         run: |
-          dotnet nuget push artifacts/packages/CsAssay.Analyzers.0.1.1.nupkg --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
-          dotnet nuget push artifacts/packages/CsAssay.Tool.0.1.1.nupkg --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
+          dotnet nuget push artifacts/packages/CsAssay.Analyzers.0.1.2.nupkg --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
+          dotnet nuget push artifacts/packages/CsAssay.Tool.0.1.2.nupkg --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
 
       - name: Upload release evidence
         if: always() && hashFiles('artifacts/**/*') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: csharp-assay-nuget-0.1.1
+          name: csharp-assay-nuget-0.1.2
           path: |
             artifacts/packages/
             artifacts/release/

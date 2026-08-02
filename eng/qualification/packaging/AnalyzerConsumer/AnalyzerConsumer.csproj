@@ -15,7 +15,7 @@
     <Compile Include="UnrelatedWarning.cs"
              Condition="'$(QualificationUnrelatedWarning)' == 'true'" />
     <PackageReference Include="CsAssay.Analyzers"
-                      Version="0.1.1"
+                      Version="0.1.2"
                       PrivateAssets="all" />
   </ItemGroup>
 </Project>

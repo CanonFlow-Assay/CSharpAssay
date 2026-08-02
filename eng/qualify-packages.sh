@@ -19,7 +19,7 @@ export DOTNET_CLI_HOME="$phase4_dotnet_home"
 export NUGET_PACKAGES="$phase4_nuget_packages"
 
 "$phase4_dotnet" tool install CsAssay.Tool \
-  --version 0.1.1 \
+  --version 0.1.2 \
   --tool-path "$phase4_scratch/tools" \
   --configfile eng/qualification/packaging/NuGet.Config \
   --no-cache

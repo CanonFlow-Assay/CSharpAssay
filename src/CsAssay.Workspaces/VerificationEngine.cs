@@ -300,7 +300,7 @@ public static class VerificationEngine
             Environment.OSVersion.ToString());
         var evidence = new EvidenceBundle(
             SchemaVersion: "1.2.0",
-            ToolVersion: "0.1.1",
+            ToolVersion: "0.1.2",
             Input: Path.GetFileName(fullInputPath),
             RequestedProfile: policy.Profile,
             Profile: overallProfile,

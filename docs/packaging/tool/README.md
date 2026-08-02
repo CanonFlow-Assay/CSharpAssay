@@ -3,7 +3,7 @@
 `CsAssay.Tool` installs the `cs-assay` command-line verifier.
 
 ```text
-dotnet tool install --global CsAssay.Tool --version 0.1.1
+dotnet tool install --global CsAssay.Tool --version 0.1.2
 cs-assay doctor
 cs-assay --help
 cs-assay explain CSAN0001
@@ -20,4 +20,4 @@ installation, adoption, CI, evidence, migration, and rollback guidance.
 directly. `explain` emits the complete HTTPS documentation URL shared with
 analyzer diagnostics and SARIF.
 `migrate` is a report-only inventory and never changes source. Phase 6 guidance
-is contextual/heuristic advice and cannot block a `0.1.1` release verdict.
+is contextual/heuristic advice and cannot block a `0.1.2` release verdict.
