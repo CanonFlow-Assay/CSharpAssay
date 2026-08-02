@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#090b12">
+  <meta name="description" content="CSharpAssay is a deterministic Roslyn-based verifier for functional-first C# policy. Shape the boundary, guard it in builds, and prove release evidence without turning missing evidence into a pass.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="CSharpAssay — Evidence-first functional C#">
+  <meta property="og:description" content="Make functional C# a build contract, not a style debate.">
+  <meta property="og:url" content="https://canonflow-assay.github.io/CSharpAssay/">
+  <meta property="og:image" content="https://canonflow-assay.github.io/CSharpAssay/assets/social-card.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>CSharpAssay — Evidence-first functional C#</title>
+  <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+  <script>document.documentElement.classList.replace('no-js', 'js');</script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+  <div class="ambient ambient-three" aria-hidden="true"></div>
+
+  <div class="release-bar" role="status">
+    <span class="release-dot" aria-hidden="true"></span>
+    <span><strong>0.1.2</strong> is published, signed, and externally verified.</span>
+    <a href="https://www.nuget.org/packages/CsAssay.Tool/0.1.2">View on NuGet <span aria-hidden="true">↗</span></a>
+  </div>
+
+  <header class="site-header" data-header>
+    <nav class="nav shell" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="CSharpAssay home">
+        <img src="assets/mark.svg" alt="" width="38" height="38">
+        <span>CSharp<span class="brand-accent">Assay</span></span>
+      </a>
+
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-menu" data-nav-toggle>
+        <span class="sr-only">Open navigation</span>
+        <span></span><span></span><span></span>
+      </button>
+
+      <div class="nav-menu" id="site-menu" data-nav-menu>
+        <a href="#why">Why</a>
+        <a href="#method">Method</a>
+        <a href="#authority">Authority</a>
+        <a href="#start">Get started</a>
+        <a href="#rules">Rules</a>
+        <a href="#docs">Docs</a>
+        <a class="nav-github" href="https://github.com/CanonFlow-Assay/CSharpAssay">
+          GitHub <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero shell" id="top">
+      <div class="hero-copy">
+        <div class="eyebrow"><span>Developer tool</span><span>Functional-first</span><span>.NET 10</span></div>
+        <h1>Make functional C# a <span class="gradient-text">build contract</span>, not a style debate.</h1>
+        <p class="hero-lede">
+          CSharpAssay gives people and AI agents a narrow, reviewable way to build safer functional-first C# from the beginning—then backs the decision with compiler, test, workspace, policy, and deterministic evidence.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#start">
+            Start with 0.1.2
+            <span aria-hidden="true">→</span>
+          </a>
+          <a class="button button-tonal" href="FUNCTIONAL-CSHARP-PROFILE.html">
+            Read Shape v0.1
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <div class="hero-proof" role="group" aria-label="Release trust signals">
+          <div class="avatar-stack" aria-hidden="true"><span>C#</span><span>CI</span><span>AI</span></div>
+          <p><strong>Human-controlled.</strong> Deterministic gates outrank model confidence.</p>
+        </div>
+      </div>
+
+      <div class="hero-visual" role="group" aria-label="Example CSharpAssay authoritative pass">
+        <div class="window glass-card">
+          <div class="window-bar">
+            <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span>verify · evidence model</span>
+            <span class="window-version">0.1.2</span>
+          </div>
+          <div class="report-head">
+            <div class="assay-mark small" aria-hidden="true"><span></span></div>
+            <div>
+              <p class="overline">AUTHORITATIVE VERDICT</p>
+              <h2><span class="status-icon">✓</span> Pass</h2>
+            </div>
+            <span class="status-pill status-pass">complete</span>
+          </div>
+          <div class="signal-grid">
+            <div><span>Workspace</span><strong>Complete</strong><i class="signal good"></i></div>
+            <div><span>Required rules</span><strong>7 / 7</strong><i class="signal good"></i></div>
+            <div><span>Required tests</span><strong>Executed</strong><i class="signal good"></i></div>
+            <div><span>Missing evidence</span><strong>0</strong><i class="signal good"></i></div>
+          </div>
+          <section class="terminal" aria-label="Example command output">
+            <div class="terminal-line"><span class="prompt">$</span> cs-assay verify Orders.slnx <span class="muted">\</span></div>
+            <div class="terminal-line indent"><span class="flag">--policy</span> .csassay.json <span class="flag">--json</span> assay.json</div>
+            <div class="terminal-line output">Project graph loaded <span>complete</span></div>
+            <div class="terminal-line output">Release tests passed <span>minimum met</span></div>
+            <div class="terminal-line output final">Verdict <span>Pass · authoritative</span></div>
+          </section>
+          <div class="artifact-row">
+            <span>JSON</span><span>SARIF 2.1</span><span>HTML</span><span>SHA-256</span>
+          </div>
+        </div>
+        <div class="float-chip float-chip-one"><span>◇</span> deterministic</div>
+        <div class="float-chip float-chip-two"><span>⌁</span> anti-bypass</div>
+      </div>
+    </section>
+
+    <section class="trust-band" aria-label="Product facts">
+      <div class="shell trust-grid">
+        <div><strong>0.1.2</strong><span>published release</span></div>
+        <div><strong>7</strong><span>admitted rules</span></div>
+        <div><strong>4</strong><span>honest verdict states</span></div>
+        <div><strong>3</strong><span>evidence formats</span></div>
+        <div><strong>0</strong><span>missing-as-pass paths</span></div>
+      </div>
+    </section>
+
+    <section class="section shell" id="why">
+      <div class="section-heading split-heading">
+        <div>
+          <p class="kicker">THE BUSINESS CASE</p>
+          <h2>Less review entropy. More trustworthy change.</h2>
+        </div>
+        <p>CSharpAssay turns a small set of functional-first C# expectations into visible engineering controls. It does not grade taste; it narrows ambiguity where a machine can prove something useful.</p>
+      </div>
+
+      <div class="value-grid">
+        <article class="feature-card glass-card feature-lilac">
+          <div class="icon-tile" aria-hidden="true">⌘</div>
+          <p class="card-number">01</p>
+          <h3>Give reviewers a shared contract</h3>
+          <p>Core and shell boundaries, null policy, immutable carriers, suppressions, and required release evidence become explicit—not tribal knowledge buried in comments.</p>
+          <ul class="check-list">
+            <li>Fewer style arguments</li>
+            <li>Reviewable policy changes</li>
+            <li>Named enforcement owners</li>
+          </ul>
+        </article>
+
+        <article class="feature-card glass-card feature-cyan">
+          <div class="icon-tile" aria-hidden="true">✦</div>
+          <p class="card-number">02</p>
+          <h3>Make AI work inside guardrails</h3>
+          <p>An agent gets a bounded shape, real commands, prohibited shortcuts, and stop conditions. It can move quickly without declaring its own work correct.</p>
+          <ul class="check-list">
+            <li>Deterministic feedback</li>
+            <li>Explicit incomplete states</li>
+            <li>Human decision points</li>
+          </ul>
+        </article>
+
+        <article class="feature-card glass-card feature-amber">
+          <div class="icon-tile" aria-hidden="true">◎</div>
+          <p class="card-number">03</p>
+          <h3>Carry evidence into the release</h3>
+          <p>Compiler state, loaded projects, target frameworks, required rules, configured tests, findings, and suppressions travel together in deterministic artifacts.</p>
+          <ul class="check-list">
+            <li>Auditable CI decisions</li>
+            <li>SARIF for code scanning</li>
+            <li>Provenance-ready artifacts</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="positioning-panel glass-card">
+        <div class="positioning-copy">
+          <p class="kicker">ONE NARROW PROMISE</p>
+          <h3>Prove the selected contract—or say exactly why you cannot.</h3>
+          <p>A clean result means the admitted rules and required evidence completed for the reviewed scope. It never silently expands into a claim about the whole application.</p>
+        </div>
+        <div class="positioning-lists">
+          <div>
+            <h4><span class="mini-dot yes"></span> CSharpAssay is</h4>
+            <ul>
+              <li>A Roslyn analyzer and CLI</li>
+              <li>A functional-first policy gate</li>
+              <li>An evidence completeness check</li>
+              <li>A staged adoption tool</li>
+            </ul>
+          </div>
+          <div>
+            <h4><span class="mini-dot no"></span> CSharpAssay is not</h4>
+            <ul>
+              <li>An OOP-to-functional converter</li>
+              <li>A security or quality score</li>
+              <li>A replacement for tests</li>
+              <li>A business-correctness proof</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tint" id="method">
+      <div class="shell">
+        <div class="section-heading centered-heading">
+          <p class="kicker">THE OPERATING MODEL</p>
+          <h2>Shape. Guard. Prove.</h2>
+          <p>Three deliberately separate responsibilities keep design guidance, build enforcement, and release authority honest.</p>
+        </div>
+
+        <div class="method-flow">
+          <article class="method-step">
+            <div class="step-orbit"><span>1</span></div>
+            <p class="step-label">SHAPE</p>
+            <h3>Choose the boundary</h3>
+            <p>Start greenfield modules with immutable domain values, explicit outcomes, framework-free orchestration, and an imperative shell.</p>
+            <a href="FUNCTIONAL-CSHARP-PROFILE.html">Shape v0.1 contract <span aria-hidden="true">→</span></a>
+          </article>
+          <div class="flow-connector" aria-hidden="true"><span></span></div>
+          <article class="method-step">
+            <div class="step-orbit"><span>2</span></div>
+            <p class="step-label">GUARD</p>
+            <h3>Block known shortcuts</h3>
+            <p>Roslyn diagnostics catch selected null, mutability, and suppression violations during an ordinary build.</p>
+            <a href="#rules">See admitted rules <span aria-hidden="true">→</span></a>
+          </article>
+          <div class="flow-connector" aria-hidden="true"><span></span></div>
+          <article class="method-step">
+            <div class="step-orbit"><span>3</span></div>
+            <p class="step-label">PROVE</p>
+            <h3>Require complete evidence</h3>
+            <p>The CLI combines project, compiler, policy, rule, target-framework, and test evidence into one four-state verdict.</p>
+            <a href="#authority">Understand authority <span aria-hidden="true">→</span></a>
+          </article>
+        </div>
+
+        <div class="repair-note">
+          <span class="note-icon" aria-hidden="true">i</span>
+          <p><strong>Repair stays intentionally small.</strong> Version 0.1.2 includes one conservative <code>set</code>-to-<code>init</code> code fix. Migration reporting never rewrites source, and semantic refactors remain human-controlled.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" id="shape">
+      <div class="section-heading split-heading">
+        <div>
+          <p class="kicker">FUNCTIONAL C# SHAPE v0.1</p>
+          <h2>Pure decisions in the center. Effects at the edge.</h2>
+        </div>
+        <p>Shape v0.1 is a normative construction contract for a hand-built reference—not a CLI profile, template package, or universal architecture law.</p>
+      </div>
+
+      <div class="architecture-grid">
+        <div class="architecture-map glass-card">
+          <div class="arch-core">
+            <div class="arch-node domain">
+              <span class="arch-tag">PURE CORE</span>
+              <strong>Domain</strong>
+              <small>Values · decisions · invariants</small>
+            </div>
+            <div class="arch-arrow" aria-hidden="true">←</div>
+            <div class="arch-node application">
+              <span class="arch-tag">CORE ORCHESTRATION</span>
+              <strong>Application</strong>
+              <small>Workflows · owned ports</small>
+            </div>
+          </div>
+          <div class="arch-divider"><span>dependency boundary</span></div>
+          <div class="arch-shell">
+            <div class="arch-node infrastructure">
+              <span class="arch-tag">IMPERATIVE SHELL</span>
+              <strong>Infrastructure</strong>
+              <small>Storage · network · clocks</small>
+            </div>
+            <div class="arch-node api">
+              <span class="arch-tag">COMPOSITION SHELL</span>
+              <strong>API</strong>
+              <small>Transport · mapping · DI</small>
+            </div>
+          </div>
+          <p class="arch-caption">Dependencies point inward. External representations cross the boundary once.</p>
+        </div>
+
+        <div class="shape-principles">
+          <article>
+            <span class="principle-number">01</span>
+            <div><h3>Make invalid state difficult to construct</h3><p>Validated values expose factories that return explicit failure. Accepted aggregates come only from reviewed decision paths.</p></div>
+          </article>
+          <article>
+            <span class="principle-number">02</span>
+            <div><h3>Model outcomes as data</h3><p><code>Result&lt;TValue,TError&gt;</code> and <code>Option&lt;T&gt;</code> are closed, non-null representations with both cases handled explicitly.</p></div>
+          </article>
+          <article>
+            <span class="principle-number">03</span>
+            <div><h3>Pass effects through ports</h3><p>Application orchestration owns effect contracts. Infrastructure implements them. Domain decisions receive every input directly.</p></div>
+          </article>
+          <article>
+            <span class="principle-number">04</span>
+            <div><h3>Translate once at the edge</h3><p>API and infrastructure may use ordinary OOP and frameworks, provided mutable and transport details do not leak inward.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tint" id="authority">
+      <div class="shell">
+        <div class="section-heading split-heading">
+          <div>
+            <p class="kicker">HONEST RELEASE AUTHORITY</p>
+            <h2>Pass is only one of four outcomes.</h2>
+          </div>
+          <p>Most tools optimize for a green check. CSharpAssay optimizes for an honest answer—even when the honest answer is that the evidence is incomplete.</p>
+        </div>
+
+        <div class="verdict-grid">
+          <article class="verdict-card verdict-pass">
+            <div class="verdict-icon">✓</div>
+            <h3>Pass</h3>
+            <p>The selected contract completed with all required evidence and no blocking finding.</p>
+            <span>exit 0</span>
+          </article>
+          <article class="verdict-card verdict-fail">
+            <div class="verdict-icon">×</div>
+            <h3>Fail</h3>
+            <p>The evidence completed and proved at least one admitted blocking violation.</p>
+            <span>exit 1</span>
+          </article>
+          <article class="verdict-card verdict-warn">
+            <div class="verdict-icon">?</div>
+            <h3>Inconclusive</h3>
+            <p>A required project, framework, rule, policy, compiler, or test fact is missing.</p>
+            <span>exit 2</span>
+          </article>
+          <article class="verdict-card verdict-tool">
+            <div class="verdict-icon">!</div>
+            <h3>ToolFailure</h3>
+            <p>The toolchain or qualified evidence reporter failed; no release claim is made.</p>
+            <span>exit 3</span>
+          </article>
+        </div>
+
+        <div class="authority-stack glass-card">
+          <div class="authority-copy">
+            <p class="kicker">WHO GETS THE FINAL WORD?</p>
+            <h3>A clear authority stack keeps automation in its lane.</h3>
+            <p>AI can propose and explain. It cannot overrule a compiler error, a failed test, incomplete workspace evidence, a changed hash, or a human stop point.</p>
+          </div>
+          <ol class="authority-layers">
+            <li><span>1</span><div><strong>Human approval</strong><small>Scope, business intent, risk acceptance</small></div></li>
+            <li><span>2</span><div><strong>Deterministic release evidence</strong><small>Compiler, tests, CSharpAssay, provenance, hashes</small></div></li>
+            <li><span>3</span><div><strong>AI judgment</strong><small>Supplementary review and explanation only</small></div></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" id="agents">
+      <div class="agent-panel glass-card">
+        <div class="agent-copy">
+          <p class="kicker">BUILT FOR HUMAN + AGENT TEAMS</p>
+          <h2>A healthier operating environment for coding agents.</h2>
+          <p>Good agent work comes from clear boundaries, short feedback loops, and permission to report uncertainty. Shape v0.1 packages those conditions as an operating contract—not as confidence theater.</p>
+          <a class="text-link" href="FUNCTIONAL-CSHARP-PROFILE.html">Read the AI-agent contract <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="agent-checks">
+          <div><span aria-hidden="true">⌁</span><strong>Bounded task</strong><small>One reviewed change, explicit non-goals</small></div>
+          <div><span aria-hidden="true">◇</span><strong>Real commands</strong><small>Build, test, check, and verify—not invented interfaces</small></div>
+          <div><span aria-hidden="true">⊘</span><strong>Prohibited shortcuts</strong><small>No null, suppression, disabled analyzer, or policy weakening</small></div>
+          <div><span aria-hidden="true">◫</span><strong>Honest stop states</strong><small>Inconclusive and ToolFailure are useful outcomes</small></div>
+          <div><span aria-hidden="true">◎</span><strong>Independent evidence</strong><small>Artifacts can be rechecked without trusting the author</small></div>
+          <div><span aria-hidden="true">✦</span><strong>Human agency</strong><small>Representation and policy changes stop for review</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tint" id="start">
+      <div class="shell">
+        <div class="section-heading split-heading">
+          <div>
+            <p class="kicker">START SMALL</p>
+            <h2>Useful in minutes. Authoritative by choice.</h2>
+          </div>
+          <p>Pin both packages to the same version. Begin with observation, install the analyzer only in reviewed core projects, and promote <code>verify</code> after the evidence is understood.</p>
+        </div>
+
+        <div class="install-grid">
+          <article class="code-card glass-card">
+            <div class="code-card-head">
+              <div><span class="code-language">CLI</span><h3>Repository-pinned tool</h3></div>
+              <button class="copy-button" type="button" data-copy-target="cli-install" aria-label="Copy CLI installation commands"><span>Copy</span></button>
+            </div>
+            <pre id="cli-install"><code><span class="cmd">dotnet new</span> tool-manifest
+<span class="cmd">dotnet tool install</span> CsAssay.Tool <span class="flag">--version</span> 0.1.2
+<span class="cmd">dotnet tool restore</span>
+<span class="cmd">dotnet tool run</span> cs-assay doctor</code></pre>
+            <p>Commit the manifest so local and CI environments use the same tool version.</p>
+          </article>
+
+          <article class="code-card glass-card">
+            <div class="code-card-head">
+              <div><span class="code-language">ROSLYN</span><h3>Private analyzer reference</h3></div>
+              <button class="copy-button" type="button" data-copy-target="analyzer-install" aria-label="Copy analyzer package reference"><span>Copy</span></button>
+            </div>
+            <pre id="analyzer-install"><code>&lt;<span class="tag">PackageReference</span>
+  <span class="attr">Include</span>=<span class="str">"CsAssay.Analyzers"</span>
+  <span class="attr">Version</span>=<span class="str">"0.1.2"</span>
+  <span class="attr">PrivateAssets</span>=<span class="str">"all"</span> /&gt;</code></pre>
+            <p>Reference directly in Domain and Application—not centrally across framework or generated-code shells.</p>
+          </article>
+        </div>
+
+        <div class="command-workflow glass-card">
+          <div class="workflow-copy">
+            <p class="kicker">TWO-STAGE ADOPTION</p>
+            <h3>Observe with <code>check</code>. Release with <code>verify</code>.</h3>
+            <p><code>check</code> is provisional and does not run configured release tests. <code>verify</code> executes the qualified evidence path and is the only authoritative command.</p>
+            <div class="workflow-links">
+              <a href="installation.html">Installation &amp; rollback <span aria-hidden="true">→</span></a>
+              <a href="adoption.html">Staged adoption <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+          <div class="workflow-code">
+            <button class="copy-button floating" type="button" data-copy-target="verify-command" aria-label="Copy verify command"><span>Copy</span></button>
+            <pre id="verify-command"><code><span class="comment"># Provisional observation</span>
+<span class="cmd">dotnet tool run</span> cs-assay check MySolution.slnx \
+  <span class="flag">--policy</span> .csassay.json \
+  <span class="flag">--json</span> artifacts/check.json
+
+<span class="comment"># Authoritative release decision</span>
+<span class="cmd">dotnet tool run</span> cs-assay verify MySolution.slnx \
+  <span class="flag">--policy</span> .csassay.json \
+  <span class="flag">--json</span> artifacts/verify.json \
+  <span class="flag">--sarif</span> artifacts/verify.sarif \
+  <span class="flag">--html</span> artifacts/verify.html</code></pre>
+          </div>
+        </div>
+
+        <ul class="requirements-row">
+          <li><i></i>.NET SDK 10.0.301 lane</li>
+          <li><i></i><code>.csproj</code>, <code>.sln</code>, or <code>.slnx</code></li>
+          <li><i></i>xUnit v3 + Microsoft Testing Platform for required-test evidence</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section shell" id="evidence">
+      <div class="section-heading split-heading">
+        <div>
+          <p class="kicker">EVIDENCE YOU CAN INSPECT</p>
+          <h2>Not just a finding list.</h2>
+        </div>
+        <p>The release verdict binds the analysis to what actually loaded and ran. Stable JSON and SARIF make no-change reruns comparable byte for byte.</p>
+      </div>
+
+      <div class="evidence-layout">
+        <div class="evidence-list">
+          <article><span>01</span><div><h3>Workspace completeness</h3><p>Project load, compiler errors, target frameworks, generated code, and missing project evidence stay visible.</p></div></article>
+          <article><span>02</span><div><h3>Policy completeness</h3><p>Required admitted rules, scoped core and shell, representations, suppressions, and test requirements are recorded.</p></div></article>
+          <article><span>03</span><div><h3>Test execution</h3><p>A required test marked <code>notRun</code>, filtered to zero, or below its stable minimum cannot produce authority.</p></div></article>
+          <article><span>04</span><div><h3>Reproducible output</h3><p>Deterministic JSON and SARIF support review, diffing, code-scanning integration, and durable acceptance evidence.</p></div></article>
+        </div>
+        <div class="json-card glass-card">
+          <div class="window-bar">
+            <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span>verify.json</span><span class="window-version">schema 1.2.0</span>
+          </div>
+          <pre><code>{
+  <span class="key">"verdict"</span>: <span class="str">"Pass"</span>,
+  <span class="key">"authoritative"</span>: <span class="bool">true</span>,
+  <span class="key">"workspace"</span>: {
+    <span class="key">"projectsLoaded"</span>: <span class="num">6</span>,
+    <span class="key">"compilerErrors"</span>: <span class="num">0</span>,
+    <span class="key">"missingEvidence"</span>: []
+  },
+  <span class="key">"requiredRules"</span>: {
+    <span class="key">"completed"</span>: <span class="num">7</span>,
+    <span class="key">"blockingFindings"</span>: <span class="num">0</span>
+  },
+  <span class="key">"tests"</span>: {
+    <span class="key">"status"</span>: <span class="str">"Passed"</span>,
+    <span class="key">"minimumSatisfied"</span>: <span class="bool">true</span>
+  }
+}</code></pre>
+          <p class="sample-label">Illustrative shape—not a captured project report.</p>
+        </div>
+      </div>
+
+      <div class="supply-chain glass-card">
+        <div class="supply-icon" aria-hidden="true">⌾</div>
+        <div><h3>Release trust goes beyond CI green.</h3><p>Version 0.1.2 was built from protected tag <code>v0.1.2</code>, qualified from fresh package installs, attested with GitHub/Sigstore provenance, repository-signed by NuGet, and verified against published payloads.</p></div>
+        <div class="supply-links">
+          <a href="https://github.com/CanonFlow-Assay/CSharpAssay/attestations">Attestations <span aria-hidden="true">↗</span></a>
+          <a href="release.html">Release qualification <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tint" id="rules">
+      <div class="shell">
+        <div class="section-heading split-heading">
+          <div>
+            <p class="kicker">RULE CATALOGUE</p>
+            <h2>Seven rules may block. Thirteen may teach.</h2>
+          </div>
+          <p>Admission is a trust boundary. Only qualified mechanical rules can participate in a 0.1.2 authoritative release verdict; contextual suggestions remain visible and non-blocking.</p>
+        </div>
+
+        <div class="rule-table glass-card">
+          <div class="rule-table-head"><span>Rule</span><span>What it guards</span><span>Stage</span></div>
+          <a href="rules/CSAI0001.html"><code>CSAI0001</code><span>Mutable setter on immutable carrier</span><em>Admitted</em></a>
+          <a href="rules/CSAI0002.html"><code>CSAI0002</code><span>Mutable collection exposure</span><em>Admitted</em></a>
+          <a href="rules/CSAN0001.html"><code>CSAN0001</code><span>Nullable analysis disabled</span><em>Admitted</em></a>
+          <a href="rules/CSAN0002.html"><code>CSAN0002</code><span>Null-forgiving operator</span><em>Admitted</em></a>
+          <a href="rules/CSAN0003.html"><code>CSAN0003</code><span>Null value introduction</span><em>Admitted</em></a>
+          <a href="rules/CSAN0004.html"><code>CSAN0004</code><span>Nullable public core contract</span><em>Admitted</em></a>
+          <a href="rules/CSAP0001.html"><code>CSAP0001</code><span>Unauthorized suppression</span><em>Admitted</em></a>
+        </div>
+
+        <details class="prototype-rules glass-card">
+          <summary><span><strong>13 prototype and advisory rules</strong><small>Async, error, domain, functional style, shell leakage, and union guidance</small></span><span class="summary-action">Expand <i aria-hidden="true">+</i></span></summary>
+          <div class="prototype-grid">
+            <a href="rules/CSAA0001.html"><code>CSAA0001</code><span>Async void</span></a>
+            <a href="rules/CSAA0002.html"><code>CSAA0002</code><span>Blocking async flow</span></a>
+            <a href="rules/CSAD0001.html"><code>CSAD0001</code><span>Configured primitive obsession</span></a>
+            <a href="rules/CSAD0002.html"><code>CSAD0002</code><span>State flags</span></a>
+            <a href="rules/CSAE0001.html"><code>CSAE0001</code><span>Swallowed exception</span></a>
+            <a href="rules/CSAE0002.html"><code>CSAE0002</code><span>Expected failure at a public boundary</span></a>
+            <a href="rules/CSAF0001.html"><code>CSAF0001</code><span>Behavior-only type candidate</span></a>
+            <a href="rules/CSAF0002.html"><code>CSAF0002</code><span>Loop-to-pipeline opportunity</span></a>
+            <a href="rules/CSAI0003.html"><code>CSAI0003</code><span>Mutable shell leakage</span></a>
+            <a href="rules/CSAU0001.html"><code>CSAU0001</code><span>Extensible configured hierarchy</span></a>
+            <a href="rules/CSAU0002.html"><code>CSAU0002</code><span>Incomplete configured hierarchy switch</span></a>
+            <a href="rules/CSAU0003.html"><code>CSAU0003</code><span>Unguarded OneOf extraction</span></a>
+            <a href="rules/CSAU0004.html"><code>CSAU0004</code><span>Native union discard</span></a>
+          </div>
+        </details>
+
+        <div class="rule-note">
+          <span aria-hidden="true">⚑</span>
+          <p><strong>Advice stays advice.</strong> Prototype findings require context and human adjudication. Zero advisory findings is not a release requirement.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" id="limits">
+      <div class="limits-grid">
+        <div class="limits-copy">
+          <p class="kicker">THE EDGE OF THE CLAIM</p>
+          <h2>Know what the green check does not mean.</h2>
+          <p>Trust comes from being specific about the boundary. A CSharpAssay Pass is strong evidence for a small declared contract—not a universal certificate for the software.</p>
+          <a class="button button-tonal" href="adoption.html">Read before gating CI <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="limit-list glass-card">
+          <div><span>01</span><p><strong>No business correctness guarantee.</strong> Product-owner tests and review still own intent.</p></div>
+          <div><span>02</span><p><strong>No general security analysis.</strong> Use dedicated security tooling and threat modeling.</p></div>
+          <div><span>03</span><p><strong>No architecture proof.</strong> Shape relies on tests and review outside admitted rules.</p></div>
+          <div><span>04</span><p><strong>No unattended application rewrite.</strong> Automatic repair remains deliberately narrow.</p></div>
+          <div><span>05</span><p><strong>No universal test runner.</strong> Required-test evidence is currently qualified for xUnit v3 on Microsoft Testing Platform.</p></div>
+          <div><span>06</span><p><strong>No EF, messaging, concurrency, or performance qualification.</strong> Those need separate contracts and evidence.</p></div>
+        </div>
+      </div>
+
+      <div class="known-gaps glass-card">
+        <p class="kicker">SHAPE v0.1 DISCLOSED GAPS</p>
+        <div>
+          <span>Direct <code>DateTime.Now</code> in Domain is not yet detected</span>
+          <span>A configured but absent core path is not yet a Shape architecture rule</span>
+          <span>Domain serialization attributes are not yet detected</span>
+        </div>
+        <p>These are retained as explicit gaps, not converted into implied coverage.</p>
+      </div>
+    </section>
+
+    <section class="section section-tint" id="docs">
+      <div class="shell">
+        <div class="section-heading split-heading">
+          <div>
+            <p class="kicker">DOCUMENTATION</p>
+            <h2>Go from first install to reviewed authority.</h2>
+          </div>
+          <p>Start with the consumer path. Use the maintainer path only when qualifying or publishing CSharpAssay itself.</p>
+        </div>
+
+        <div class="docs-grid">
+          <a class="doc-card doc-featured glass-card" href="installation.html">
+            <span class="doc-icon" aria-hidden="true">01</span>
+            <div><small>START HERE</small><h3>Installation &amp; rollback</h3><p>Pin the packages, verify the analyzer boundary, learn exit codes, and retain a safe way out.</p></div>
+            <span class="doc-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="doc-card glass-card" href="adoption.html">
+            <span class="doc-icon" aria-hidden="true">02</span>
+            <div><small>TEAM ROLLOUT</small><h3>Staged adoption</h3><p>Observe, declare the core, establish authority, then operate without surprise enforcement.</p></div>
+            <span class="doc-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="doc-card glass-card" href="FUNCTIONAL-CSHARP-PROFILE.html">
+            <span class="doc-icon" aria-hidden="true">03</span>
+            <div><small>GREENFIELD CONTRACT</small><h3>Shape v0.1</h3><p>The normative functional-core / imperative-shell contract for humans and AI agents.</p></div>
+            <span class="doc-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="doc-card glass-card" href="migration.html">
+            <span class="doc-icon" aria-hidden="true">04</span>
+            <div><small>INVENTORY ONLY</small><h3>Migration report</h3><p>Inspect public OneOf and ValueOf exposure without rewriting source or claiming equivalence.</p></div>
+            <span class="doc-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="doc-card glass-card" href="release.html">
+            <span class="doc-icon" aria-hidden="true">05</span>
+            <div><small>MAINTAINERS</small><h3>Release qualification</h3><p>Reproducible packages, stable-lane authority, isolated qualification, and provenance.</p></div>
+            <span class="doc-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="doc-card glass-card" href="publishing.html">
+            <span class="doc-icon" aria-hidden="true">06</span>
+            <div><small>MAINTAINERS</small><h3>Trusted publishing</h3><p>Protected tags, short-lived credentials, artifact checks, attestations, and registry verification.</p></div>
+            <span class="doc-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="doc-card glass-card" href="ecosystem.html">
+            <span class="doc-icon" aria-hidden="true">07</span>
+            <div><small>BOUNDED ROADMAP</small><h3>Ecosystem</h3><p>Understand what is shipped, what is only proposed, and the gates future surfaces would require.</p></div>
+            <span class="doc-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="doc-card glass-card" href="https://canonflow-assay.github.io/CSharpAssay.Playground/">
+            <span class="doc-icon" aria-hidden="true">08</span>
+            <div><small>RUNNING EVIDENCE</small><h3>Playground</h3><p>Inspect the published GoF pattern crosswalk, before-and-after findings, limitations, and reproducible evidence.</p></div>
+            <span class="doc-arrow" aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta shell">
+      <div class="cta-panel">
+        <div class="cta-orb" aria-hidden="true"></div>
+        <div>
+          <p class="kicker">THE PRACTICAL FIRST MOVE</p>
+          <h2>Assay one bounded core before you gate the organization.</h2>
+          <p>Pin 0.1.2, run <code>check</code>, review every finding and missing-evidence record, and decide with the team whether the declared contract belongs in CI.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="button button-light" href="installation.html">Install CSharpAssay <span aria-hidden="true">→</span></a>
+          <a class="button button-ghost" href="https://github.com/CanonFlow-Assay/CSharpAssay">View source <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="#top"><img src="assets/mark.svg" alt="" width="34" height="34"><span>CSharp<span class="brand-accent">Assay</span></span></a>
+        <p>Evidence-first functional C# for humans and AI agents.</p>
+      </div>
+      <div class="footer-links">
+        <div><strong>Product</strong><a href="#method">Method</a><a href="#authority">Authority</a><a href="#rules">Rules</a><a href="FUNCTIONAL-CSHARP-PROFILE.html">Shape v0.1</a></div>
+        <div><strong>Use</strong><a href="installation.html">Install</a><a href="adoption.html">Adopt</a><a href="migration.html">Migrate</a><a href="https://www.nuget.org/packages/CsAssay.Tool/0.1.2">NuGet</a></div>
+        <div><strong>Trust</strong><a href="release.html">Qualification</a><a href="publishing.html">Publishing</a><a href="https://github.com/CanonFlow-Assay/CSharpAssay/attestations">Attestations</a><a href="https://github.com/CanonFlow-Assay/CSharpAssay/actions">CI</a></div>
+      </div>
+    </div>
+    <div class="shell footer-bottom">
+      <span>CSharpAssay 0.1.2 · Research preview</span>
+      <span>Missing evidence never becomes Pass.</span>
+    </div>
+  </footer>
+
+  <div class="copy-toast" role="status" aria-live="polite" data-copy-toast>Copied to clipboard</div>
+  <script src="assets/site.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse"><stop stop-color="#080a11"/><stop offset="1" stop-color="#151327"/></linearGradient>
+    <radialGradient id="a"><stop stop-color="#8967ff" stop-opacity=".5"/><stop offset="1" stop-color="#8967ff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="b"><stop stop-color="#27c9ef" stop-opacity=".4"/><stop offset="1" stop-color="#27c9ef" stop-opacity="0"/></radialGradient>
+    <linearGradient id="t" x1="120" y1="80" x2="1050" y2="550" gradientUnits="userSpaceOnUse"><stop stop-color="#cfbdff"/><stop offset=".5" stop-color="#9ee8ff"/><stop offset="1" stop-color="#7cf2c9"/></linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1050" cy="80" r="420" fill="url(#a)"/><circle cx="180" cy="600" r="420" fill="url(#b)"/>
+  <rect x="62" y="56" width="1076" height="518" rx="42" fill="#171826" fill-opacity=".68" stroke="#fff" stroke-opacity=".14"/>
+  <path fill="none" stroke="url(#t)" stroke-linecap="round" stroke-linejoin="round" stroke-width="15" d="m144 148-32 31 32 31M177 148l32 31-32 31"/><circle cx="160.5" cy="179" r="11" fill="#fff"/>
+  <text x="238" y="191" fill="#f1effb" font-family="Arial, sans-serif" font-size="51" font-weight="700">CSharp<tspan fill="url(#t)">Assay</tspan></text>
+  <text x="106" y="333" fill="#f6f2ff" font-family="Arial, sans-serif" font-size="65" font-weight="700">Make functional C# a build contract.</text>
+  <text x="108" y="405" fill="#bdb9cd" font-family="Arial, sans-serif" font-size="29">Evidence-first policy for humans and AI agents.</text>
+  <rect x="108" y="463" width="179" height="55" rx="27.5" fill="#cfbdff"/><text x="151" y="499" fill="#171126" font-family="Arial, sans-serif" font-size="22" font-weight="700">v0.1.2</text>
+  <text x="318" y="499" fill="#7cf2c9" font-family="Arial, sans-serif" font-size="22" font-weight="700">PASS · AUTHORITATIVE</text>
+</svg>
