@@ -6,6 +6,8 @@ namespace CsAssay.Catalogue;
 public static class RuleCatalogue
 {
     private const string DocsRoot = "docs/rules/";
+    private const string DocumentationUrlRoot =
+        "https://github.com/CanonFlow-Assay/CSharpAssay/blob/main/";
     private const string CompatPositive = "specimens/Compat.Good/";
     private const string CompatNegative = "specimens/Compat.Bad/";
 
@@ -217,6 +219,9 @@ public static class RuleCatalogue
 
         return Presence.Missing<RuleRecord>();
     }
+
+    public static string DocumentationUrl(RuleRecord rule) =>
+        DocumentationUrlRoot + rule.Documentation;
 
     private static RuleRecord Rule(
         string id,

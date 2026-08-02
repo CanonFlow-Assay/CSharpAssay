@@ -37,6 +37,14 @@ Compiler-generated and source-generator output is retained as evidence by the
 CLI but excluded from owned-source diagnostics; framework generators must not
 make an application fail CSharpAssay policy.
 
+CLI and analyzer boundaries are intentionally different in 0.1.x. The CLI
+reads `.csassay.json` and applies `coreProjects`/`shellProjects` while producing
+evidence. The analyzer package does not read that policy during compilation;
+its enforcement boundary is each project that directly installs the package.
+Installing the analyzer centrally or transitively across framework, serializer,
+generator, test, or other shell projects can therefore block code that the CLI
+correctly treats as shell advice. Install it only in reviewed core projects.
+
 The package includes `buildTransitive` props and targets. Enforcement is on by
 default: admitted blocking diagnostics fail `dotnet build`, and the target
 rejects attempts to turn analyzers off, hide an admitted rule in `NoWarn`, or
@@ -62,6 +70,21 @@ dotnet tool install CsAssay.Tool --version 0.1.1
 dotnet tool restore
 dotnet tool run cs-assay doctor
 ```
+
+Product help and rule documentation are available without a repository clone:
+
+```text
+cs-assay help
+cs-assay --help
+cs-assay -h
+cs-assay explain CSAN0001
+```
+
+`help`, `--help`, and `-h` are identical when invoking `cs-assay` directly.
+For a local manifest, prefer `dotnet tool run cs-assay help`; the `dotnet tool
+run` host can consume its own `--help` option before the tool receives it.
+`explain` prints the same complete HTTPS rule URL used by analyzer diagnostics
+and SARIF.
 
 Adopt the gate in two steps:
 
@@ -117,6 +140,11 @@ tool does not masquerade as a repository failure.
 
 An emergency build-only rollback may set `CsAssayEnforceOnBuild=false`. Treat
 that property as a reviewed incident action, not a permanent configuration.
+The package continues running analyzers and keeps CSharpAssay diagnostics
+visible, but exempts only the seven admitted CSharpAssay IDs from global
+warnings-as-errors promotion. Unrelated compiler and third-party analyzer
+warnings retain the consumer's policy. Do not also set `RunAnalyzers=false` if
+the rollback record must retain diagnostic evidence.
 
 Keep previous JSON/SARIF, checksums, provenance, and the policy file used for
 the decision. Rollback changes enforcement; it must not erase the audit trail.

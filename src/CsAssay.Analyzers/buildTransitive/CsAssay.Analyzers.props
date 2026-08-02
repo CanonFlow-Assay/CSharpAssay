@@ -2,5 +2,7 @@
   <PropertyGroup>
     <CsAssayEnforceOnBuild Condition="'$(CsAssayEnforceOnBuild)' == ''">true</CsAssayEnforceOnBuild>
     <RunAnalyzersDuringBuild Condition="'$(CsAssayEnforceOnBuild)' == 'true'">true</RunAnalyzersDuringBuild>
+    <_CsAssayBlockingRuleIds>CSAP0001;CSAN0001;CSAN0002;CSAN0003;CSAN0004;CSAI0001;CSAI0002</_CsAssayBlockingRuleIds>
+    <WarningsNotAsErrors Condition="'$(CsAssayEnforceOnBuild)' == 'false'">$(WarningsNotAsErrors);$(_CsAssayBlockingRuleIds)</WarningsNotAsErrors>
   </PropertyGroup>
 </Project>

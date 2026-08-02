@@ -22,8 +22,7 @@ internal static class DescriptorProvider
             defaultSeverity: ToDiagnosticSeverity(rule.Disposition),
             isEnabledByDefault: rule.Status != RuleStatus.Retired,
             description: rule.Mechanism,
-            helpLinkUri: "https://github.com/CanonFlow-Assay/CSharpAssay/blob/main/" +
-                rule.Documentation);
+            helpLinkUri: RuleCatalogue.DocumentationUrl(rule));
 
     private static DiagnosticSeverity ToDiagnosticSeverity(RuleDisposition disposition) =>
         disposition switch

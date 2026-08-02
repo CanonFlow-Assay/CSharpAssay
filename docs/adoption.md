@@ -55,6 +55,13 @@ rule. This compiler-time gate is fast feedback; authoritative `verify` remains
 the release gate because it also proves project graph, all target frameworks,
 policy, configured tests, and evidence completeness.
 
+The CLI boundary policy does not configure analyzer build scope in 0.1.x.
+`shellProjects` can make a CLI finding nonblocking, but it cannot demote the
+same diagnostic in a shell project that directly references the analyzer
+package. Keep analyzer references limited to reviewed core projects; do not
+use central or transitive installation across framework, serializer, generator,
+test, or compatibility shells as a substitute for `.csassay.json` boundaries.
+
 ## 4. Operate and roll back
 
 Pin package and tool versions in source control. Upload JSON/SARIF even when a
@@ -67,4 +74,7 @@ rule if one exists, qualify it independently, and only then consider admission.
 
 For emergency rollback only, a reviewed build can set
 `CsAssayEnforceOnBuild=false`; disabling enforcement should be reverted together
-with the triggering package change and recorded in the audit trail.
+with the triggering package change and recorded in the audit trail. Analyzers
+continue to run, admitted CSharpAssay diagnostics remain visible as warnings,
+and only those admitted IDs are exempted from global warnings-as-errors.
+Unrelated warnings remain governed by the repository's existing policy.

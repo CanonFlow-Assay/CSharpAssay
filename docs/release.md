@@ -40,7 +40,9 @@ artifacts/packages/provenance.json
 consumer with repository-wide warning promotion disabled, and proves the
 packaged target itself promotes an ordinary `CSAN0004` warning into a blocking
 diagnostic. It also rejects `RunAnalyzers=false`, admitted `NoWarn`, and admitted
-`WarningsNotAsErrors`, while retaining the explicit reviewed rollback property.
+`WarningsNotAsErrors`. Its reviewed-rollback fixture enables global
+warnings-as-errors, proves admitted CSharpAssay diagnostics remain visible but
+nonblocking, and proves an unrelated compiler warning still blocks.
 
 ## Signing order
 

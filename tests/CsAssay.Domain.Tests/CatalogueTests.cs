@@ -53,6 +53,13 @@ public sealed class CatalogueTests
                     rule.Id + ".md",
                     rule.Documentation,
                     StringComparison.Ordinal);
+                var documentationUrl = RuleCatalogue.DocumentationUrl(rule);
+                Assert.True(
+                    Uri.TryCreate(
+                        documentationUrl,
+                        UriKind.Absolute,
+                        out var uri));
+                Assert.Equal(Uri.UriSchemeHttps, uri.Scheme);
             });
     }
 
