@@ -51,6 +51,7 @@ public enum EffectiveProfile
 public enum RuleOutcome
 {
     Completed,
+    Incomplete,
     Skipped,
     Failed
 }

@@ -343,6 +343,7 @@ public static class JsonEvidenceWriter
         value switch
         {
             RuleOutcome.Completed => "completed",
+            RuleOutcome.Incomplete => "incomplete",
             RuleOutcome.Skipped => "skipped",
             RuleOutcome.Failed => "failed",
             _ => throw new ArgumentOutOfRangeException(

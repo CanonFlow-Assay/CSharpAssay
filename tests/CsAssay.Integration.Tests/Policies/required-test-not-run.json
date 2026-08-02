@@ -1,0 +1,26 @@
+{
+  "profile": "compat",
+  "release": {
+    "allowPreviewToolchain": false,
+    "requiredTargetFrameworks": [
+      "net10.0"
+    ],
+    "requiredRules": [],
+    "tests": [
+      {
+        "input": "Required.Tests.csproj",
+        "configuration": "Release",
+        "noBuild": true,
+        "minimumExpectedTests": 1
+      }
+    ]
+  },
+  "boundaries": {
+    "coreProjects": [],
+    "shellProjects": [
+      "BoundaryScope.csproj"
+    ],
+    "coreNamespaces": [],
+    "shellNamespaces": []
+  }
+}
