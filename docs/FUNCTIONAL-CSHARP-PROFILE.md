@@ -107,7 +107,16 @@ it does not prove all runtime or exhaustive-handling semantics.
 
 The Domain project:
 
-- MUST contain immutable, constructor-complete values and decisions;
+- MUST contain immutable values and decisions whose public construction paths
+  cannot create an invalid state;
+- MUST represent a validated value with a non-defaultable reference type when
+  the CLR default of a value type would violate its invariant;
+- MUST keep validated-value constructors non-public and expose a factory that
+  returns `Result<ValidatedValue, DomainError>` for expected rejection;
+- MUST keep accepted aggregates non-publicly constructible so only the
+  validated Domain decision path can create them;
+- MUST reject null dependencies and default, empty, or out-of-range input at
+  the factory or decision boundary before constructing validated state;
 - MUST receive all information required for a decision as explicit input;
 - MUST return explicit data or `Result`, never perform an effect;
 - MUST use `Option` for modeled absence rather than nullable domain state;
