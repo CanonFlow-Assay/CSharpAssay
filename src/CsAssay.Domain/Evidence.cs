@@ -147,7 +147,7 @@ public sealed record EvidenceBundle(
     ImmutableArray<SourceEvidence> Sources)
 {
     public static EvidenceBundle Empty(string input, bool isAuthoritative) => new(
-        SchemaVersion: "1.1.0",
+        SchemaVersion: "1.2.0",
         ToolVersion: "0.1.1",
         Input: input,
         RequestedProfile: AssayProfile.Compat,

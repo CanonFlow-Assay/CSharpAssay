@@ -103,6 +103,7 @@ public sealed class VerdictTests
                 prototype.Title));
         var evidence = EvidenceBundle.Empty("sample.csproj", true) with
         {
+            Projects = [CompleteProject()],
             Findings = [finding]
         };
 
@@ -137,6 +138,7 @@ public sealed class VerdictTests
                 admitted.Title));
         var evidence = EvidenceBundle.Empty("sample.csproj", true) with
         {
+            Projects = [CompleteProject()],
             Findings = [finding]
         };
 
@@ -184,6 +186,7 @@ public sealed class VerdictTests
     {
         var evidence = EvidenceBundle.Empty("sample.csproj", true) with
         {
+            Projects = [CompleteProject()],
             Rules =
             [
                 new RuleEvidence(
@@ -209,6 +212,7 @@ public sealed class VerdictTests
     {
         var evidence = EvidenceBundle.Empty("sample.csproj", true) with
         {
+            Projects = [CompleteProject()],
             Tests =
             [
                 new TestRunEvidence(
@@ -227,9 +231,237 @@ public sealed class VerdictTests
         var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
 
         Assert.IsType<InconclusiveVerdict>(verdict);
+        Assert.False(verdict.Evidence.IsAuthoritative);
         Assert.Contains(
             verdict.Evidence.Missing,
             item => item.Code == "CSASSAY-REQUIRED-TESTS-NOT-RUN");
+    }
+
+    [Fact]
+    public void Ncalc_shaped_fail_is_not_authoritative_when_evidence_is_incomplete()
+    {
+        var admitted = RuleCatalogue.All.Single(rule => rule.Id == "CSAN0001");
+        var project = CompleteProject() with
+        {
+            CompilerDiagnostics =
+            [
+                new CompilerEvidence(
+                    "CS0103",
+                    "Error",
+                    "The name 'BinaryOperators' does not exist in the current context.",
+                    new SourceSpan("src/NCalc.Core/Expression.cs", 10, 9, 10, 24)),
+                new CompilerEvidence(
+                    "CS0117",
+                    "Error",
+                    "'TypeHelper' does not contain a definition for a generated member.",
+                    new SourceSpan("src/NCalc.Core/TypeHelper.cs", 12, 9, 12, 19))
+            ]
+        };
+        var evidence = EvidenceBundle.Empty("NCalc.slnx", true) with
+        {
+            Projects = [project],
+            Findings =
+            [
+                new Finding(
+                    admitted.Id,
+                    admitted.Title,
+                    FindingSeverity.Warning,
+                    admitted.Certainty,
+                    admitted.Disposition,
+                    Suppressed: false,
+                    "NCalc.Core",
+                    "net10.0",
+                    new SourceSpan("src/NCalc.Core/Expression.cs", 20, 5, 20, 15),
+                    "ncalc-shaped-fingerprint")
+            ],
+            Rules =
+            [
+                new RuleEvidence(
+                    "CSAN0001",
+                    Required: true,
+                    RuleOutcome.Completed,
+                    FindingCount: 0,
+                    Presence.Missing<string>())
+            ],
+            Tests =
+            [
+                new TestRunEvidence(
+                    "test/NCalc.Tests/NCalc.Tests.csproj",
+                    "Release",
+                    Required: true,
+                    TestRunOutcome.NotRun,
+                    ExitCode: -1,
+                    Total: 0,
+                    Passed: 0,
+                    Failed: 0,
+                    Skipped: 0)
+            ]
+        };
+
+        var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
+
+        Assert.IsType<FailVerdict>(verdict);
+        Assert.False(verdict.Evidence.IsAuthoritative);
+        Assert.Contains(
+            verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-COMPILER-ERRORS");
+        Assert.Contains(
+            verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-REQUIRED-TESTS-NOT-RUN");
+        var rule = Assert.Single(verdict.Evidence.Rules);
+        Assert.Equal(RuleOutcome.Incomplete, rule.Outcome);
+        Assert.IsType<Presence<string>.Present>(rule.Reason);
+    }
+
+    [Fact]
+    public void Completed_required_test_failure_remains_authoritative_evidence()
+    {
+        var evidence = EvidenceBundle.Empty("sample.csproj", true) with
+        {
+            Projects = [CompleteProject()],
+            Tests =
+            [
+                new TestRunEvidence(
+                    "tests/Sample.Tests/Sample.Tests.csproj",
+                    "Release",
+                    Required: true,
+                    TestRunOutcome.Failed,
+                    ExitCode: 1,
+                    Total: 2,
+                    Passed: 1,
+                    Failed: 1,
+                    Skipped: 0)
+            ]
+        };
+
+        var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
+
+        Assert.IsType<FailVerdict>(verdict);
+        Assert.True(verdict.Evidence.IsAuthoritative);
+    }
+
+    [Fact]
+    public void Provisional_rules_are_incomplete_when_project_evidence_is_unavailable()
+    {
+        var project = CompleteProject() with
+        {
+            CompilerDiagnostics =
+            [
+                new CompilerEvidence(
+                    "CS0103",
+                    "Error",
+                    "A generated member is unavailable.",
+                    new SourceSpan("src/Sample/GeneratedConsumer.cs", 4, 9, 4, 18))
+            ]
+        };
+        var evidence = EvidenceBundle.Empty("sample.csproj", false) with
+        {
+            Projects = [project],
+            Rules =
+            [
+                new RuleEvidence(
+                    "CSAN0001",
+                    Required: false,
+                    RuleOutcome.Completed,
+                    FindingCount: 0,
+                    Presence.Missing<string>())
+            ]
+        };
+
+        var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
+
+        Assert.False(verdict.Evidence.IsAuthoritative);
+        Assert.Equal(
+            RuleOutcome.Incomplete,
+            Assert.Single(verdict.Evidence.Rules).Outcome);
+    }
+
+    [Fact]
+    public void Zero_loaded_projects_prevents_authority_and_completion()
+    {
+        var evidence = EvidenceBundle.Empty("NCalc.slnx", true) with
+        {
+            Rules =
+            [
+                new RuleEvidence(
+                    "CSAN0001",
+                    Required: true,
+                    RuleOutcome.Completed,
+                    FindingCount: 0,
+                    Presence.Missing<string>())
+            ]
+        };
+
+        var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
+
+        Assert.IsType<InconclusiveVerdict>(verdict);
+        Assert.False(verdict.Evidence.IsAuthoritative);
+        Assert.Contains(
+            verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-NO-PROJECTS-LOADED");
+        Assert.Equal(
+            RuleOutcome.Incomplete,
+            Assert.Single(verdict.Evidence.Rules).Outcome);
+    }
+
+    [Fact]
+    public void Any_missing_evidence_prevents_authority()
+    {
+        var evidence = EvidenceBundle.Empty("sample.csproj", true) with
+        {
+            Projects = [CompleteProject()],
+            Missing =
+            [
+                new MissingEvidence(
+                    "CSASSAY-EVIDENCE-GAP",
+                    "Required evidence is unavailable.",
+                    "Sample",
+                    "net10.0")
+            ]
+        };
+
+        var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
+
+        Assert.IsType<InconclusiveVerdict>(verdict);
+        Assert.False(verdict.Evidence.IsAuthoritative);
+    }
+
+    [Fact]
+    public void Completeness_affecting_workspace_diagnostic_prevents_authority()
+    {
+        var evidence = EvidenceBundle.Empty("sample.csproj", true) with
+        {
+            Projects = [CompleteProject()],
+            Rules =
+            [
+                new RuleEvidence(
+                    "CSAN0001",
+                    Required: false,
+                    RuleOutcome.Completed,
+                    FindingCount: 0,
+                    Presence.Missing<string>())
+            ],
+            WorkspaceDiagnostics =
+            [
+                new WorkspaceDiagnosticEvidence(
+                    "Warning",
+                    "Generated document could not be loaded.",
+                    "Sample",
+                    "net10.0",
+                    AffectsCompleteness: true)
+            ]
+        };
+
+        var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
+
+        Assert.IsType<InconclusiveVerdict>(verdict);
+        Assert.False(verdict.Evidence.IsAuthoritative);
+        Assert.Equal(
+            RuleOutcome.Incomplete,
+            Assert.Single(verdict.Evidence.Rules).Outcome);
+        Assert.Contains(
+            verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-WORKSPACE-INCOMPLETE");
     }
 
     [Fact]
@@ -250,4 +482,16 @@ public sealed class VerdictTests
 
         Assert.Equal(slash, backslash);
     }
+
+    private static ProjectEvidence CompleteProject() => new(
+        "Sample",
+        "src/Sample/Sample.csproj",
+        "net10.0",
+        EffectiveProfile.Compat,
+        "qualified",
+        "14.0",
+        "Enable",
+        Loaded: true,
+        ImmutableArray<string>.Empty,
+        ImmutableArray<CompilerEvidence>.Empty);
 }

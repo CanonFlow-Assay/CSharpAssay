@@ -299,7 +299,7 @@ public static class VerificationEngine
                 : string.Empty,
             Environment.OSVersion.ToString());
         var evidence = new EvidenceBundle(
-            SchemaVersion: "1.1.0",
+            SchemaVersion: "1.2.0",
             ToolVersion: "0.1.1",
             Input: Path.GetFileName(fullInputPath),
             RequestedProfile: policy.Profile,

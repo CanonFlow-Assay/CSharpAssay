@@ -142,19 +142,112 @@ public sealed class VerificationIntegrationTests
     [Fact]
     public async Task Compiler_error_is_inconclusive_and_cannot_pass()
     {
-        var result = await VerifyFixtureAsync(
+        var first = await VerifyFixtureAsync(
+            "CompilerError",
+            Presence.Missing<string>());
+        var second = await VerifyFixtureAsync(
             "CompilerError",
             Presence.Missing<string>());
 
-        Assert.Equal(AssayVerdictKind.Inconclusive, result.Verdict.Kind);
-        Assert.Equal(2, result.Verdict.ExitCode);
+        Assert.Equal(AssayVerdictKind.Inconclusive, first.Verdict.Kind);
+        Assert.Equal(2, first.Verdict.ExitCode);
+        Assert.False(first.Verdict.Evidence.IsAuthoritative);
         Assert.Contains(
-            result.Verdict.Evidence.Missing,
+            first.Verdict.Evidence.Missing,
             item => item.Code == "CSASSAY-COMPILER-ERRORS");
         Assert.Contains(
-            result.Verdict.Evidence.Projects.SelectMany(
+            first.Verdict.Evidence.Projects.SelectMany(
                 project => project.CompilerDiagnostics),
             diagnostic => diagnostic.Severity == "Error");
+        Assert.DoesNotContain(
+            first.Verdict.Evidence.Rules,
+            rule => rule.Outcome == RuleOutcome.Completed);
+        var firstJson = JsonEvidenceWriter.Write(first.Verdict);
+        var firstSarif = SarifWriter.Write(first.Verdict);
+        var jsonText = System.Text.Encoding.UTF8.GetString(firstJson);
+        var sarifText = System.Text.Encoding.UTF8.GetString(firstSarif);
+        Assert.Contains("\"schemaVersion\": \"1.2.0\"", jsonText);
+        Assert.Contains("\"authoritative\": false", jsonText);
+        Assert.Contains("\"outcome\": \"incomplete\"", jsonText);
+        Assert.Contains("\"authoritative\": false", sarifText);
+        Assert.Equal(
+            firstJson,
+            JsonEvidenceWriter.Write(second.Verdict));
+        Assert.Equal(
+            firstSarif,
+            SarifWriter.Write(second.Verdict));
+    }
+
+    [Fact]
+    public async Task Required_test_not_run_is_non_authoritative_and_deterministic()
+    {
+        var root = FindRoot();
+        var policy = Path.Combine(
+            root,
+            "tests",
+            "CsAssay.Integration.Tests",
+            "Policies",
+            "required-test-not-run.json");
+        var first = await VerifyFixtureAsync(
+            "BoundaryScope",
+            Presence.Of(policy));
+        var second = await VerifyFixtureAsync(
+            "BoundaryScope",
+            Presence.Of(policy));
+
+        Assert.Empty(first.Verdict.Evidence.Failures);
+        Assert.Equal(AssayVerdictKind.Inconclusive, first.Verdict.Kind);
+        Assert.False(first.Verdict.Evidence.IsAuthoritative);
+        Assert.Equal(
+            TestRunOutcome.NotRun,
+            Assert.Single(first.Verdict.Evidence.Tests).Outcome);
+        Assert.Contains(
+            first.Verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-REQUIRED-TESTS-NOT-RUN");
+        var firstJson = JsonEvidenceWriter.Write(first.Verdict);
+        var firstSarif = SarifWriter.Write(first.Verdict);
+        var jsonText = System.Text.Encoding.UTF8.GetString(firstJson);
+        var sarifText = System.Text.Encoding.UTF8.GetString(firstSarif);
+        Assert.Contains("\"authoritative\": false", jsonText);
+        Assert.Contains("\"outcome\": \"notRun\"", jsonText);
+        Assert.Contains("\"authoritative\": false", sarifText);
+        Assert.Equal(
+            firstJson,
+            JsonEvidenceWriter.Write(second.Verdict));
+        Assert.Equal(
+            firstSarif,
+            SarifWriter.Write(second.Verdict));
+    }
+
+    [Fact]
+    public async Task Zero_loaded_projects_cannot_be_authoritative()
+    {
+        var root = FindRoot();
+        var missingProject = Path.Combine(
+            root,
+            "specimens",
+            "Projects",
+            "Missing",
+            "Missing.csproj");
+
+        var result = await VerificationEngine.VerifyAsync(
+            new VerificationRequest(
+                missingProject,
+                PolicyPath: Presence.Missing<string>(),
+                IsAuthoritative: true,
+                ExecuteTests: false,
+                ProfileOverride: Presence.Of(AssayProfile.Compat)),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(AssayVerdictKind.ToolFailure, result.Verdict.Kind);
+        Assert.False(result.Verdict.Evidence.IsAuthoritative);
+        Assert.Empty(result.Verdict.Evidence.Projects);
+        Assert.Contains(
+            result.Verdict.Evidence.Missing,
+            item => item.Code == "CSASSAY-NO-PROJECTS-LOADED");
+        Assert.DoesNotContain(
+            result.Verdict.Evidence.Rules,
+            rule => rule.Outcome == RuleOutcome.Completed);
     }
 
     [Fact]
