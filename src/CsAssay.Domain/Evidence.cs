@@ -148,7 +148,7 @@ public sealed record EvidenceBundle(
 {
     public static EvidenceBundle Empty(string input, bool isAuthoritative) => new(
         SchemaVersion: "1.2.0",
-        ToolVersion: "0.1.1",
+        ToolVersion: "0.1.2",
         Input: input,
         RequestedProfile: AssayProfile.Compat,
         Profile: EffectiveProfile.Compat,

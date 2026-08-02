@@ -19,14 +19,14 @@ run and place them in a local feed such as `./packages`.
 Add the analyzer privately so it does not flow into consumers of your library:
 
 ```text
-dotnet add package CsAssay.Analyzers --version 0.1.1
+dotnet add package CsAssay.Analyzers --version 0.1.2
 ```
 
 The equivalent project entry is:
 
 ```xml
 <PackageReference Include="CsAssay.Analyzers"
-                  Version="0.1.1"
+                  Version="0.1.2"
                   PrivateAssets="all" />
 ```
 
@@ -57,7 +57,7 @@ target-framework, and configured-test evidence.
 Global installation:
 
 ```text
-dotnet tool install --global CsAssay.Tool --version 0.1.1
+dotnet tool install --global CsAssay.Tool --version 0.1.2
 cs-assay doctor
 cs-assay catalog --profile compat
 ```
@@ -66,7 +66,7 @@ For a repository-pinned installation, create and commit a tool manifest:
 
 ```text
 dotnet new tool-manifest
-dotnet tool install CsAssay.Tool --version 0.1.1
+dotnet tool install CsAssay.Tool --version 0.1.2
 dotnet tool restore
 dotnet tool run cs-assay doctor
 ```
@@ -113,9 +113,9 @@ run, then verify their bytes:
 
 ```text
 sha256sum --check checksums.sha256
-gh attestation verify CsAssay.Analyzers.0.1.1.nupkg \
+gh attestation verify CsAssay.Analyzers.0.1.2.nupkg \
   --repo CanonFlow-Assay/CSharpAssay
-gh attestation verify CsAssay.Tool.0.1.1.nupkg \
+gh attestation verify CsAssay.Tool.0.1.2.nupkg \
   --repo CanonFlow-Assay/CSharpAssay
 ```
 

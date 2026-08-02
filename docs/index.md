@@ -1,6 +1,6 @@
 # CSharpAssay
 
-CSharpAssay 0.1.1 is a published C# design-assessment and CI enforcement tool
+CSharpAssay 0.1.2 is a published C# design-assessment and CI enforcement tool
 with reproducible evidence. It identifies selected non-functional design risks
 and guides human-controlled refinement. It is not an automatic functional-C#
 converter or a correctness proof system.
@@ -11,7 +11,7 @@ Pin the command-line tool in your repository:
 
 ```text
 dotnet new tool-manifest
-dotnet tool install CsAssay.Tool --version 0.1.1
+dotnet tool install CsAssay.Tool --version 0.1.2
 dotnet tool restore
 dotnet tool run cs-assay doctor
 ```
@@ -19,7 +19,7 @@ dotnet tool run cs-assay doctor
 Add the analyzer package privately to a project:
 
 ```text
-dotnet add package CsAssay.Analyzers --version 0.1.1
+dotnet add package CsAssay.Analyzers --version 0.1.2
 ```
 
 Read [installation and rollback](installation.html) before making CSharpAssay a
@@ -39,7 +39,7 @@ required CI gate.
 
 The seven admitted rules can participate in an authoritative release verdict.
 The remaining rules are prototype or prototype-advisory evidence and cannot
-block a 0.1.1 release verdict.
+block a 0.1.2 release verdict.
 
 ### Admitted
 

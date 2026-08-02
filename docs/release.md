@@ -2,8 +2,8 @@
 
 Phase 4 produces two release packages:
 
-- `CsAssay.Analyzers.0.1.1.nupkg`;
-- `CsAssay.Tool.0.1.1.nupkg`.
+- `CsAssay.Analyzers.0.1.2.nupkg`;
+- `CsAssay.Tool.0.1.2.nupkg`.
 
 Run the stable release sequence from the repository root:
 
@@ -29,8 +29,8 @@ payload and the embedded commit/identity/license metadata, rejects source,
 both artifact sets byte for byte. It writes:
 
 ```text
-artifacts/packages/CsAssay.Analyzers.0.1.1.nupkg
-artifacts/packages/CsAssay.Tool.0.1.1.nupkg
+artifacts/packages/CsAssay.Analyzers.0.1.2.nupkg
+artifacts/packages/CsAssay.Tool.0.1.2.nupkg
 artifacts/packages/checksums.sha256
 artifacts/packages/provenance.json
 ```

@@ -1,4 +1,4 @@
-# Publishing `0.1.1` to NuGet.org
+# Publishing `0.1.2` to NuGet.org
 
 Publication is manual, passwordless, and gated by the same source commit that
 produces the package bytes. Do not create or store a long-lived NuGet API key.
@@ -33,16 +33,20 @@ OIDC exchange permanently binds the policy.
 
 ## Publish
 
-1. Confirm `main` contains the intended release commit and its stable workflow
-   is green.
-2. Open **Actions → Publish NuGet packages → Run workflow**.
-3. Select `main` and enter `publish-0.1.1` exactly.
-4. Approve the `nuget.org` environment deployment if protection is enabled.
+1. Confirm the reviewed release candidate is merged and all required checks are
+   green.
+2. Create the immutable `v0.1.2` tag at the exact reviewed candidate commit,
+   not at a later merge or documentation commit.
+3. Open **Actions → Publish NuGet packages → Run workflow**.
+4. Select `v0.1.2` and enter `publish-0.1.2` exactly.
+5. Approve the `nuget.org` environment deployment if protection is enabled.
 
 The workflow performs locked restore, warning-clean build, all serialized
 tests, authoritative self-assay, two reproducible packs, isolated fresh-install
 qualification, package attestation, OIDC login, and two explicit pushes. The
-temporary NuGet key is requested only after qualification.
+temporary NuGet key is requested only after qualification. The tag makes the
+reviewed candidate SHA the package provenance commit even when repository
+policy retains a separate PR merge commit.
 
 ## Verify publication
 
@@ -51,12 +55,12 @@ fresh cache:
 
 ```text
 dotnet nuget locals all --clear
-dotnet tool install --global CsAssay.Tool --version 0.1.1
+dotnet tool install --global CsAssay.Tool --version 0.1.2
 cs-assay doctor
 
 dotnet new classlib -n AssayConsumer
 cd AssayConsumer
-dotnet add package CsAssay.Analyzers --version 0.1.1
+dotnet add package CsAssay.Analyzers --version 0.1.2
 dotnet build
 ```
 

@@ -1,7 +1,7 @@
 # CSharpAssay implementation status
 
 ```text
-version: 0.1.1-research
+version: 0.1.2-research
 stable lane: .NET SDK 10.0.301 / C# 14 / Roslyn 5.6.0
 native lane: .NET 11 SDK Preview 6 probe installed; explicitly unqualified
 release authority: qualified on the stable lane for seven admitted rules
@@ -41,7 +41,7 @@ source hashes, generated code, suppressions, required-rule outcomes, and stable
 test counts. `check` is explicitly provisional and does not run configured
 release tests. `verify` is authoritative and does.
 
-Phase 4 packages `CsAssay.Analyzers` and `CsAssay.Tool` at version 0.1.1. Two
+Phase 4 packages `CsAssay.Analyzers` and `CsAssay.Tool` at version 0.1.2. Two
 independent packs are canonicalized and compared byte for byte; their embedded
 repository commit, identity, version, license, readme, required payload, signing
 state, and exclusion of source/inspiration content are audited before checksums
