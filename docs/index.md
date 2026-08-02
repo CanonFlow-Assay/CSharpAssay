@@ -29,6 +29,7 @@ required CI gate.
 
 - [Installation and rollback](installation.html)
 - [Staged adoption](adoption.html)
+- [Functional C# Profile — Shape v0.1](FUNCTIONAL-CSHARP-PROFILE.html)
 - [Migration inventory](migration.html)
 - [Ecosystem roadmap](ecosystem.html)
 - [Release qualification](release.html)
