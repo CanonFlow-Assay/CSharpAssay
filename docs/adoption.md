@@ -5,11 +5,11 @@ allowing any diagnostic to block a release.
 
 ## 1. Observe
 
-Install exact version `0.1.1`, copy `eng/templates/observe.csassay.json`, and
+Install exact version `0.1.2`, copy `eng/templates/observe.csassay.json`, and
 run provisional observation:
 
 ```text
-dotnet tool install --local CsAssay.Tool --version 0.1.1
+dotnet tool install --local CsAssay.Tool --version 0.1.2
 dotnet tool run cs-assay doctor
 dotnet tool run cs-assay check MySolution.slnx \
   --policy .csassay.json \
@@ -28,7 +28,7 @@ owner confirms the concept and expected type.
 
 The six Phase 6 families (`CSAD0001`, `CSAD0002`, `CSAF0001`, `CSAF0002`,
 `CSAE0002`, and `CSAI0003`) are contextual or heuristic advice. They cannot be
-listed as required rules and cannot fail a release in `0.1.1`.
+listed as required rules and cannot fail a release in `0.1.2`.
 
 ## 3. Establish authority
 
