@@ -33,16 +33,20 @@ OIDC exchange permanently binds the policy.
 
 ## Publish
 
-1. Confirm `main` contains the intended release commit and its stable workflow
-   is green.
-2. Open **Actions → Publish NuGet packages → Run workflow**.
-3. Select `main` and enter `publish-0.1.2` exactly.
-4. Approve the `nuget.org` environment deployment if protection is enabled.
+1. Confirm the reviewed release candidate is merged and all required checks are
+   green.
+2. Create the immutable `v0.1.2` tag at the exact reviewed candidate commit,
+   not at a later merge or documentation commit.
+3. Open **Actions → Publish NuGet packages → Run workflow**.
+4. Select `v0.1.2` and enter `publish-0.1.2` exactly.
+5. Approve the `nuget.org` environment deployment if protection is enabled.
 
 The workflow performs locked restore, warning-clean build, all serialized
 tests, authoritative self-assay, two reproducible packs, isolated fresh-install
 qualification, package attestation, OIDC login, and two explicit pushes. The
-temporary NuGet key is requested only after qualification.
+temporary NuGet key is requested only after qualification. The tag makes the
+reviewed candidate SHA the package provenance commit even when repository
+policy retains a separate PR merge commit.
 
 ## Verify publication
 
