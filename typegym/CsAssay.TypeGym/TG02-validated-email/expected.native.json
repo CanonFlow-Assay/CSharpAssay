@@ -1,8 +1,14 @@
 {
   "challenge": "TG02-validated-email",
+  "bad": {
+    "diagnostics": [
+      "CSAN0003",
+      "CSAN0004"
+    ],
+    "golden": "a@example.test"
+  },
   "native": {
-    "capability": "unavailable",
     "diagnostics": [],
-    "golden": "native-preview-unavailable"
+    "golden": "a@example.test"
   }
 }

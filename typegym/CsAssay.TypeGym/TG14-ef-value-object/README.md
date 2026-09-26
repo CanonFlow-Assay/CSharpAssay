@@ -2,7 +2,7 @@
 
 Primary obligation: Keep the domain value object distinct and isolate persistence conversion at the adapter.
 
-`Bad.cs`, `Compat.cs`, and `Native.cs` are compiled independently by the
+`Bad.cs`, `Native.cs`, and `Native.cs` are compiled independently by the
 TypeGym harness. The harness executes `TypeGym.Challenge.Probe()`, compares
 the semantic analyzer result with the checked-in expectation, and rejects
 compiler errors or analyzer crashes. It does not inspect source substrings.

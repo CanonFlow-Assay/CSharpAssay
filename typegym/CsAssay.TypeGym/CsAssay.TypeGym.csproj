@@ -13,9 +13,7 @@
   <ItemGroup>
     <None Include="TG*/README.md" />
     <None Include="TG*/Bad.cs" />
-    <None Include="TG*/Compat.cs" />
     <None Include="TG*/Native.cs" />
-    <None Include="TG*/expected.compat.json" />
     <None Include="TG*/expected.native.json" />
   </ItemGroup>
 </Project>

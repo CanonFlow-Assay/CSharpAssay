@@ -2,7 +2,7 @@
 
 Primary obligation: Keep Map and Bind at a stable facade so representation changes do not leak into callers.
 
-`Bad.cs`, `Compat.cs`, and `Native.cs` are compiled independently by the
+`Bad.cs`, `Native.cs`, and `Native.cs` are compiled independently by the
 TypeGym harness. The harness executes `TypeGym.Challenge.Probe()`, compares
 the semantic analyzer result with the checked-in expectation, and rejects
 compiler errors or analyzer crashes. It does not inspect source substrings.

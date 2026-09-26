@@ -1,9 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <Description>Roslyn-free domain and evidence model for CSharpAssay.</Description>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" />
-  </ItemGroup>
 </Project>

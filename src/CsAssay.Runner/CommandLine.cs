@@ -11,7 +11,6 @@ public sealed record CommandLine(
     Presence<string> HtmlPath,
     Presence<string> PolicyPath,
     Presence<AssayProfile> Profile,
-    bool Report,
     bool Help)
 {
     public static CommandLine Parse(string[] args)
@@ -27,7 +26,6 @@ public sealed record CommandLine(
                 Presence.Missing<string>(),
                 Presence.Missing<string>(),
                 Presence.Missing<AssayProfile>(),
-                false,
                 true);
         }
 
@@ -43,7 +41,6 @@ public sealed record CommandLine(
         Presence<string> html = Presence.Missing<string>();
         Presence<string> policy = Presence.Missing<string>();
         Presence<AssayProfile> profile = Presence.Missing<AssayProfile>();
-        var report = false;
         var help = false;
 
         for (var index = 1; index < args.Length; index++)
@@ -54,15 +51,6 @@ public sealed record CommandLine(
                 case "-h":
                 case "--help":
                     help = true;
-                    break;
-                case "--report":
-                    if (report)
-                    {
-                        throw new ArgumentException(
-                            "Duplicate option: " + argument);
-                    }
-
-                    report = true;
                     break;
                 case "--json":
                     json = Once(
@@ -105,14 +93,12 @@ public sealed record CommandLine(
                     {
                         ruleId = Presence.Of(argument);
                     }
-                    else if (input is Presence<string>.Absent)
-                    {
-                        input = Presence.Of(argument);
-                    }
                     else
                     {
-                        throw new ArgumentException(
-                            "Unexpected positional argument: " + argument);
+                        input = input is Presence<string>.Absent
+                            ? Presence.Of(argument)
+                            : throw new ArgumentException(
+                                "Unexpected positional argument: " + argument);
                     }
 
                     break;
@@ -128,7 +114,6 @@ public sealed record CommandLine(
             html,
             policy,
             profile,
-            report,
             help);
         ValidateCommandShape(result);
         return result;
@@ -157,42 +142,30 @@ public sealed record CommandLine(
                 Has(commandLine.RuleId) ||
                 HasAnyOutput(commandLine) ||
                 Has(commandLine.PolicyPath) ||
-                Has(commandLine.Profile) ||
-                commandLine.Report =>
+                Has(commandLine.Profile) =>
                 "doctor does not accept arguments.",
             "catalog" when
                 Has(commandLine.Input) ||
                 Has(commandLine.RuleId) ||
                 HasAnyOutput(commandLine) ||
-                Has(commandLine.PolicyPath) ||
-                commandLine.Report =>
+                Has(commandLine.PolicyPath) =>
                 "catalog accepts only --profile.",
             "explain" when
                 Has(commandLine.Input) ||
                 HasAnyOutput(commandLine) ||
                 Has(commandLine.PolicyPath) ||
-                Has(commandLine.Profile) ||
-                commandLine.Report =>
+                Has(commandLine.Profile) =>
                 "explain accepts exactly one rule ID.",
             "check" or "verify" when
-                Has(commandLine.RuleId) ||
-                commandLine.Report =>
+                Has(commandLine.RuleId) =>
                 commandLine.Command +
                     " accepts an input and verification options only.",
-            "migrate" when
-                Has(commandLine.RuleId) ||
-                Has(commandLine.SarifPath) ||
-                Has(commandLine.HtmlPath) ||
-                Has(commandLine.PolicyPath) ||
-                Has(commandLine.Profile) =>
-                "migrate accepts --report and --json only.",
             "help" when
                 Has(commandLine.Input) ||
                 Has(commandLine.RuleId) ||
                 HasAnyOutput(commandLine) ||
                 Has(commandLine.PolicyPath) ||
-                Has(commandLine.Profile) ||
-                commandLine.Report =>
+                Has(commandLine.Profile) =>
                 "help does not accept arguments.",
             _ => string.Empty
         };
@@ -226,10 +199,8 @@ public sealed record CommandLine(
     private static AssayProfile ParseProfile(string value) =>
         value.ToLowerInvariant() switch
         {
-            "auto" => AssayProfile.Auto,
-            "compat" => AssayProfile.Compat,
             "native" => AssayProfile.Native,
             _ => throw new ArgumentException(
-                "--profile must be auto, compat, or native.")
+                "--profile must be native; .NET 11 is required.")
         };
 }

@@ -15,7 +15,7 @@ public sealed class ReportingTests
                 "TEST",
                 "missing",
                 "Sample",
-                "net10.0")),
+                "net11.0")),
             evidence with
             {
                 Missing =
@@ -24,7 +24,7 @@ public sealed class ReportingTests
                         "TEST",
                         "missing",
                         "Sample",
-                        "net10.0")
+                        "net11.0")
                 ]
             });
 

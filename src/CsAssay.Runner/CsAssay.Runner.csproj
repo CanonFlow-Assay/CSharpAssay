@@ -7,12 +7,14 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>cs-assay</ToolCommandName>
     <PackageId>CsAssay.Tool</PackageId>
-    <Version>0.1.2</Version>
+    <Version>0.2.0-rc.1</Version>
     <Title>CSharpAssay command-line verifier</Title>
     <PackageTags>dotnet-tool;csharp;roslyn;verification;functional-programming</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
+    <!-- MSBuildLocator must load Framework from the pinned SDK, not NuGet. -->
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" />
     <ProjectReference Include="../CsAssay.Domain/CsAssay.Domain.csproj" />
     <ProjectReference Include="../CsAssay.Catalogue/CsAssay.Catalogue.csproj" />
     <ProjectReference Include="../CsAssay.Workspaces/CsAssay.Workspaces.csproj" />

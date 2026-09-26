@@ -21,10 +21,7 @@ public static class Presence
     public static Presence<T> Of<T>(T value)
         where T : notnull
     {
-        if (value is null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
+        ArgumentNullException.ThrowIfNull(value);
 
         return new Presence<T>.Present(value);
     }

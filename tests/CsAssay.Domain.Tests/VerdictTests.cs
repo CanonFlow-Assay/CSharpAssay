@@ -25,7 +25,7 @@ public sealed class VerdictTests
                     "MISSING",
                     "evidence missing",
                     "sample",
-                    "net10.0")
+                    "net11.0")
             ]
         };
 
@@ -51,12 +51,12 @@ public sealed class VerdictTests
             admitted.Disposition,
             Suppressed: false,
             "Sample",
-            "net10.0",
+            "net11.0",
             location,
             Fingerprints.Finding(
                 admitted.Id,
                 "Sample",
-                "net10.0",
+                "net11.0",
                 location,
                 admitted.Title));
         var evidence = EvidenceBundle.Empty("sample.csproj", true) with
@@ -68,7 +68,7 @@ public sealed class VerdictTests
                     "MISSING",
                     "lower precedence than fail",
                     "Sample",
-                    "net10.0")
+                    "net11.0")
             ]
         };
 
@@ -93,12 +93,12 @@ public sealed class VerdictTests
             prototype.Disposition,
             Suppressed: false,
             "Sample",
-            "net10.0",
+            "net11.0",
             location,
             Fingerprints.Finding(
                 prototype.Id,
                 "Sample",
-                "net10.0",
+                "net11.0",
                 location,
                 prototype.Title));
         var evidence = EvidenceBundle.Empty("sample.csproj", true) with
@@ -128,12 +128,12 @@ public sealed class VerdictTests
             admitted.Disposition,
             Suppressed: true,
             "Sample",
-            "net10.0",
+            "net11.0",
             location,
             Fingerprints.Finding(
                 admitted.Id,
                 "Sample",
-                "net10.0",
+                "net11.0",
                 location,
                 admitted.Title));
         var evidence = EvidenceBundle.Empty("sample.csproj", true) with
@@ -171,7 +171,7 @@ public sealed class VerdictTests
                     "LOWER-PRECEDENCE",
                     "A failed required test is decisive.",
                     "Sample.Tests",
-                    "net10.0")
+                    "net11.0")
             ]
         };
 
@@ -270,7 +270,7 @@ public sealed class VerdictTests
                     admitted.Disposition,
                     Suppressed: false,
                     "NCalc.Core",
-                    "net10.0",
+                    "net11.0",
                     new SourceSpan("src/NCalc.Core/Expression.cs", 20, 5, 20, 15),
                     "ncalc-shaped-fingerprint")
             ],
@@ -416,7 +416,7 @@ public sealed class VerdictTests
                     "CSASSAY-EVIDENCE-GAP",
                     "Required evidence is unavailable.",
                     "Sample",
-                    "net10.0")
+                    "net11.0")
             ]
         };
 
@@ -447,7 +447,7 @@ public sealed class VerdictTests
                     "Warning",
                     "Generated document could not be loaded.",
                     "Sample",
-                    "net10.0",
+                    "net11.0",
                     AffectsCompleteness: true)
             ]
         };
@@ -470,13 +470,13 @@ public sealed class VerdictTests
         var slash = Fingerprints.Finding(
             "CSAN0001",
             "Sample",
-            "net10.0",
+            "net11.0",
             new SourceSpan("src/File.cs", 2, 3, 2, 4),
             "message");
         var backslash = Fingerprints.Finding(
             "CSAN0001",
             "Sample",
-            "net10.0",
+            "net11.0",
             new SourceSpan(@"src\File.cs", 2, 3, 2, 4),
             "message");
 
@@ -486,8 +486,8 @@ public sealed class VerdictTests
     private static ProjectEvidence CompleteProject() => new(
         "Sample",
         "src/Sample/Sample.csproj",
-        "net10.0",
-        EffectiveProfile.Compat,
+        "net11.0",
+        EffectiveProfile.Native,
         "qualified",
         "14.0",
         "Enable",

@@ -1,6 +1,0 @@
-{
-  "ruleId": "CSAU0003",
-  "fault": "analyzer-exception",
-  "expectedVerdict": "toolFailure",
-  "mayBecomePass": false
-}

@@ -1,9 +1,9 @@
 {
-  "profile": "compat",
+  "profile": "native",
   "release": {
-    "allowPreviewToolchain": false,
+    "allowPreviewToolchain": true,
     "requiredTargetFrameworks": [
-      "net11.0"
+      "net11.0-windows"
     ],
     "requiredRules": [],
     "tests": []

@@ -148,10 +148,10 @@ public sealed record EvidenceBundle(
 {
     public static EvidenceBundle Empty(string input, bool isAuthoritative) => new(
         SchemaVersion: "1.2.0",
-        ToolVersion: "0.1.2",
+        ToolVersion: "0.2.0-rc.1",
         Input: input,
-        RequestedProfile: AssayProfile.Compat,
-        Profile: EffectiveProfile.Compat,
+        RequestedProfile: AssayProfile.Native,
+        Profile: EffectiveProfile.Native,
         IsAuthoritative: isAuthoritative,
         Policy: new PolicyEvidence(
             "built-in-observe",

@@ -2,8 +2,8 @@
 
 Phase 4 produces two release packages:
 
-- `CsAssay.Analyzers.0.1.2.nupkg`;
-- `CsAssay.Tool.0.1.2.nupkg`.
+- `CsAssay.Analyzers.0.2.0-rc.1.nupkg`;
+- `CsAssay.Tool.0.2.0-rc.1.nupkg`.
 
 Run the stable release sequence from the repository root:
 
@@ -29,8 +29,8 @@ payload and the embedded commit/identity/license metadata, rejects source,
 both artifact sets byte for byte. It writes:
 
 ```text
-artifacts/packages/CsAssay.Analyzers.0.1.2.nupkg
-artifacts/packages/CsAssay.Tool.0.1.2.nupkg
+artifacts/packages/CsAssay.Analyzers.0.2.0-rc.1.nupkg
+artifacts/packages/CsAssay.Tool.0.2.0-rc.1.nupkg
 artifacts/packages/checksums.sha256
 artifacts/packages/provenance.json
 ```
@@ -66,13 +66,6 @@ workflow reruns the entire gate, attests the tested bytes, exchanges GitHub OIDC
 for a temporary NuGet credential, and pushes the two explicit package paths.
 See [publishing.md](publishing.md).
 
-## CI authority separation
+## CI authority
 
-The stable .NET 10 job is the only authoritative release gate. It uses locked
-restore, serialized tests, authoritative self-verification, package
-qualification, SARIF upload, checksums, and provenance attestation.
-
-The native-preview job is separate and `continue-on-error`. It records preview
-capability evidence but cannot block or promote the stable release lane. A
-preview failure becomes authoritative only after policy and qualification are
-explicitly changed in a reviewed commit.
+The .NET 11 RC1 job is the sole release gate. It restores the solution and workspace fixtures with lock files, builds and tests, self-verifies, qualifies packages, and records provenance. There is no optional older-runtime or preview fallback lane.

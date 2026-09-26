@@ -41,9 +41,9 @@ public sealed record AssayPolicy(
     ImmutableArray<SuppressionGrant> Suppressions)
 {
     public static AssayPolicy Observe { get; } = new(
-        AssayProfile.Auto,
+        AssayProfile.Native,
         new ReleasePolicy(
-            AllowPreviewToolchain: false,
+            AllowPreviewToolchain: true,
             RequiredTargetFrameworks: ImmutableArray<string>.Empty,
             RequiredRules: ImmutableArray<string>.Empty,
             Tests: ImmutableArray<TestRequirement>.Empty),

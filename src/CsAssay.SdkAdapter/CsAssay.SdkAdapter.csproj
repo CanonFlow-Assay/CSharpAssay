@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <Description>Isolated Roslyn compatibility surface for CSharpAssay.</Description>
   </PropertyGroup>
   <ItemGroup>

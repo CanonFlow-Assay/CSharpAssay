@@ -1,15 +1,5 @@
-# Native union qualification lane
+# Native union qualification
 
-This directory intentionally contains no passing native-union claim.
+The sole supported lane is .NET 11 RC1 with C# preview. NativeUnionTests exercise real compiler symbols, omitted-case diagnostics, and Assay discard diagnostics. ProfileNegotiatorTests reject earlier frameworks and language versions. The TypeGym native corpus executes behavior probes.
 
-The lane requires:
-
-1. an installed, pinned .NET 11 SDK;
-2. `<LangVersion>preview</LangVersion>` while unions remain preview;
-3. Roslyn symbol and operation snapshots;
-4. compiler exhaustiveness/nullability positive and negative specimens;
-5. JSON, ASP.NET, OpenAPI, AOT, reflection, and multi-TFM round trips;
-6. byte-stable evidence across repeated runs.
-
-Until those obligations execute, `UnionCapabilities` fails closed and
-`--profile native` produces missing evidence.
+CSAU0004 remains Prototype: these checks do not claim serialization, OpenAPI, EF, AOT, or every possible domain representation is qualified. See docs/net11-migration.md for measured results.

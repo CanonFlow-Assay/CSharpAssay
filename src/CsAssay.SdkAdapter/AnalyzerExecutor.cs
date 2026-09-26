@@ -24,10 +24,7 @@ public static class AnalyzerExecutor
         AnalyzerOptions analyzerOptions,
         CancellationToken cancellationToken)
     {
-        if (compilation is null)
-        {
-            throw new ArgumentNullException(nameof(compilation));
-        }
+        ArgumentNullException.ThrowIfNull(compilation);
 
         var failures = new ConcurrentBag<AnalyzerFailure>();
         var options = new CompilationWithAnalyzersOptions(

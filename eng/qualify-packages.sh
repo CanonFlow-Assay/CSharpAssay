@@ -19,7 +19,7 @@ export DOTNET_CLI_HOME="$phase4_dotnet_home"
 export NUGET_PACKAGES="$phase4_nuget_packages"
 
 "$phase4_dotnet" tool install CsAssay.Tool \
-  --version 0.1.2 \
+  --version 0.2.0-rc.1 \
   --tool-path "$phase4_scratch/tools" \
   --configfile eng/qualification/packaging/NuGet.Config \
   --no-cache
@@ -143,4 +143,35 @@ fi
   -p:CsAssayEnforceOnBuild=false \
   -p:RunAnalyzers=false
 
-echo "Fresh tool install and analyzer package qualification passed."
+# This fixture skips Directory.Build.targets: only the installed package can
+# reject these targets, including when ordinary Assay enforcement is rolled back.
+for unsupported_framework in net8.0 net10.0 netstandard2.0; do
+  if "$phase4_dotnet" build \
+      eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
+      --no-restore --configuration Release \
+      -p:TargetFramework="$unsupported_framework" \
+      -p:CsAssayEnforceOnBuild=false \
+      > "$phase4_scratch/unsupported-framework.log" 2>&1; then
+    echo "Analyzer package accepted unsupported target $unsupported_framework." >&2
+    exit 1
+  fi
+  if ! grep -q "CSASSAY-NET11-REQUIRED" "$phase4_scratch/unsupported-framework.log"; then
+    cat "$phase4_scratch/unsupported-framework.log" >&2
+    echo "Unsupported target did not report the package's .NET 11 gate." >&2
+    exit 1
+  fi
+done
+
+if "$phase4_dotnet" build \
+    eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
+    --no-restore --configuration Release -p:LangVersion=14.0 \
+    > "$phase4_scratch/unsupported-language.log" 2>&1; then
+  echo "Analyzer package accepted the older language version." >&2
+  exit 1
+fi
+if ! grep -q "CSASSAY-NATIVE-LANGUAGE-REQUIRED" "$phase4_scratch/unsupported-language.log"; then
+  cat "$phase4_scratch/unsupported-language.log" >&2
+  exit 1
+fi
+
+echo "Fresh tool install, native union consumer, and framework/language rejection qualification passed."

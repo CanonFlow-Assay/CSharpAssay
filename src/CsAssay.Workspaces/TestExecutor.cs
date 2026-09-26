@@ -215,11 +215,10 @@ public static class TestExecutor
             throw;
         }
         catch (Exception exception) when (
-            exception is not OperationCanceledException &&
-            (exception is InvalidOperationException or
+            exception is InvalidOperationException or
                 System.ComponentModel.Win32Exception or
                 IOException or
-                UnauthorizedAccessException))
+                UnauthorizedAccessException)
         {
             return FailedExecution(
                 requirement,

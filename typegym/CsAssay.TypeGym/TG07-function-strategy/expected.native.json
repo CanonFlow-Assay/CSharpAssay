@@ -1,7 +1,12 @@
 {
   "challenge": "TG07-function-strategy",
+  "bad": {
+    "diagnostics": [
+      "CSAF0001"
+    ],
+    "golden": "5"
+  },
   "native": {
-    "capability": "same",
     "diagnostics": [],
     "golden": "5"
   }

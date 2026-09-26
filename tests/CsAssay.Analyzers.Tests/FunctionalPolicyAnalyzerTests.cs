@@ -530,42 +530,6 @@ public sealed class FunctionalPolicyAnalyzerTests
     }
 
     [Fact]
-    public async Task Oneof_extraction_requires_matching_semantic_guard()
-    {
-        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(
-            """
-            namespace OneOf
-            {
-                public readonly struct OneOf<T0, T1>
-                {
-                    public bool IsT0 => true;
-                    public T0 AsT0 => default!;
-                }
-            }
-
-            public static class Sample
-            {
-                public static string Bad(OneOf.OneOf<string, int> value) =>
-                    value.AsT0;
-
-                public static string Good(OneOf.OneOf<string, int> value)
-                {
-                    if (value.IsT0)
-                    {
-                        return value.AsT0;
-                    }
-
-                    return "";
-                }
-            }
-            """);
-
-        Assert.Single(
-            diagnostics,
-            diagnostic => diagnostic.Id == RuleIds.UnguardedOneOfExtraction);
-    }
-
-    [Fact]
     public async Task Configured_closed_hierarchy_is_checked()
     {
         var diagnostics = await AnalyzerTestHost.AnalyzeAsync(

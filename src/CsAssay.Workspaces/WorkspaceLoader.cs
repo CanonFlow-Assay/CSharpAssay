@@ -31,7 +31,7 @@ public sealed record WorkspaceLoadResult(
 
 public static class WorkspaceLoader
 {
-    private static readonly object RegistrationGate = new();
+    private static readonly Lock RegistrationGate = new();
     private static Presence<VisualStudioInstance> registeredInstance =
         Presence.Missing<VisualStudioInstance>();
 
@@ -374,7 +374,7 @@ public static class WorkspaceLoader
         if (message.Message.StartsWith(prefix, StringComparison.Ordinal))
         {
             var referencedPath = Path.GetFullPath(
-                message.Message.Substring(prefix.Length));
+                message.Message[prefix.Length..]);
             var discovered = discoveredProjectPaths.Any(path => string.Equals(
                 Path.GetFullPath(path),
                 referencedPath,
@@ -413,9 +413,7 @@ public static class WorkspaceLoader
             return message;
         }
 
-        var evaluatedPath = message.Message.Substring(
-            evaluationPrefix.Length,
-            separatorIndex - evaluationPrefix.Length);
+        var evaluatedPath = message.Message[evaluationPrefix.Length..separatorIndex];
         var loaded = loadedProjectPaths.Any(path => string.Equals(
             Path.GetFullPath(path),
             Path.GetFullPath(evaluatedPath),

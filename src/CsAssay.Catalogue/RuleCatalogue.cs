@@ -8,8 +8,8 @@ public static class RuleCatalogue
     private const string DocsRoot = "docs/rules/";
     private const string DocumentationUrlRoot =
         "https://github.com/CanonFlow-Assay/CSharpAssay/blob/main/";
-    private const string CompatPositive = "specimens/Compat.Good/";
-    private const string CompatNegative = "specimens/Compat.Bad/";
+    private const string NativePositive = "specimens/Native.Good/";
+    private const string NativeNegative = "specimens/Native.Bad/";
 
     private static readonly ImmutableHashSet<string> AdmittedRuleIds =
         ImmutableHashSet.Create(
@@ -187,15 +187,6 @@ public static class RuleCatalogue
             "switch over a configured closed hierarchy with an omitted direct case",
             "Only the restricted direct-case model is evaluated."),
         Rule(
-            RuleIds.UnguardedOneOfExtraction,
-            "OneOf ordinal extraction must be dominated by its matching guard",
-            RuleCategory.Union,
-            RuleCertainty.Deterministic,
-            RuleDisposition.Block,
-            "property metadata identity and operation ancestry",
-            "AsTn access outside the proven guard subset",
-            "Use Match/Switch or a semantically matched IsTn guard."),
-        Rule(
             RuleIds.NativeUnionDiscard,
             "Native union switches should not hide new cases behind a discard",
             RuleCategory.Union,
@@ -203,8 +194,8 @@ public static class RuleCatalogue
             RuleDisposition.Block,
             "native union symbol identity and semantic switch model",
             "discard/default arm on a native union switch",
-            "Native-preview only; unavailable toolchains produce missing evidence.",
-            [EffectiveProfile.NativePreview])
+            ".NET 11 native unions; unavailable toolchains produce missing evidence.",
+            [EffectiveProfile.Native])
     ];
 
     public static Presence<RuleRecord> Find(string id)
@@ -241,7 +232,7 @@ public static class RuleCatalogue
             evidence,
             mechanism,
             suppression,
-            [EffectiveProfile.Compat, EffectiveProfile.NativePreview]);
+            [EffectiveProfile.Native]);
 
     private static RuleRecord Rule(
         string id,
@@ -266,8 +257,8 @@ public static class RuleCatalogue
             RequiredEvidence: evidence,
             Mechanism: mechanism,
             SuppressionPolicy: suppression,
-            PositiveSpecimen: CompatPositive + id,
-            NegativeSpecimen: CompatNegative + id,
+            PositiveSpecimen: NativePositive + id,
+            NegativeSpecimen: NativeNegative + id,
             Documentation: DocsRoot + id + ".md",
             DelegatedTo: Presence.Missing<string>());
 }

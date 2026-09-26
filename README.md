@@ -1,144 +1,48 @@
 # CSharpAssay
 
-[![Stable lane](https://github.com/CanonFlow-Assay/CSharpAssay/actions/workflows/dotnet.yml/badge.svg)](https://github.com/CanonFlow-Assay/CSharpAssay/actions/workflows/dotnet.yml)
-[![Playground evidence](https://github.com/CanonFlow-Assay/CSharpAssay.Playground/actions/workflows/playground.yml/badge.svg)](https://github.com/CanonFlow-Assay/CSharpAssay.Playground/actions/workflows/playground.yml)
+A deterministic Roslyn verifier for functional C# policy. **.NET 11 is the only supported target and runtime.** The development package line is `0.2.0-rc.1`.
 
-CSharpAssay is a deterministic Roslyn-based verifier for explicitly selected
-functional-first C# policy. It reports what it proved, what it could not prove,
-and whether the toolchain itself failed. Missing evidence never becomes a clean
-release verdict.
+`global.json` pins SDK `11.0.100-rc.1.26425.128` with roll-forward disabled. Projects use `net11.0` and `LangVersion=preview` for native C# unions. The sole profile is `native`, selected by default. Earlier frameworks, `auto`, `compat`, and third-party union/value-object library adapters are unsupported.
 
-The project is currently a `0.1` research preview. Phase 6 adds six explicitly
-non-blocking contextual guidance families and staged adoption templates. Phase
-5 provides the report-only migration inventory, Phase 4 provides packaging and CI, Phase 3
-provides the authoritative CLI, and Phase 2 admits seven
-stable-lane rules after positive, negative, suppression, fault, semantic
-matrix, performance, and real-repository evidence. The remaining thirteen rules
-stay `Prototype` and cannot block a release verdict.
-
-## Current capabilities
-
-- C# 14 / .NET 10 compatibility lane;
-- strict `.csassay.json` loading with a published JSON Schema;
-- Roslyn diagnostics for the initial null, immutability, error, async, union,
-  and suppression trust slice;
-- `.csproj`, `.sln`, and `.slnx` loading through `MSBuildWorkspace`;
-- explicit project-reference graph evidence and evaluated all-target-framework
-  enumeration, including imported MSBuild properties;
-- allowlisted required-rule and required-test release policy;
-- compiler, analyzer, source, generated-code, suppression, workspace, and
-  stable test-count evidence;
-- four-state verdicts: `Pass`, `Fail`, `Inconclusive`, and `ToolFailure`;
-- deterministic JSON and SARIF 2.1.0;
-- conservative `set` to `init` code fix;
-- deterministic, evidence-linked, report-only OneOf/ValueOf migration inventory;
-- advisory domain-glossary, state-flag, behavior-type, loop, exception-boundary,
-  and mutable-shell-leak guidance that cannot block in `0.1`;
-- a transitive MSBuild gate that rejects disabled analyzers and `NoWarn`
-  suppression of admitted blocking rules;
-- xUnit v3 on Microsoft Testing Platform.
-
-Null safety is the first offence family. Core code must not disable nullable
-analysis, use the null-forgiving operator, introduce null/default reference
-values, or expose nullable public contracts. Shell code may receive and check
-null only to convert it immediately into an explicit domain representation.
-CSharpAssay's owned contracts use `Presence<T>` or a closed outcome instead of
-nullable state. The full solution currently self-assays with zero blocking
-findings while retaining ten Phase 6 advisory observations.
-
-## What CSharpAssay does not claim
-
-CSharpAssay is not a universal “professional C#” score or an unconstrained
-source rewriter. If a repository cannot compile or load, the result is
-`Inconclusive` or `ToolFailure` with the failed evidence; it is never a guessed
-pass.
-
-The release goal is complete reporting within the admitted mechanical rule
-contract across every loaded project and target framework. General concurrency
-correctness, architecture quality, security, domain correctness, and
-performance remain outside that contract unless a future rule defines and
-qualifies a provable subset.
-
-Automatic changes remain deliberately narrow. The current safe fix changes a
-public record auto-property from `set` to `init`. Async and concurrency edits
-must preserve cancellation, failure, ordering, and synchronization semantics,
-so they remain diagnostic-only until a fix has behavioral qualification.
-`migrate --report` inventories representation risk and never edits source.
-It links every recommendation to the exact public API, source location,
-metadata, representation/API assembly identity, target framework, compat/native behavior contract,
-and applicable serialization/EF/ASP.NET/AOT obligations. See the
-[migration guide](docs/migration.md).
+See the [migration and validation report](docs/net11-migration.md) for breaking changes and validation results.
 
 ## Build and test
 
-```text
-dotnet restore CSharpAssay.slnx --locked-mode
+Install the exact pinned SDK, then run:
+
+```sh
+./eng/restore.sh
 dotnet build CSharpAssay.slnx --no-restore --configuration Release
-dotnet test CSharpAssay.slnx --no-build --configuration Release \
-  --max-parallel-test-modules 1
+dotnet test CSharpAssay.slnx --no-build --no-restore --configuration Release --max-parallel-test-modules 1
 ```
 
-Test modules are serialized because the solution includes a wall-clock analyzer
-latency gate. Running that benchmark beside six CPU-heavy test processes
-measures scheduler contention rather than analyzer latency.
+Tests are serialized because the suite includes an analyzer latency gate. Older MSBuild targets produce `CSASSAY-NET11-REQUIRED`. Unsupported analyzed targets produce incomplete evidence and cannot receive a passing verification verdict.
 
-For rollout profiles, see the [adoption guide](docs/adoption.md). For the
-playground, agent/MCP, container, community, and case-study sequence, see the
-[ecosystem roadmap](docs/ecosystem.md).
+## Commands
 
-## CLI
-
-```text
+```sh
 dotnet run --project src/CsAssay.Runner -- doctor
-dotnet run --project src/CsAssay.Runner -- catalog --profile compat
+dotnet run --project src/CsAssay.Runner -- catalog
 dotnet run --project src/CsAssay.Runner -- check CSharpAssay.slnx
-dotnet run --project src/CsAssay.Runner -- verify CSharpAssay.slnx \
-  --json artifacts/csassay.json \
-  --sarif artifacts/csassay.sarif
-dotnet run --project src/CsAssay.Runner -- migrate --report \
-  MySolution.slnx --json artifacts/migration.json
+dotnet run --project src/CsAssay.Runner -- verify CSharpAssay.slnx --json artifacts/csassay.json --sarif artifacts/csassay.sarif
 ```
 
-`check` is provisional. `verify` is the release-authority path and can issue an
-authoritative verdict for the seven admitted stable-lane rules when project,
-compiler, analyzer, policy, target-framework, and configured test evidence is
-complete. `check` records configured tests as `NotRun`; `verify` executes them.
-The current test-evidence runner is qualified for xUnit v3 on Microsoft Testing
-Platform and parses only stable TRX counts. Timestamps, host names, durations,
-and temporary result paths never enter deterministic artifacts. Other test
-stacks currently produce `ToolFailure` unless they expose the qualified
-reporter contract; they are not silently treated as passing. Native preview
-rules remain unqualified.
+`check` is provisional; `verify` evaluates configured release evidence and required tests. Verdicts remain `Pass`, `Fail`, `Inconclusive`, and `ToolFailure`. Missing evidence never becomes a passing verdict. Tests use xUnit v3 and Microsoft Testing Platform.
 
-The release section of `.csassay.json` can require target frameworks, admitted
-rules, and fixed test inputs:
+Native union exhaustiveness belongs to the C# compiler. `CSAU0004` reports discard/default arms that hide future cases; its status remains `Prototype`. Selecting .NET 11 does not promote an unqualified rule. Seven previously admitted nullability, immutability, and suppression rules remain the release gate. Contextual advice remains non-blocking.
 
-```json
-{
-  "release": {
-    "requiredTargetFrameworks": ["net10.0"],
-    "requiredRules": ["CSAN0001", "CSAN0002"],
-    "tests": [
-      {
-        "input": "tests/Acme.Tests/Acme.Tests.csproj",
-        "configuration": "Release",
-        "noBuild": false,
-        "minimumExpectedTests": 1
-      }
-    ]
-  }
-}
+The removed `migrate --report` command and `CSAU0003` were specific to legacy OneOf/ValueOf representations. Ordinary project-owned domain types remain analyzable.
+
+## Packages and playground
+
+`CsAssay.Analyzers` and `CsAssay.Tool` target .NET 11 and use version `0.2.0-rc.1`. Analyzer hosts must run .NET 11; older IDE/compiler hosts are unsupported. Local builds do not publish packages.
+
+```sh
+cd ../CSharpAssay.Playground
+./eng/prepare-assay.sh ../CSharpAssay
+./eng/run-assay.sh ../CSharpAssay/src/CsAssay.Runner/bin/Release/net11.0/cs-assay.dll
+./eng/run-gof-crosswalk.sh
+./eng/run-functional-shape.sh
 ```
 
-See [grandplan.md](grandplan.md) for the full design and
-[STATUS.md](STATUS.md) for implementation progress. Package consumers should
-also read [installation and rollback](docs/installation.md) and the
-[staged adoption guide](docs/adoption.md); maintainers should use the
-[release qualification](docs/release.md) and [NuGet publishing](docs/publishing.md)
-procedures.
-
-Phase 4 produces `CsAssay.Analyzers` and the `CsAssay.Tool` global/local tool.
-The stable workflow verifies the repository, proves package reproducibility,
-qualifies both packages from an isolated local feed, uploads SARIF, and attaches
-keyless provenance on `main`. Preview SDK probing is intentionally separate and
-cannot turn an unavailable or changing preview into stable release authority.
+Historical phase-admission documents and stored `0.1.x` evidence describe the earlier toolchain, not fresh .NET 11 validation.

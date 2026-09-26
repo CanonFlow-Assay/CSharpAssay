@@ -1,9 +1,9 @@
 {
-  "profile": "compat",
+  "profile": "native",
   "release": {
-    "allowPreviewToolchain": false,
+    "allowPreviewToolchain": true,
     "requiredTargetFrameworks": [
-      "net10.0"
+      "net11.0"
     ],
     "requiredRules": [
       "CSAI0001"

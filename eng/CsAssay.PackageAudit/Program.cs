@@ -122,8 +122,8 @@ public static class Program
                 : throw new InvalidDataException(
                     "Unexpected package identity: " + name);
         var expectedName = packageKind == PackageKind.Analyzer
-            ? "CsAssay.Analyzers.0.1.2.nupkg"
-            : "CsAssay.Tool.0.1.2.nupkg";
+            ? "CsAssay.Analyzers.0.2.0-rc.1.nupkg"
+            : "CsAssay.Tool.0.2.0-rc.1.nupkg";
         if (!string.Equals(name, expectedName, StringComparison.Ordinal))
         {
             throw new InvalidDataException(
@@ -149,10 +149,10 @@ public static class Program
                 name,
                 entries,
                 "README.md",
-                "tools/net10.0/any/DotnetToolSettings.xml",
-                "tools/net10.0/any/cs-assay.dll",
-                "tools/net10.0/any/CsAssay.Analyzers.dll",
-                "tools/net10.0/any/CsAssay.Workspaces.dll");
+                "tools/net11.0/any/DotnetToolSettings.xml",
+                "tools/net11.0/any/cs-assay.dll",
+                "tools/net11.0/any/CsAssay.Analyzers.dll",
+                "tools/net11.0/any/CsAssay.Workspaces.dll");
         }
 
         VerifyPackageMetadata(archive, packageKind, commit);
@@ -202,7 +202,7 @@ public static class Program
             ? "CsAssay.Analyzers"
             : "CsAssay.Tool";
         RequireMetadataValue(metadata, "id", expectedId);
-        RequireMetadataValue(metadata, "version", "0.1.2");
+        RequireMetadataValue(metadata, "version", "0.2.0-rc.1");
         RequireMetadataValue(metadata, "readme", "README.md");
 
         var license = RequireMetadataElement(metadata, "license");

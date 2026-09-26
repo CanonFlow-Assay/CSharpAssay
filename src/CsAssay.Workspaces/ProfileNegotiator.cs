@@ -14,42 +14,35 @@ public static class ProfileNegotiator
     public static ProfileNegotiation Negotiate(
         AssayProfile requested,
         WorkspaceCompilation unit,
-        bool allowPreview)
+        bool allowPreview = true)
     {
-        var previewLanguage = unit.Compilation.SyntaxTrees
+        var nativeLanguage = unit.Compilation.SyntaxTrees
             .Select(tree => tree.Options)
             .OfType<CSharpParseOptions>()
-            .Any(options => options.LanguageVersion == LanguageVersion.Preview);
-        var net11 = unit.TargetFramework.StartsWith(
-            "net11.0",
-            StringComparison.OrdinalIgnoreCase);
-        var unionSupport = UnionCapabilities.CompilerExposesUnionSymbols();
-        var nativeAvailable = net11 && previewLanguage && unionSupport && allowPreview;
+            .All(options => options.LanguageVersion == LanguageVersion.Preview);
+        var net11 = unit.TargetFramework.Equals("net11.0", StringComparison.OrdinalIgnoreCase) ||
+            unit.TargetFramework.StartsWith("net11.0-", StringComparison.OrdinalIgnoreCase);
+        var runtimeSupport = unit.Compilation.GetTypeByMetadataName(
+            "System.Runtime.CompilerServices.UnionAttribute") is not null &&
+            unit.Compilation.GetTypeByMetadataName(
+                "System.Runtime.CompilerServices.IUnion") is not null;
 
-        if (requested == AssayProfile.Native && !nativeAvailable)
+        if (requested != AssayProfile.Native || !net11 || !nativeLanguage ||
+            !allowPreview || !runtimeSupport || !UnionCapabilities.CompilerExposesUnionSymbols())
         {
             return new ProfileNegotiation(
-                EffectiveProfile.Compat,
+                EffectiveProfile.Native,
                 "native-unavailable",
                 Presence.Of(new MissingEvidence(
                     "CSASSAY-NATIVE-UNAVAILABLE",
-                    "Native profile requires net11.0, preview language, union symbols, and preview policy opt-in.",
+                    "CSharpAssay requires .NET 11, C# preview, and native compiler/runtime union support. Earlier targets and library compatibility profiles are unsupported.",
                     unit.Name,
                     unit.TargetFramework)));
         }
 
-        if (requested == AssayProfile.Native ||
-            requested == AssayProfile.Auto && nativeAvailable)
-        {
-            return new ProfileNegotiation(
-                EffectiveProfile.NativePreview,
-                "native-preview",
-                Presence.Missing<MissingEvidence>());
-        }
-
         return new ProfileNegotiation(
-            EffectiveProfile.Compat,
-            "compat",
+            EffectiveProfile.Native,
+            "native",
             Presence.Missing<MissingEvidence>());
     }
 }

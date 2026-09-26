@@ -20,6 +20,5 @@ public static class RuleIds
     public const string BlockingAsync = "CSAA0002";
     public const string ExtensibleClosedHierarchy = "CSAU0001";
     public const string IncompleteClosedHierarchySwitch = "CSAU0002";
-    public const string UnguardedOneOfExtraction = "CSAU0003";
     public const string NativeUnionDiscard = "CSAU0004";
 }

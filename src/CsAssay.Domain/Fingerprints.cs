@@ -25,20 +25,9 @@ public static class Fingerprints
 
     public static string Sha256(string value)
     {
-        if (value is null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
+        ArgumentNullException.ThrowIfNull(value);
 
-        using var algorithm = SHA256.Create();
-        var hash = algorithm.ComputeHash(Encoding.UTF8.GetBytes(value));
-        var builder = new StringBuilder(hash.Length * 2);
-        foreach (var valueByte in hash)
-        {
-            builder.Append(valueByte.ToString("x2", System.Globalization.CultureInfo.InvariantCulture));
-        }
-
-        return builder.ToString();
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     }
 
     public static string NormalizePath(string path) =>

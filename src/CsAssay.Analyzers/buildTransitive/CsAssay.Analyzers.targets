@@ -1,4 +1,13 @@
 <Project>
+  <Target Name="CsAssayRequireNativeToolchain" BeforeTargets="PrepareForBuild">
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '^net11\.0(-.+)?$'))"
+           Code="CSASSAY-NET11-REQUIRED"
+           Text="CsAssay.Analyzers 0.2 requires a .NET 11 target and compiler host. Earlier frameworks are unsupported." />
+    <Error Condition="'$(LangVersion)' != 'preview'"
+           Code="CSASSAY-NATIVE-LANGUAGE-REQUIRED"
+           Text="CsAssay.Analyzers requires LangVersion=preview for native unions on .NET 11 RC1." />
+  </Target>
+
   <PropertyGroup>
     <_CsAssayNoWarnNormalized>$([System.String]::Copy('$(NoWarn)').Replace(' ', '').Replace(',', ';').ToUpperInvariant())</_CsAssayNoWarnNormalized>
     <_CsAssayWarningsNotAsErrorsNormalized>$([System.String]::Copy('$(WarningsNotAsErrors)').Replace(' ', '').Replace(',', ';').ToUpperInvariant())</_CsAssayWarningsNotAsErrorsNormalized>

@@ -20,7 +20,7 @@ public sealed class VerificationIntegrationTests
             PolicyPath: Presence.Missing<string>(),
             IsAuthoritative: false,
             ExecuteTests: false,
-            ProfileOverride: Presence.Of(AssayProfile.Compat));
+            ProfileOverride: Presence.Of(AssayProfile.Native));
 
         var first = await VerificationEngine.VerifyAsync(
             request,
@@ -49,7 +49,7 @@ public sealed class VerificationIntegrationTests
                 PolicyPath: Presence.Missing<string>(),
                 IsAuthoritative: true,
                 ExecuteTests: true,
-                ProfileOverride: Presence.Of(AssayProfile.Compat)),
+                ProfileOverride: Presence.Of(AssayProfile.Native)),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(AssayVerdictKind.Pass, result.Verdict.Kind);
@@ -59,7 +59,8 @@ public sealed class VerificationIntegrationTests
         Assert.DoesNotContain(
             result.Verdict.Evidence.Missing,
             item => item.Code == "CSASSAY-WORKSPACE-WARNING");
-        Assert.NotEmpty(result.Verdict.Evidence.WorkspaceDiagnostics);
+        Assert.NotEmpty(result.Verdict.Evidence.Projects);
+        Assert.All(result.Verdict.Evidence.Projects, project => Assert.True(project.Loaded));
         Assert.Contains(
             result.Verdict.Evidence.Projects,
             project => project.ProjectReferences.Length > 0);
@@ -96,7 +97,7 @@ public sealed class VerificationIntegrationTests
                 PolicyPath: Presence.Missing<string>(),
                 IsAuthoritative: false,
                 ExecuteTests: false,
-                ProfileOverride: Presence.Of(AssayProfile.Compat)),
+                ProfileOverride: Presence.Of(AssayProfile.Native)),
             TestContext.Current.CancellationToken);
 
         var nullableDisabled = Assert.Single(
@@ -127,7 +128,7 @@ public sealed class VerificationIntegrationTests
                 PolicyPath: Presence.Missing<string>(),
                 IsAuthoritative: false,
                 ExecuteTests: false,
-                ProfileOverride: Presence.Of(AssayProfile.Compat)),
+                ProfileOverride: Presence.Of(AssayProfile.Native)),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(AssayVerdictKind.Pass, result.Verdict.Kind);
@@ -236,7 +237,7 @@ public sealed class VerificationIntegrationTests
                 PolicyPath: Presence.Missing<string>(),
                 IsAuthoritative: true,
                 ExecuteTests: false,
-                ProfileOverride: Presence.Of(AssayProfile.Compat)),
+                ProfileOverride: Presence.Of(AssayProfile.Native)),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(AssayVerdictKind.ToolFailure, result.Verdict.Kind);
@@ -324,7 +325,7 @@ public sealed class VerificationIntegrationTests
                 policyPath,
                 IsAuthoritative: true,
                 ExecuteTests: false,
-                ProfileOverride: Presence.Of(AssayProfile.Compat)),
+                ProfileOverride: Presence.Of(AssayProfile.Native)),
             TestContext.Current.CancellationToken);
     }
 

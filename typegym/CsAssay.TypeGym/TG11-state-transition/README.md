@@ -2,7 +2,7 @@
 
 Primary obligation: Model transition as a pure state-and-event function with illegal transitions explicit.
 
-`Bad.cs`, `Compat.cs`, and `Native.cs` are compiled independently by the
+`Bad.cs`, `Native.cs`, and `Native.cs` are compiled independently by the
 TypeGym harness. The harness executes `TypeGym.Challenge.Probe()`, compares
 the semantic analyzer result with the checked-in expectation, and rejects
 compiler errors or analyzer crashes. It does not inspect source substrings.

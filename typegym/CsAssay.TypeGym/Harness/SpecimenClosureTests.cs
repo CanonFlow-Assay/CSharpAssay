@@ -110,7 +110,7 @@ public sealed class SpecimenClosureTests
     {
         var tree = CSharpSyntaxTree.ParseText(
             "public sealed class Sample { }",
-            new CSharpParseOptions(LanguageVersion.CSharp14),
+            new CSharpParseOptions(LanguageVersion.Preview),
             cancellationToken: TestContext.Current.CancellationToken);
         var compilation = CSharpCompilation.Create(
             "ThrowingSpecimen",
@@ -130,7 +130,7 @@ public sealed class SpecimenClosureTests
     }
 
     [Fact]
-    public void Real_world_adjudication_format_covers_every_rule()
+    public void Historical_adjudication_covers_retained_rules()
     {
         var root = FindRepositoryRoot();
         using var document = JsonDocument.Parse(
@@ -142,6 +142,7 @@ public sealed class SpecimenClosureTests
         var ids = document.RootElement.GetProperty("rules")
             .EnumerateArray()
             .Select(entry => RequiredString(entry, "ruleId"))
+            .Where(id => id != "CSAU0003")
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
         var expected = RuleCatalogue.All
@@ -165,7 +166,7 @@ public sealed class SpecimenClosureTests
         Assert.True(File.Exists(path), "Missing specimen: " + path);
         var tree = CSharpSyntaxTree.ParseText(
             File.ReadAllText(path),
-            new CSharpParseOptions(LanguageVersion.CSharp14),
+            new CSharpParseOptions(LanguageVersion.Preview),
             path);
         var compilation = CSharpCompilation.Create(
             "Specimen_" + Path.GetFileName(
@@ -275,7 +276,7 @@ public sealed class SpecimenClosureTests
             """;
         var tree = CSharpSyntaxTree.ParseText(
             source,
-            new CSharpParseOptions(LanguageVersion.CSharp14));
+            new CSharpParseOptions(LanguageVersion.Preview));
         var compilation = CSharpCompilation.Create(
             "ThrowingSpecimenAnalyzerAssembly",
             [tree],

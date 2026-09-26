@@ -1,5 +1,5 @@
 {
-  "profile": "compat",
+  "profile": "native",
   "boundaries": {
     "coreProjects": ["GuidancePolicy.csproj"],
     "shellProjects": [],

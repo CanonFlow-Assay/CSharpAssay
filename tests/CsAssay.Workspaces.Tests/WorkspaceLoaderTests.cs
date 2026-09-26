@@ -23,7 +23,7 @@ public sealed class WorkspaceLoaderTests
                     "Failure",
                     StringComparison.OrdinalIgnoreCase)));
         var compilation = Assert.Single(result.Compilations);
-        Assert.Equal("netstandard2.0", compilation.TargetFramework);
+        Assert.Equal("net11.0", compilation.TargetFramework);
         Assert.NotEmpty(compilation.Compilation.SyntaxTrees);
     }
 
@@ -42,7 +42,7 @@ public sealed class WorkspaceLoaderTests
             TestContext.Current.CancellationToken);
 
         var compilation = Assert.Single(result.Compilations);
-        Assert.Equal("net10.0", compilation.TargetFramework);
+        Assert.Equal("net11.0", compilation.TargetFramework);
         Assert.DoesNotContain(
             result.Messages,
             message => message.Message.StartsWith(
@@ -66,7 +66,7 @@ public sealed class WorkspaceLoaderTests
             TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            ["net10.0", "net8.0"],
+            ["net11.0", "net11.0-windows"],
             result.Compilations
                 .Select(compilation => compilation.TargetFramework)
                 .ToArray());

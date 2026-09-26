@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/CanonFlow-Assay/CSharpAssay/main/eng/schemas/csassay.schema.json",
-  "profile": "compat",
+  "profile": "native",
   "release": {
-    "allowPreviewToolchain": false,
+    "allowPreviewToolchain": true,
     "requiredTargetFrameworks": [],
     "requiredRules": [],
     "tests": []

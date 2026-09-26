@@ -18,7 +18,7 @@ public static class PolicyLoader
         "^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*|\\+[A-Za-z_][A-Za-z0-9_]*)*(?:`[1-9][0-9]*)?$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
     private static readonly Regex TargetFrameworkRegex = new(
-        "^net[0-9]+(?:\\.[0-9]+)?(?:-[A-Za-z0-9.-]+)?$",
+        "^net11\\.0(?:-[A-Za-z0-9.-]+)?$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
     private static readonly Regex RuleIdRegex = new(
         "^CSA[NUIEFDAP][0-9]{4}$",
@@ -114,12 +114,12 @@ public static class PolicyLoader
 
         var profile = root.TryGetProperty("profile", out var profileElement)
             ? ParseProfile(RequireString(profileElement, "$.profile"))
-            : AssayProfile.Auto;
+            : AssayProfile.Native;
 
         var release = root.TryGetProperty("release", out var releaseElement)
             ? ParseRelease(releaseElement)
             : new ReleasePolicy(
-                false,
+                true,
                 ImmutableArray<string>.Empty,
                 ImmutableArray<string>.Empty,
                 ImmutableArray<TestRequirement>.Empty);
@@ -169,11 +169,10 @@ public static class PolicyLoader
             ],
             "$.release");
 
-        var allowPreview = value.TryGetProperty(
+        var allowPreview = !value.TryGetProperty(
             "allowPreviewToolchain",
-            out var previewElement)
-            ? RequireBoolean(previewElement, "$.release.allowPreviewToolchain")
-            : false;
+            out var previewElement) ||
+            RequireBoolean(previewElement, "$.release.allowPreviewToolchain");
         var frameworks = value.TryGetProperty(
             "requiredTargetFrameworks",
             out var frameworksElement)
@@ -466,11 +465,9 @@ public static class PolicyLoader
     private static AssayProfile ParseProfile(string profile) =>
         profile switch
         {
-            "auto" => AssayProfile.Auto,
-            "compat" => AssayProfile.Compat,
             "native" => AssayProfile.Native,
             _ => throw new InvalidDataException(
-                "$.profile must be auto, compat, or native.")
+                "$.profile must be native; .NET 11 is required.")
         };
 
     private static ImmutableArray<string> ParseStringArray(

@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using CsAssay.Catalogue;
 using CsAssay.Domain;
 using CsAssay.Reporting;
@@ -10,12 +9,6 @@ namespace CsAssay.Runner;
 
 public static class CommandApp
 {
-    private static readonly JsonSerializerOptions MigrationJsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
-
     public static async Task<int> RunAsync(
         string[] args,
         TextWriter output,
@@ -29,7 +22,7 @@ public static class CommandApp
         }
         catch (ArgumentException exception)
         {
-            await error.WriteLineAsync(exception.Message).ConfigureAwait(false);
+            await error.WriteLineAsync(exception.Message, CancellationToken.None).ConfigureAwait(false);
             await WriteHelpAsync(error).ConfigureAwait(false);
             return 64;
         }
@@ -43,7 +36,7 @@ public static class CommandApp
         return commandLine.Command switch
         {
             "doctor" => await DoctorAsync(output).ConfigureAwait(false),
-            "catalog" => await CatalogAsync(commandLine, output).ConfigureAwait(false),
+            "catalog" => await CatalogAsync(output).ConfigureAwait(false),
             "explain" => await ExplainAsync(commandLine, output, error).ConfigureAwait(false),
             "check" => await AssayAsync(
                 commandLine,
@@ -54,11 +47,6 @@ public static class CommandApp
             "verify" => await AssayAsync(
                 commandLine,
                 authoritative: true,
-                output,
-                error,
-                cancellationToken).ConfigureAwait(false),
-            "migrate" => await MigrateAsync(
-                commandLine,
                 output,
                 error,
                 cancellationToken).ConfigureAwait(false),
@@ -83,7 +71,7 @@ public static class CommandApp
                 (UnionCapabilities.CompilerExposesUnionSymbols()
                     ? "available (qualification still required)"
                     : "unavailable"));
-            output.WriteLine("Stable compat lane: ready");
+            output.WriteLine(".NET 11 RC1 native lane: ready");
             return Task.FromResult(0);
         }
         catch (Exception exception)
@@ -93,18 +81,9 @@ public static class CommandApp
         }
     }
 
-    private static Task<int> CatalogAsync(
-        CommandLine commandLine,
-        TextWriter output)
+    private static Task<int> CatalogAsync(TextWriter output)
     {
-        var profile = commandLine.Profile switch
-        {
-            Presence<AssayProfile>.Present
-            {
-                Value: AssayProfile.Native
-            } => EffectiveProfile.NativePreview,
-            _ => EffectiveProfile.Compat
-        };
+        var profile = EffectiveProfile.Native;
 
         foreach (var rule in RuleCatalogue.All
                      .Where(rule => rule.Profiles.Contains(profile))
@@ -159,7 +138,7 @@ public static class CommandApp
         if (commandLine.Input is not Presence<string>.Present input)
         {
             await error.WriteLineAsync(
-                    commandLine.Command + " requires a project or solution path.")
+                    commandLine.Command + " requires a project or solution path.", CancellationToken.None)
                 .ConfigureAwait(false);
             return 64;
         }
@@ -178,13 +157,13 @@ public static class CommandApp
         }
         catch (OperationCanceledException)
         {
-            await error.WriteLineAsync("CSharpAssay was cancelled.").ConfigureAwait(false);
+            await error.WriteLineAsync("CSharpAssay was cancelled.", CancellationToken.None).ConfigureAwait(false);
             return 3;
         }
         catch (Exception exception)
         {
             await error.WriteLineAsync(
-                "CSharpAssay verification failed: " + exception.Message)
+                "CSharpAssay verification failed: " + exception.Message, CancellationToken.None)
                 .ConfigureAwait(false);
             return 3;
         }
@@ -225,139 +204,18 @@ public static class CommandApp
             }
         }
         catch (Exception exception) when (
-            exception is not OperationCanceledException &&
-            (exception is IOException or
+            exception is IOException or
                 UnauthorizedAccessException or
                 ArgumentException or
-                NotSupportedException))
+                NotSupportedException)
         {
             await error.WriteLineAsync(
-                "CSharpAssay artifact write failed: " + exception.Message)
+                "CSharpAssay artifact write failed: " + exception.Message, CancellationToken.None)
                 .ConfigureAwait(false);
             return 3;
         }
 
         return result.Verdict.ExitCode;
-    }
-
-    private static async Task<int> MigrateAsync(
-        CommandLine commandLine,
-        TextWriter output,
-        TextWriter error,
-        CancellationToken cancellationToken)
-    {
-        if (!commandLine.Report ||
-            commandLine.Input is not Presence<string>.Present input)
-        {
-            await error.WriteLineAsync(
-                "Usage: cs-assay migrate --report <project-or-solution> [--json path]")
-                .ConfigureAwait(false);
-            return 64;
-        }
-
-        if (commandLine.JsonPath is Presence<string>.Present requestedPath &&
-            !string.Equals(
-                Path.GetExtension(requestedPath.Value),
-                ".json",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            await error.WriteLineAsync(
-                "migrate --json requires a .json report path.")
-                .ConfigureAwait(false);
-            return 64;
-        }
-
-        MigrationReport report;
-        try
-        {
-            report = await MigrationInventory
-                .AnalyzeAsync(input.Value, cancellationToken)
-                .ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            await error.WriteLineAsync(
-                "CSharpAssay migration reporting was cancelled.")
-                .ConfigureAwait(false);
-            return 3;
-        }
-        catch (Exception exception)
-        {
-            await error.WriteLineAsync(
-                "CSharpAssay migration reporting failed: " + exception.Message)
-                .ConfigureAwait(false);
-            return 3;
-        }
-
-        output.WriteLine(
-            "Migration report: " + report.Exposures.Length +
-            " public OneOf/ValueOf exposures across " +
-            report.Sources.Length +
-            " source files; report-only analysis made no source change.");
-        foreach (var exposure in report.Exposures)
-        {
-            output.WriteLine(
-                exposure.Location.Path + ":" + exposure.Location.StartLine + " " +
-                exposure.Representation + " " + exposure.ApiRole + " " +
-                exposure.Api);
-            output.WriteLine(
-                "  evidence: " + string.Join(" | ", exposure.Evidence));
-            foreach (var risk in exposure.Risks)
-            {
-                output.WriteLine("  risk " + risk.Id + ": " + risk.Statement);
-            }
-
-            output.WriteLine(
-                "  comparison: " + exposure.Comparison.Decision);
-            foreach (var adapter in exposure.AdapterAssessments)
-            {
-                output.WriteLine(
-                    "  adapter " + adapter.Adapter + ": " + adapter.Status);
-            }
-
-            foreach (var recommendation in exposure.Recommendations)
-            {
-                output.WriteLine(
-                    "  recommendation " + recommendation.Id + ": " +
-                    recommendation.Statement);
-            }
-        }
-
-        if (commandLine.JsonPath is Presence<string>.Present jsonPath)
-        {
-            try
-            {
-                var json = JsonSerializer.Serialize(
-                    report,
-                    MigrationJsonOptions) + "\n";
-                var directory = Path.GetDirectoryName(
-                    Path.GetFullPath(jsonPath.Value));
-                if (!string.IsNullOrEmpty(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
-                await File.WriteAllTextAsync(
-                    jsonPath.Value,
-                    json,
-                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
-                    cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception exception) when (
-                exception is not OperationCanceledException &&
-                (exception is IOException or
-                    UnauthorizedAccessException or
-                    ArgumentException or
-                    NotSupportedException))
-            {
-                await error.WriteLineAsync(
-                    "CSharpAssay migration report write failed: " +
-                    exception.Message).ConfigureAwait(false);
-                return 3;
-            }
-        }
-
-        return report.Failures.IsDefaultOrEmpty ? 0 : 3;
     }
 
     private static async Task<int> UnknownCommandAsync(
@@ -376,16 +234,14 @@ public static class CommandApp
 
             Usage:
               cs-assay doctor
-              cs-assay catalog [--profile compat|native]
+              cs-assay catalog [--profile native|native]
               cs-assay explain <rule-id>
               cs-assay check <project-or-solution> [options]
               cs-assay verify <project-or-solution> [options]
-              cs-assay migrate --report <project-or-solution> [--json path]
 
             Options:
-              --report          Required marker for read-only migration inventory
               --policy <path>   Explicit .csassay.json
-              --profile <name>  auto, compat, or native
+              --profile <name>  native (.NET 11 only)
               --json <path>     Deterministic JSON evidence
               --sarif <path>    SARIF 2.1.0 results
               --html <path>     Static HTML projection

@@ -7,10 +7,7 @@ public static class MetadataIdentity
 {
     public static string GetFullMetadataName(this ISymbol symbol)
     {
-        if (symbol is null)
-        {
-            throw new ArgumentNullException(nameof(symbol));
-        }
+        ArgumentNullException.ThrowIfNull(symbol);
 
         var parts = new Stack<string>();
         Presence<ISymbol> current = Presence.Of(symbol);
@@ -39,12 +36,6 @@ public static class MetadataIdentity
             type.OriginalDefinition.GetFullMetadataName(),
             fullMetadataName,
             StringComparison.Ordinal);
-
-    public static bool IsOneOf(ITypeSymbol type)
-    {
-        var metadataName = type.OriginalDefinition.GetFullMetadataName();
-        return metadataName.StartsWith("OneOf.OneOf`", StringComparison.Ordinal);
-    }
 
     public static bool IsTaskLike(ITypeSymbol type)
     {

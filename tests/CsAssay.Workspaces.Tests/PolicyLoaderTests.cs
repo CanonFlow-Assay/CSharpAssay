@@ -20,7 +20,7 @@ public sealed class PolicyLoaderTests
 
         var policy = PolicyLoader.Parse(json);
 
-        Assert.Equal(AssayProfile.Compat, policy.Profile);
+        Assert.Equal(AssayProfile.Native, policy.Profile);
     }
 
     [Fact]
@@ -29,10 +29,10 @@ public sealed class PolicyLoaderTests
         var policy = PolicyLoader.Parse(
             """
             {
-              "profile": "compat",
+              "profile": "native",
               "release": {
-                "allowPreviewToolchain": false,
-                "requiredTargetFrameworks": ["net10.0"],
+                "allowPreviewToolchain": true,
+                "requiredTargetFrameworks": ["net11.0"],
                 "requiredRules": ["CSAN0001"],
                 "tests": [
                   {
@@ -61,8 +61,8 @@ public sealed class PolicyLoaderTests
             }
             """);
 
-        Assert.Equal(AssayProfile.Compat, policy.Profile);
-        Assert.Equal(["net10.0"], policy.Release.RequiredTargetFrameworks);
+        Assert.Equal(AssayProfile.Native, policy.Profile);
+        Assert.Equal(["net11.0"], policy.Release.RequiredTargetFrameworks);
         Assert.Equal(["CSAN0001"], policy.Release.RequiredRules);
         var test = Assert.Single(policy.Release.Tests);
         Assert.Equal(
@@ -89,7 +89,7 @@ public sealed class PolicyLoaderTests
             PolicyLoader.Parse(
                 """
                 {
-                  "profile": "compat",
+                  "profile": "native",
                   "silentFallback": true
                 }
                 """));

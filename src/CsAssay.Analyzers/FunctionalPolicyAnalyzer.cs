@@ -328,7 +328,7 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeClosedType(SymbolAnalysisContext context)
     {
         var type = (INamedTypeSymbol)context.Symbol;
-        if (!IsConfiguredClosedType(
+        if (UnionCapabilities.IsNativeUnion(type) || !IsConfiguredClosedType(
                 type,
                 context.Options.AnalyzerConfigOptionsProvider))
         {
@@ -454,16 +454,6 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
                 operation.Property.ToDisplayString() + " blocks async flow");
         }
 
-        if (!IsOneOfExtraction(operation) || HasMatchingOneOfGuard(operation))
-        {
-            return;
-        }
-
-        Report(
-            context,
-            RuleIds.UnguardedOneOfExtraction,
-            operation.Syntax.GetLocation(),
-            operation.Property.Name + " is outside the proven matching IsTn guard subset");
     }
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
@@ -617,11 +607,8 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         var labels = switchStatement.Sections.SelectMany(section => section.Labels);
 
         if (UnionCapabilities.IsNativeUnion(switchedType) &&
-            labels.Any(label => label is DefaultSwitchLabelSyntax ||
-                label is CasePatternSwitchLabelSyntax
-                {
-                    Pattern: DiscardPatternSyntax
-                }))
+            labels.Any(label => label is DefaultSwitchLabelSyntax or
+                CasePatternSwitchLabelSyntax { Pattern: DiscardPatternSyntax }))
         {
             Report(
                 context,
@@ -643,7 +630,7 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         IEnumerable<PatternSyntax> patterns,
         Location location)
     {
-        if (!IsConfiguredClosedType(
+        if (UnionCapabilities.IsNativeUnion(switchedType) || !IsConfiguredClosedType(
                 switchedType,
                 context.Options.AnalyzerConfigOptionsProvider))
         {
@@ -824,15 +811,13 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
             } or IMethodSymbol
             {
                 ExplicitInterfaceImplementations.Length: > 0
-            } ||
-            symbol is IPropertySymbol
+            } or IPropertySymbol
             {
                 IsOverride: true
             } or IPropertySymbol
             {
                 ExplicitInterfaceImplementations.Length: > 0
-            } ||
-            symbol is IEventSymbol
+            } or IEventSymbol
             {
                 IsOverride: true
             } or IEventSymbol
@@ -887,151 +872,10 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        return current is IConstantPatternOperation or
-            IBinaryOperation
-            {
-                OperatorKind:
-                    BinaryOperatorKind.Equals or
-                    BinaryOperatorKind.NotEquals
-            };
-    }
-
-    private static bool IsOneOfExtraction(IPropertyReferenceOperation operation)
-    {
-        if (!MetadataIdentity.IsOneOf(operation.Property.ContainingType) ||
-            !operation.Property.Name.StartsWith("AsT", StringComparison.Ordinal))
+        return current is IConstantPatternOperation or IBinaryOperation
         {
-            return false;
-        }
-
-        return int.TryParse(
-            operation.Property.Name.Substring(3),
-            System.Globalization.NumberStyles.None,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out _);
-    }
-
-    private static bool HasMatchingOneOfGuard(IPropertyReferenceOperation extraction)
-    {
-        var expectedGuard = "Is" + extraction.Property.Name.Substring(2);
-        IOperation? current = extraction;
-
-        while (current?.Parent is not null)
-        {
-            current = current.Parent;
-            if (current is not IConditionalOperation conditional)
-            {
-                continue;
-            }
-
-            if (IsWithin(extraction, conditional.WhenTrue) &&
-                ContainsGuard(
-                    conditional.Condition,
-                    expectedGuard,
-                    extraction.Instance,
-                    negated: false))
-            {
-                return true;
-            }
-
-            if (conditional.WhenFalse is not null &&
-                IsWithin(extraction, conditional.WhenFalse) &&
-                ContainsGuard(
-                    conditional.Condition,
-                    expectedGuard,
-                    extraction.Instance,
-                    negated: true))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool ContainsGuard(
-        IOperation condition,
-        string expectedGuard,
-        IOperation? receiver,
-        bool negated)
-    {
-        foreach (var candidate in DescendantsAndSelf(condition)
-                     .OfType<IPropertyReferenceOperation>())
-        {
-            if (!string.Equals(
-                    candidate.Property.Name,
-                    expectedGuard,
-                    StringComparison.Ordinal) ||
-                !MetadataIdentity.IsOneOf(candidate.Property.ContainingType) ||
-                !SameReceiver(receiver, candidate.Instance))
-            {
-                continue;
-            }
-
-            var isNegated = candidate.Parent is IUnaryOperation
-            {
-                OperatorKind: UnaryOperatorKind.Not
-            };
-
-            if (isNegated == negated)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool SameReceiver(IOperation? left, IOperation? right) =>
-        (left, right) switch
-        {
-            (ILocalReferenceOperation leftLocal, ILocalReferenceOperation rightLocal) =>
-                SymbolEqualityComparer.Default.Equals(leftLocal.Local, rightLocal.Local),
-            (IParameterReferenceOperation leftParameter, IParameterReferenceOperation rightParameter) =>
-                SymbolEqualityComparer.Default.Equals(
-                    leftParameter.Parameter,
-                    rightParameter.Parameter),
-            (IFieldReferenceOperation leftField, IFieldReferenceOperation rightField) =>
-                SymbolEqualityComparer.Default.Equals(leftField.Field, rightField.Field) &&
-                SameReceiver(leftField.Instance, rightField.Instance),
-            (IPropertyReferenceOperation leftProperty, IPropertyReferenceOperation rightProperty) =>
-                SymbolEqualityComparer.Default.Equals(leftProperty.Property, rightProperty.Property) &&
-                SameReceiver(leftProperty.Instance, rightProperty.Instance),
-            (IInstanceReferenceOperation, IInstanceReferenceOperation) => true,
-            _ => false
+            OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals
         };
-
-    private static bool IsWithin(IOperation operation, IOperation container)
-    {
-        IOperation? current = operation;
-        while (current is not null)
-        {
-            if (ReferenceEquals(current, container))
-            {
-                return true;
-            }
-
-            current = current.Parent;
-        }
-
-        return false;
-    }
-
-    private static IEnumerable<IOperation> DescendantsAndSelf(IOperation root)
-    {
-        var pending = new Stack<IOperation>();
-        pending.Push(root);
-
-        while (pending.Count > 0)
-        {
-            var current = pending.Pop();
-            yield return current;
-
-            foreach (var child in current.ChildOperations.Reverse())
-            {
-                pending.Push(child);
-            }
-        }
     }
 
     private static bool IsKnownMutableCollection(ITypeSymbol type) =>
@@ -1088,8 +932,8 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var expectedType = entry.Substring(0, separator).Trim();
-            foreach (var parameterName in entry.Substring(separator + 1).Split(
+            var expectedType = entry[..separator].Trim();
+            foreach (var parameterName in entry[(separator + 1)..].Split(
                          [','],
                          StringSplitOptions.RemoveEmptyEntries))
             {
@@ -1099,7 +943,7 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
                     yield return new DomainPrimitiveGlossaryEntry(
                         expectedType,
                         trimmed[0] == '@'
-                            ? trimmed.Substring(1)
+                            ? trimmed[1..]
                             : trimmed);
                 }
             }

@@ -1,11 +1,17 @@
 {
   "challenge": "TG04-payment-outcome",
-  "native": {
-    "capability": "unavailable",
-    "diagnostics": [],
-    "golden": "native-preview-unavailable"
+  "bad": {
+    "diagnostics": [
+      "CSAU0001",
+      "CSAU0002"
+    ],
+    "golden": "P-1"
   },
   "options": {
     "csassay_closed_types": "TypeGym.PaymentOutcome"
+  },
+  "native": {
+    "diagnostics": [],
+    "golden": "P-1"
   }
 }

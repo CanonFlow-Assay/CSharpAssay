@@ -307,8 +307,7 @@ public static class JsonEvidenceWriter
     private static string ToText(EffectiveProfile value) =>
         value switch
         {
-            EffectiveProfile.Compat => "compat",
-            EffectiveProfile.NativePreview => "native-preview",
+            EffectiveProfile.Native => "native",
             _ => throw new ArgumentOutOfRangeException(
                 nameof(value),
                 value,
@@ -318,8 +317,6 @@ public static class JsonEvidenceWriter
     private static string ToText(AssayProfile value) =>
         value switch
         {
-            AssayProfile.Auto => "auto",
-            AssayProfile.Compat => "compat",
             AssayProfile.Native => "native",
             _ => throw new ArgumentOutOfRangeException(
                 nameof(value),

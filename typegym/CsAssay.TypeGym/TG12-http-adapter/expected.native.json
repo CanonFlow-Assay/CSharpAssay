@@ -1,8 +1,14 @@
 {
   "challenge": "TG12-http-adapter",
+  "bad": {
+    "diagnostics": [
+      "CSAN0003",
+      "CSAN0004"
+    ],
+    "golden": "200"
+  },
   "native": {
-    "capability": "unavailable",
     "diagnostics": [],
-    "golden": "native-preview-unavailable"
+    "golden": "200"
   }
 }

@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <!-- MSBuildLocator must load Framework from the pinned SDK, not NuGet. -->
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" />
     <ProjectReference Include="../../src/CsAssay.Workspaces/CsAssay.Workspaces.csproj" />
   </ItemGroup>
 </Project>

@@ -1,13 +1,14 @@
 # CSharpAssay analyzers
 
 `CsAssay.Analyzers` supplies the admitted CSharpAssay Roslyn diagnostics to
-editor and build hosts. The package embeds the analyzer, its three
+editor and build hosts running .NET 11. Consumer projects must target
+`net11.0` and use `LangVersion=preview`; older targets and hosts are unsupported. The package embeds the analyzer, its three
 CSharpAssay-owned runtime dependencies under `analyzers/dotnet/cs`, and a
 transitive MSBuild enforcement target.
 
 ```xml
 <PackageReference Include="CsAssay.Analyzers"
-                  Version="0.1.2"
+                  Version="0.2.0-rc.1"
                   PrivateAssets="all" />
 ```
 
@@ -15,7 +16,7 @@ The package is a research preview. Only rules marked `Admitted` can block a
 CSharpAssay release verdict. See the repository documentation for policy,
 suppression, staged adoption, installation, and rollback guidance. The six
 Phase 6 contextual/heuristic rules are informational and cannot block in
-`0.1.2`.
+`0.2.0-rc.1`.
 
 `CsAssayEnforceOnBuild` defaults to `true`. Admitted violations therefore fail
 ordinary `dotnet build`; disabling analyzers or listing an admitted CSharpAssay

@@ -37,15 +37,12 @@ public enum RuleDisposition
 
 public enum AssayProfile
 {
-    Auto,
-    Compat,
     Native
 }
 
 public enum EffectiveProfile
 {
-    Compat,
-    NativePreview
+    Native
 }
 
 public enum RuleOutcome

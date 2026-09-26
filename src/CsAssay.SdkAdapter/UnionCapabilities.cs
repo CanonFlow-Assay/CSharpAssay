@@ -1,54 +1,19 @@
-using System.Reflection;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace CsAssay.SdkAdapter;
 
 public static class UnionCapabilities
 {
-    private static readonly string[] KnownUnionAttributes =
-    [
-        "System.Runtime.CompilerServices.UnionAttribute",
-        "System.Diagnostics.CodeAnalysis.UnionAttribute"
-    ];
+    // RC1's union API is experimental; the SDK and Roslyn packages are pinned.
+#pragma warning disable RSEXPERIMENTAL006
+    public static bool IsNativeUnion(ITypeSymbol type) => type.IsUnion;
+#pragma warning restore RSEXPERIMENTAL006
 
-    public static bool IsNativeUnion(ITypeSymbol type)
-    {
-        if (type.GetAttributes().Any(attribute =>
-            attribute.AttributeClass is INamedTypeSymbol attributeClass &&
-            KnownUnionAttributes.Contains(
-                attributeClass.GetFullMetadataName(),
-                StringComparer.Ordinal)))
-        {
-            return true;
-        }
-
-        if (type.AllInterfaces.Any(@interface =>
-            string.Equals(
-                @interface.GetFullMetadataName(),
-                "System.Runtime.CompilerServices.IUnion",
-                StringComparison.Ordinal)))
-        {
-            return true;
-        }
-
-        // Preview Roslyn has changed this surface more than once. Reflection keeps
-        // that instability inside the SDK adapter and fails closed when absent.
-        var property = type.GetType().GetProperty(
-            "IsUnion",
-            BindingFlags.Instance | BindingFlags.Public);
-
-        return property is PropertyInfo unionProperty &&
-            unionProperty.PropertyType == typeof(bool) &&
-            unionProperty.GetValue(type) is true;
-    }
-
-    public static bool CompilerExposesUnionSymbols()
-    {
-        var property = typeof(INamedTypeSymbol).GetProperty(
-            "IsUnion",
-            BindingFlags.Instance | BindingFlags.Public);
-
-        return property is PropertyInfo unionProperty &&
-            unionProperty.PropertyType == typeof(bool);
-    }
+    public static bool CompilerExposesUnionSymbols() =>
+        !CSharpSyntaxTree.ParseText(
+                "public union CompilerProbe(int, string);",
+                new CSharpParseOptions(LanguageVersion.Preview))
+            .GetDiagnostics()
+            .Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
 }

@@ -82,7 +82,7 @@ public sealed class AnalyzerPerformanceTests
                 "(string Name, System.Collections.Immutable.ImmutableArray<int> Items);"));
         var tree = CSharpSyntaxTree.ParseText(
             source,
-            new CSharpParseOptions(LanguageVersion.CSharp14),
+            new CSharpParseOptions(LanguageVersion.Preview),
             path: "Representative.cs");
         return CSharpCompilation.Create(
             "Representative",

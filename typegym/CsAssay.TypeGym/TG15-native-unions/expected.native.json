@@ -1,0 +1,13 @@
+{
+  "challenge": "TG15-native-unions",
+  "bad": {
+    "diagnostics": [
+      "CSAU0004"
+    ],
+    "golden": "native"
+  },
+  "native": {
+    "diagnostics": [],
+    "golden": "native"
+  }
+}

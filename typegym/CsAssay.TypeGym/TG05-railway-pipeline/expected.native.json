@@ -1,8 +1,11 @@
 {
   "challenge": "TG05-railway-pipeline",
-  "native": {
-    "capability": "unavailable",
+  "bad": {
     "diagnostics": [],
-    "golden": "native-preview-unavailable"
+    "golden": "40"
+  },
+  "native": {
+    "diagnostics": [],
+    "golden": "40"
   }
 }

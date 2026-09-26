@@ -5,6 +5,21 @@ namespace CsAssay.Runner.Tests;
 
 public sealed class CommandLineTests
 {
+    [Theory]
+    [InlineData("compat")]
+    [InlineData("auto")]
+    public void Rejects_removed_profiles(string profile) =>
+        Assert.Throws<ArgumentException>(() =>
+            CommandLine.Parse(["verify", "Sample.csproj", "--profile", profile]));
+
+    [Fact]
+    public async Task Legacy_migration_command_is_removed()
+    {
+        var result = await RunAsync(["migrate", "Sample.csproj"]);
+        Assert.Equal(64, result.ExitCode);
+        Assert.Contains("Unknown command: migrate", result.Error);
+    }
+
     [Fact]
     public void Parses_verify_options()
     {
@@ -13,7 +28,7 @@ public sealed class CommandLineTests
             "verify",
             "Sample.slnx",
             "--profile",
-            "compat",
+            "native",
             "--json",
             "assay.json",
             "--sarif",
@@ -25,7 +40,7 @@ public sealed class CommandLineTests
             new Presence<string>.Present("Sample.slnx"),
             command.Input);
         Assert.Equal(
-            new Presence<AssayProfile>.Present(AssayProfile.Compat),
+            new Presence<AssayProfile>.Present(AssayProfile.Native),
             command.Profile);
         Assert.Equal(
             new Presence<string>.Present("assay.json"),
@@ -61,7 +76,7 @@ public sealed class CommandLineTests
     public void Rejects_options_not_supported_by_command()
     {
         Assert.Throws<ArgumentException>(() =>
-            CommandLine.Parse(["doctor", "--profile", "compat"]));
+            CommandLine.Parse(["doctor", "--profile", "native"]));
     }
 
     [Fact]
@@ -71,7 +86,7 @@ public sealed class CommandLineTests
         using var error = new StringWriter();
 
         var exitCode = await CommandApp.RunAsync(
-            ["catalog", "--profile", "compat"],
+            ["catalog", "--profile", "native"],
             output,
             error,
             TestContext.Current.CancellationToken);

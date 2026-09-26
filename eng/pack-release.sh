@@ -48,7 +48,7 @@ done
 for phase4_pack_name in first second; do
   mkdir -p "$phase4_scratch/$phase4_pack_name-provenance"
   "$phase4_dotnet" \
-    eng/CsAssay.PackageAudit/bin/Release/net10.0/CsAssay.PackageAudit.dll \
+    eng/CsAssay.PackageAudit/bin/Release/net11.0/CsAssay.PackageAudit.dll \
     "$phase4_scratch/$phase4_pack_name-provenance" \
     "$phase4_commit" \
     "$phase4_sdk" \
@@ -58,11 +58,11 @@ for phase4_pack_name in first second; do
 done
 
 cmp \
-  "$phase4_scratch/first/CsAssay.Analyzers.0.1.2.nupkg" \
-  "$phase4_scratch/second/CsAssay.Analyzers.0.1.2.nupkg"
+  "$phase4_scratch/first/CsAssay.Analyzers.0.2.0-rc.1.nupkg" \
+  "$phase4_scratch/second/CsAssay.Analyzers.0.2.0-rc.1.nupkg"
 cmp \
-  "$phase4_scratch/first/CsAssay.Tool.0.1.2.nupkg" \
-  "$phase4_scratch/second/CsAssay.Tool.0.1.2.nupkg"
+  "$phase4_scratch/first/CsAssay.Tool.0.2.0-rc.1.nupkg" \
+  "$phase4_scratch/second/CsAssay.Tool.0.2.0-rc.1.nupkg"
 cmp \
   "$phase4_scratch/first-provenance/checksums.sha256" \
   "$phase4_scratch/second-provenance/checksums.sha256"

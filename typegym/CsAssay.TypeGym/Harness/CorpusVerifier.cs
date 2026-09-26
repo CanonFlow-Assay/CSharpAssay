@@ -19,25 +19,14 @@ internal static class CorpusVerifier
         RequireFile(challengeRoot, "README.md");
         RequireFile(challengeRoot, "Challenge.Tests.cs");
 
-        using var compatDocument = JsonDocument.Parse(
-            File.ReadAllText(RequireFile(challengeRoot, "expected.compat.json")));
-        var compat = compatDocument.RootElement;
-        Assert.Equal(challenge, compat.GetProperty("challenge").GetString());
-
-        var options = ReadOptions(compat);
-        await VerifySourceAsync(
-            RequireFile(challengeRoot, "Bad.cs"),
-            compat.GetProperty("bad"),
-            options);
-        await VerifySourceAsync(
-            RequireFile(challengeRoot, "Compat.cs"),
-            compat.GetProperty("compat"),
-            options);
-
         using var nativeDocument = JsonDocument.Parse(
             File.ReadAllText(RequireFile(challengeRoot, "expected.native.json")));
         var native = nativeDocument.RootElement;
         Assert.Equal(challenge, native.GetProperty("challenge").GetString());
+        await VerifySourceAsync(
+            RequireFile(challengeRoot, "Bad.cs"),
+            native.GetProperty("bad"),
+            ReadOptions(native));
         await VerifySourceAsync(
             RequireFile(challengeRoot, "Native.cs"),
             native.GetProperty("native"),
@@ -52,7 +41,7 @@ internal static class CorpusVerifier
         var source = File.ReadAllText(path);
         var syntaxTree = CSharpSyntaxTree.ParseText(
             source,
-            new CSharpParseOptions(LanguageVersion.CSharp14),
+            new CSharpParseOptions(LanguageVersion.Preview),
             path);
         var compilation = CSharpCompilation.Create(
             "TypeGym_" + Path.GetFileName(

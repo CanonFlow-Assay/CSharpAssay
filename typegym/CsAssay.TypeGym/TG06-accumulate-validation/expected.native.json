@@ -1,8 +1,11 @@
 {
   "challenge": "TG06-accumulate-validation",
-  "native": {
-    "capability": "unavailable",
+  "bad": {
     "diagnostics": [],
-    "golden": "native-preview-unavailable"
+    "golden": "name"
+  },
+  "native": {
+    "diagnostics": [],
+    "golden": "name,age"
   }
 }

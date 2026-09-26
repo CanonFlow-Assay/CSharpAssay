@@ -1,3 +1,5 @@
+> Historical planning/status record. Current support is .NET 11 RC1 only; see [the migration report](docs/net11-migration.md).
+
 # CSharpAssay implementation status
 
 ```text
