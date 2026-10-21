@@ -42,7 +42,12 @@ public sealed class AnalyzerPerformanceTests
                 RepresentativeDocumentP95BudgetMilliseconds.ToString(
                     "F3",
                     System.Globalization.CultureInfo.InvariantCulture) +
-                " ms.");
+                " ms. Sorted samples (ms): " +
+                string.Join(
+                    ", ",
+                    samples.Select(sample => sample.ToString(
+                        "F3",
+                        System.Globalization.CultureInfo.InvariantCulture))));
     }
 
     [Fact]
