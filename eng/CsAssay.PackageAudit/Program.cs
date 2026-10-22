@@ -151,8 +151,20 @@ public static class Program
                 "README.md",
                 "tools/net11.0/any/DotnetToolSettings.xml",
                 "tools/net11.0/any/cs-assay.dll",
+                "tools/net11.0/any/cs-assay.runtimeconfig.json",
                 "tools/net11.0/any/CsAssay.Analyzers.dll",
                 "tools/net11.0/any/CsAssay.Workspaces.dll");
+            var configuration = archive.GetEntry("tools/net11.0/any/cs-assay.runtimeconfig.json") ??
+                throw new InvalidDataException("Tool runtime configuration is missing.");
+            using var configurationStream = configuration.Open();
+            using var runtime = JsonDocument.Parse(configurationStream);
+            if (!runtime.RootElement.TryGetProperty("runtimeOptions", out var runtimeOptions) ||
+                !runtimeOptions.TryGetProperty("configProperties", out var properties) ||
+                !properties.TryGetProperty("System.Runtime.TieredCompilation", out var tiering) ||
+                tiering.ValueKind != JsonValueKind.False)
+            {
+                throw new InvalidDataException("Tool package must retain its qualified optimized JIT profile.");
+            }
         }
 
         VerifyPackageMetadata(archive, packageKind, commit);

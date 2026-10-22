@@ -228,6 +228,19 @@ public static class VerdictFactory
                     string.Empty));
         }
 
+        if (evidence.Tests.Any(test => test.Required && test.Outcome != TestRunOutcome.NotRun &&
+                (test.Total <= 0 || test.Passed < 0 || test.Failed < 0 || test.Skipped != 0 ||
+                 (long)test.Passed + test.Failed + test.Skipped != test.Total ||
+                 (test.Outcome == TestRunOutcome.Passed && (test.Failed != 0 || test.ExitCode != 0)) ||
+                 (test.Outcome == TestRunOutcome.Failed && test.Failed == 0))))
+        {
+            AddMissingOnce(missing, new MissingEvidence(
+                "CSASSAY-TEST-EVIDENCE-INCOMPLETE",
+                "Required test counts, outcomes or process status do not establish a complete execution.",
+                string.Empty,
+                string.Empty));
+        }
+
         var projectEvidenceUnavailable =
             loadedProjects.IsDefaultOrEmpty ||
             evidence.Projects.Any(project => !project.Loaded) ||

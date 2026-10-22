@@ -765,7 +765,8 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (string.Equals(
+        if (named.TypeArguments.IsEmpty) { return false; }
+        if (named.Name == "Nullable" && string.Equals(
                 named.OriginalDefinition.GetFullMetadataName(),
                 "System.Nullable`1",
                 StringComparison.Ordinal))

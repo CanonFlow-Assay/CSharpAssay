@@ -18,6 +18,13 @@ public sealed class TestExecutorTests
                          id="random"
                          runUser="host\user">
                   <Times creation="2026-07-31T01:02:03Z" />
+                  <Results>
+                    <UnitTestResult testName="One" executionId="one" outcome="Passed" />
+                    <UnitTestResult testName="Two" executionId="two" outcome="Passed" />
+                    <UnitTestResult testName="Three" executionId="three" outcome="Passed" />
+                    <UnitTestResult testName="Four" executionId="four" outcome="Failed" />
+                    <UnitTestResult testName="Five" executionId="five" outcome="NotExecuted" />
+                  </Results>
                   <ResultSummary outcome="Completed">
                     <Counters total="5"
                               executed="5"

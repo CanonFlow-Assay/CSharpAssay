@@ -156,7 +156,7 @@ public sealed record CommandLine(
                 Has(commandLine.PolicyPath) ||
                 Has(commandLine.Profile) =>
                 "explain accepts exactly one rule ID.",
-            "check" or "verify" when
+            "check" or "verify" or "assess" when
                 Has(commandLine.RuleId) =>
                 commandLine.Command +
                     " accepts an input and verification options only.",

@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- The shipped CLI and performance fixture share this explicit JIT profile. -->
+    <TieredCompilation>false</TieredCompilation>
+
     <AssemblyName>cs-assay</AssemblyName>
     <RootNamespace>CsAssay.Runner</RootNamespace>
     <Description>Authoritative CSharpAssay command-line verifier.</Description>
