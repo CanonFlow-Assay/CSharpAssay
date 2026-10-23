@@ -44,7 +44,7 @@ public static class CommandApp
                 output,
                 error,
                 cancellationToken).ConfigureAwait(false),
-            "verify" => await AssayAsync(
+            "verify" or "assess" => await AssayAsync(
                 commandLine,
                 authoritative: true,
                 output,
@@ -173,10 +173,14 @@ public static class CommandApp
         {
             if (commandLine.JsonPath is Presence<string>.Present jsonPath)
             {
-                await JsonEvidenceWriter.WriteAsync(
-                    jsonPath.Value,
-                    result.Verdict,
-                    cancellationToken).ConfigureAwait(false);
+                if (commandLine.Command == "assess")
+                {
+                    await AssessmentWriter.WriteAsync(jsonPath.Value, result.Verdict, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await JsonEvidenceWriter.WriteAsync(jsonPath.Value, result.Verdict, cancellationToken).ConfigureAwait(false);
+                }
             }
 
             if (commandLine.SarifPath is Presence<string>.Present sarifPath)
@@ -238,6 +242,7 @@ public static class CommandApp
               cs-assay explain <rule-id>
               cs-assay check <project-or-solution> [options]
               cs-assay verify <project-or-solution> [options]
+              cs-assay assess <project-or-solution> [options]
 
             Options:
               --policy <path>   Explicit .csassay.json
@@ -249,6 +254,7 @@ public static class CommandApp
             Command authority:
               check   Provisional analysis; configured release tests are not run
               verify  Authoritative all-TFM analysis; configured release tests run
+              assess  Same verification, with an additive assessment JSON envelope
 
             Verdict exit codes:
               0 Pass, 1 Fail, 2 Inconclusive, 3 ToolFailure

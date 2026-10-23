@@ -69,3 +69,9 @@ See [publishing.md](publishing.md).
 ## CI authority
 
 The .NET 11 RC1 job is the sole release gate. It restores the solution and workspace fixtures with lock files, builds and tests, self-verifies, qualifies packages, and records provenance. There is no optional older-runtime or preview fallback lane.
+
+Local Forgejo qualification can be recorded with `./eng/qualify-local`.
+The CLI and representative performance fixture share the explicit
+[optimized JIT profile](performance-profile.md). Package audit and two real
+package-negative cases enforce its runtime configuration. Historical default
+tiering failures remain separate evidence and are not relabeled as passing.

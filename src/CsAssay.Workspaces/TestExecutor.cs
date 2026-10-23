@@ -256,13 +256,34 @@ public static class TestExecutor
         var failed = ReadCounter(counters, "failed");
         var skipped = ReadCounter(counters, "notExecuted");
 
+        var results = document.Root?.Element(trx + "Results")?.Elements(trx + "UnitTestResult").ToArray()
+            ?? throw new InvalidDataException("TRX evidence has no individual test results.");
+        var executionIds = results.Select(result => (string?)result.Attribute("executionId") ?? string.Empty).ToArray();
+        if ((long)passed + failed + skipped != total || results.Length != total ||
+            results.Any(result => string.IsNullOrWhiteSpace((string?)result.Attribute("testName"))) ||
+            executionIds.Any(string.IsNullOrWhiteSpace) || executionIds.Distinct(StringComparer.Ordinal).Count() != total ||
+            results.Count(result => (string?)result.Attribute("outcome") == "Passed") != passed ||
+            results.Count(result => (string?)result.Attribute("outcome") == "Failed") != failed ||
+            results.Count(result => (string?)result.Attribute("outcome") == "NotExecuted") != skipped ||
+            (exitCode == 0 && failed > 0))
+        {
+            throw new InvalidDataException("TRX counters, individual executions or process status contradict each other.");
+        }
+        foreach (var name in new[] { "error", "timeout", "aborted", "inconclusive", "passedButRunAborted", "notRunnable", "disconnected", "warning", "inProgress", "pending" })
+        {
+            if (counters.Attribute(name) is not null && ReadCounter(counters, name) != 0)
+            {
+                throw new InvalidDataException("TRX reports incomplete or invalid execution: " + name + ".");
+            }
+        }
+
         return new TestRunEvidence(
             requirement.Input,
             requirement.Configuration,
             Required: true,
             failed > 0
                 ? TestRunOutcome.Failed
-                : TestRunOutcome.Passed,
+                : total == 0 || skipped > 0 ? TestRunOutcome.NotRun : TestRunOutcome.Passed,
             exitCode,
             total,
             passed,

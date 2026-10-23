@@ -31,6 +31,22 @@ public sealed class AnalyzerPerformanceTests
 
         Array.Sort(samples);
         var p95 = samples[(int)Math.Ceiling(samples.Length * 0.95) - 1];
+        if (Environment.GetEnvironmentVariable("CSASSAY_PERFORMANCE_REPORT") is string reportPath)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(reportPath)) ?? Directory.GetCurrentDirectory());
+            await File.WriteAllTextAsync(reportPath, System.Text.Json.JsonSerializer.Serialize(new
+            {
+                schema = "csassay-performance-samples/0.1",
+                runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
+                runtimeProfile = "optimized-jit-no-tiering",
+                recordCount = 40,
+                warmups = 3,
+                sampleCount = samples.Length,
+                samplesMilliseconds = samples,
+                p95Milliseconds = p95,
+                budgetMilliseconds = RepresentativeDocumentP95BudgetMilliseconds
+            }), TestContext.Current.CancellationToken);
+        }
 
         Assert.True(
             p95 < RepresentativeDocumentP95BudgetMilliseconds,
@@ -42,7 +58,12 @@ public sealed class AnalyzerPerformanceTests
                 RepresentativeDocumentP95BudgetMilliseconds.ToString(
                     "F3",
                     System.Globalization.CultureInfo.InvariantCulture) +
-                " ms.");
+                " ms. Sorted samples (ms): " +
+                string.Join(
+                    ", ",
+                    samples.Select(sample => sample.ToString(
+                        "F3",
+                        System.Globalization.CultureInfo.InvariantCulture))));
     }
 
     [Fact]

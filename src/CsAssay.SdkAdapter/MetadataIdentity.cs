@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using CsAssay.Domain;
 using Microsoft.CodeAnalysis;
 
@@ -5,10 +6,19 @@ namespace CsAssay.SdkAdapter;
 
 public static class MetadataIdentity
 {
+    // Symbols have immutable metadata identities. Weak keys keep compiler graphs
+    // collectible and reference identity cannot conflate assemblies or annotations.
+    private static readonly ConditionalWeakTable<ISymbol, MetadataNameValue> Names = new();
+    private sealed record MetadataNameValue(string Value);
+
     public static string GetFullMetadataName(this ISymbol symbol)
     {
         ArgumentNullException.ThrowIfNull(symbol);
+        return Names.GetValue(symbol, static value => new(ComputeName(value))).Value;
+    }
 
+    private static string ComputeName(ISymbol symbol)
+    {
         var parts = new Stack<string>();
         Presence<ISymbol> current = Presence.Of(symbol);
 

@@ -43,7 +43,8 @@
       "tests/CsAssay.Integration.Tests/CsAssay.Integration.Tests.csproj",
       "tests/CsAssay.Performance.Tests/CsAssay.Performance.Tests.csproj",
       "typegym/CsAssay.TypeGym/CsAssay.TypeGym.csproj",
-      "eng/CsAssay.PackageAudit/CsAssay.PackageAudit.csproj"
+      "eng/CsAssay.PackageAudit/CsAssay.PackageAudit.csproj",
+      "eng/CsAssay.Qualification/CsAssay.Qualification.csproj"
     ],
     "coreNamespaces": [
       "CsAssay.Domain",

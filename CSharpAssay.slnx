@@ -21,6 +21,7 @@
     <Project Path="typegym/CsAssay.TypeGym/CsAssay.TypeGym.csproj" />
   </Folder>
   <Folder Name="/eng/">
+    <Project Path="eng/CsAssay.Qualification/CsAssay.Qualification.csproj" />
     <Project Path="eng/CsAssay.PackageAudit/CsAssay.PackageAudit.csproj" />
   </Folder>
 </Solution>

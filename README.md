@@ -25,9 +25,17 @@ dotnet run --project src/CsAssay.Runner -- doctor
 dotnet run --project src/CsAssay.Runner -- catalog
 dotnet run --project src/CsAssay.Runner -- check CSharpAssay.slnx
 dotnet run --project src/CsAssay.Runner -- verify CSharpAssay.slnx --json artifacts/csassay.json --sarif artifacts/csassay.sarif
+dotnet run --project src/CsAssay.Runner -- assess CSharpAssay.slnx --json artifacts/assessment.json
 ```
 
 `check` is provisional; `verify` evaluates configured release evidence and required tests. Verdicts remain `Pass`, `Fail`, `Inconclusive`, and `ToolFailure`. Missing evidence never becomes a passing verdict. Tests use xUnit v3 and Microsoft Testing Platform.
+
+`assess` performs the same authoritative evaluation as `verify` and writes an
+additive `csassay-assessment/0.1` JSON envelope. Its `assessment` projection retains
+scope, source identities, verdict, authority and missing/failure evidence; its
+`receipt` embeds the complete original verification JSON. Existing `verify` JSON
+is unchanged. Application coordinators can consume this envelope without
+promoting provisional findings or changing rule admission.
 
 Native union exhaustiveness belongs to the C# compiler. `CSAU0004` reports discard/default arms that hide future cases; its status remains `Prototype`. Selecting .NET 11 does not promote an unqualified rule. Seven previously admitted nullability, immutability, and suppression rules remain the release gate. Contextual advice remains non-blocking.
 
@@ -46,3 +54,10 @@ cd ../CSharpAssay.Playground
 ```
 
 Historical phase-admission documents and stored `0.1.x` evidence describe the earlier toolchain, not fresh .NET 11 validation.
+
+For a complete local qualification record, run `./eng/qualify-local`
+from a clean source commit. It retains every gate result under ignored
+`artifacts/local-qualification/`, including later diagnostic checks after a
+test failure; release qualification remains false unless every gate passes.
+See [functional enforcement](docs/functional-enforcement.md) and the
+[current platform matrix](eng/qualification/platform-matrix.md).
