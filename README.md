@@ -6,6 +6,9 @@ A deterministic Roslyn verifier for functional C# policy. **.NET 11 is the only 
 
 See the [migration and validation report](docs/net11-migration.md) for breaking changes and validation results.
 
+The current [C# depth undertaking](docs/csharp-depth.md) expands prototype
+catch-all detection while retaining the existing admission and evidence limits.
+
 ## Build and test
 
 Install the exact pinned SDK, then run:

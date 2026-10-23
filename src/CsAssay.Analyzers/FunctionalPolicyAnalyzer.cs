@@ -579,13 +579,13 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         }
 
         if (UnionCapabilities.IsNativeUnion(switchedType) &&
-            switchExpression.Arms.Any(arm => arm.Pattern is DiscardPatternSyntax))
+            switchExpression.Arms.Any(arm => IsNativeCatchAll(arm.Pattern, context)))
         {
             Report(
                 context,
                 RuleIds.NativeUnionDiscard,
                 switchExpression.SwitchKeyword.GetLocation(),
-                "discard arm can hide a newly added native union case");
+                "catch-all arm can hide a newly added native union case");
         }
 
         AnalyzeClosedSwitch(
@@ -607,14 +607,14 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
         var labels = switchStatement.Sections.SelectMany(section => section.Labels);
 
         if (UnionCapabilities.IsNativeUnion(switchedType) &&
-            labels.Any(label => label is DefaultSwitchLabelSyntax or
-                CasePatternSwitchLabelSyntax { Pattern: DiscardPatternSyntax }))
+            labels.Any(label => label is DefaultSwitchLabelSyntax ||
+                label is CasePatternSwitchLabelSyntax pattern && IsNativeCatchAll(pattern.Pattern, context)))
         {
             Report(
                 context,
                 RuleIds.NativeUnionDiscard,
                 switchStatement.SwitchKeyword.GetLocation(),
-                "default/discard label can hide a newly added native union case");
+                "default/catch-all label can hide a newly added native union case");
         }
 
         AnalyzeClosedSwitch(
@@ -623,6 +623,28 @@ public sealed class FunctionalPolicyAnalyzer : DiagnosticAnalyzer
             labels.OfType<CasePatternSwitchLabelSyntax>().Select(label => label.Pattern),
             switchStatement.SwitchKeyword.GetLocation());
     }
+
+    // Deliberately bounded: recognize total shapes, without trying to prove
+    // arbitrary property predicates or guards. Explicit case types stay visible.
+    private static bool IsNativeCatchAll(PatternSyntax pattern, SyntaxNodeAnalysisContext context) => pattern switch
+    {
+        DiscardPatternSyntax or VarPatternSyntax => true,
+        ParenthesizedPatternSyntax wrapped => IsNativeCatchAll(wrapped.Pattern, context),
+        BinaryPatternSyntax binary when binary.IsKind(SyntaxKind.OrPattern) =>
+            IsNativeCatchAll(binary.Left, context) || IsNativeCatchAll(binary.Right, context),
+        BinaryPatternSyntax binary when binary.IsKind(SyntaxKind.AndPattern) =>
+            IsNativeCatchAll(binary.Left, context) && IsNativeCatchAll(binary.Right, context),
+        DeclarationPatternSyntax declared => IsObjectPattern(declared.Type, context),
+        TypePatternSyntax typed => IsObjectPattern(typed.Type, context),
+        RecursivePatternSyntax { PositionalPatternClause: null, PropertyPatternClause.Subpatterns.Count: 0 } recursive =>
+            recursive.Type is null || IsObjectPattern(recursive.Type, context),
+        UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern, Pattern: ConstantPatternSyntax constant }
+            when constant.Expression.IsKind(SyntaxKind.NullLiteralExpression) => true,
+        _ => false
+    };
+
+    private static bool IsObjectPattern(TypeSyntax type, SyntaxNodeAnalysisContext context) =>
+        context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type?.SpecialType == SpecialType.System_Object;
 
     private static void AnalyzeClosedSwitch(
         SyntaxNodeAnalysisContext context,

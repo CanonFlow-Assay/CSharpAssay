@@ -188,12 +188,12 @@ public static class RuleCatalogue
             "Only the restricted direct-case model is evaluated."),
         Rule(
             RuleIds.NativeUnionDiscard,
-            "Native union switches should not hide new cases behind a discard",
+            "Native union switches should not hide new cases behind a catch-all",
             RuleCategory.Union,
             RuleCertainty.Deterministic,
             RuleDisposition.Block,
             "native union symbol identity and semantic switch model",
-            "discard/default arm on a native union switch",
+            "discard/default, var, object or non-null catch-all pattern on a native union switch",
             ".NET 11 native unions; unavailable toolchains produce missing evidence.",
             [EffectiveProfile.Native])
     ];

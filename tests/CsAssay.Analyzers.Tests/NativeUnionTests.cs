@@ -67,6 +67,67 @@ public sealed class NativeUnionTests
         Assert.Contains(compilation.GetDiagnostics(TestContext.Current.CancellationToken), d => d.Id == "CS8509");
     }
 
+    [Theory]
+    [InlineData("var other")]
+    [InlineData("(_)")]
+    [InlineData("object other")]
+    [InlineData("object")]
+    [InlineData("{ }")]
+    [InlineData("object { }")]
+    [InlineData("not null")]
+    [InlineData("not null and { }")]
+    [InlineData("Success or object")]
+    public async Task Catch_all_patterns_remain_visible_in_native_switch_expressions(string pattern)
+    {
+        var source = Cases + $$"""
+            public static class Example
+            {
+                public static string Hidden(Outcome value) => value switch { {{pattern}} => "hidden" };
+            }
+            """;
+        Assert.DoesNotContain(Compile(source).GetDiagnostics(TestContext.Current.CancellationToken), d => d.Severity == DiagnosticSeverity.Error);
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(source);
+        Assert.Single(diagnostics, d => d.Id == RuleIds.NativeUnionDiscard);
+    }
+
+    [Theory]
+    [InlineData("var other")]
+    [InlineData("object other")]
+    [InlineData("{ }")]
+    public async Task Catch_all_patterns_remain_visible_in_native_switch_statements(string pattern)
+    {
+        var source = Cases + $$"""
+            public static class Example
+            {
+                public static string Hidden(Outcome value)
+                {
+                    switch (value) { case {{pattern}}: return "hidden"; }
+                    return "unhandled";
+                }
+            }
+            """;
+        Assert.DoesNotContain(Compile(source).GetDiagnostics(TestContext.Current.CancellationToken), d => d.Severity == DiagnosticSeverity.Error);
+        var diagnostics = await AnalyzerTestHost.AnalyzeAsync(source);
+        Assert.Single(diagnostics, d => d.Id == RuleIds.NativeUnionDiscard);
+    }
+
+    [Theory]
+    [InlineData("Success or Failure")]
+    [InlineData("Success { } or Failure { }")]
+    [InlineData("(Success) or (Failure)")]
+    public async Task Explicit_case_patterns_do_not_become_catch_all_advice(string pattern)
+    {
+        var source = Cases + $$"""
+            public static class Example
+            {
+                public static string Exhaustive(Outcome value) => value switch { {{pattern}} => "known" };
+                public static string Other(object value) => value switch { var other => "unrelated" };
+            }
+            """;
+        Assert.DoesNotContain(Compile(source).GetDiagnostics(TestContext.Current.CancellationToken), d => d.Severity == DiagnosticSeverity.Error);
+        Assert.DoesNotContain(await AnalyzerTestHost.AnalyzeAsync(source), d => d.Id == RuleIds.NativeUnionDiscard);
+    }
+
     private static CSharpCompilation Compile(string source)
     {
         var paths = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ??
