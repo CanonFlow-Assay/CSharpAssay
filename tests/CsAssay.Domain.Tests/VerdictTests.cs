@@ -112,10 +112,12 @@ public sealed class VerdictTests
         Assert.IsType<PassVerdict>(verdict);
     }
 
-    [Fact]
-    public void Suppressed_finding_cannot_become_a_blocker()
+    [Theory]
+    [InlineData("CSAN0004", false)]
+    [InlineData("CSAP0001", true)]
+    public void Accepted_suppression_excludes_integrity_rule(string ruleId, bool mustBlock)
     {
-        var admitted = RuleCatalogue.All[0] with
+        var admitted = RuleCatalogue.All.Single(rule => rule.Id == ruleId) with
         {
             Status = RuleStatus.Admitted
         };
@@ -144,7 +146,8 @@ public sealed class VerdictTests
 
         var verdict = VerdictFactory.Create(evidence, [admitted]);
 
-        Assert.IsType<PassVerdict>(verdict);
+        if (mustBlock) { Assert.IsType<FailVerdict>(verdict); }
+        else { Assert.IsType<PassVerdict>(verdict); }
     }
 
     [Fact]

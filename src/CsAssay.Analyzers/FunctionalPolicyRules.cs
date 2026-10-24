@@ -1,0 +1,1128 @@
+using System.Collections.Immutable;
+using CsAssay.Catalogue;
+using CsAssay.Domain;
+using CsAssay.SdkAdapter;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
+
+namespace CsAssay.Analyzers;
+
+internal sealed class FunctionalPolicyRules(AnalysisPolicySession policy)
+{
+    private static readonly ImmutableHashSet<string> MutableCollectionTypes =
+        ImmutableHashSet.Create(
+            StringComparer.Ordinal,
+            "System.Collections.ArrayList",
+            "System.Collections.Hashtable",
+            "System.Collections.ICollection",
+            "System.Collections.IList",
+            "System.Collections.IDictionary",
+            "System.Collections.Generic.List`1",
+            "System.Collections.Generic.Dictionary`2",
+            "System.Collections.Generic.HashSet`1",
+            "System.Collections.Generic.ICollection`1",
+            "System.Collections.Generic.IList`1",
+            "System.Collections.Generic.IDictionary`2",
+            "System.Collections.ObjectModel.Collection`1",
+            "System.Collections.ObjectModel.ObservableCollection`1");
+
+
+    public void Register(CompilationStartAnalysisContext context)
+    {
+        context.RegisterCompilationEndAction(AnalyzeNullableCompilation);
+        context.RegisterCompilationEndAction(policy.Complete);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeNullableDirective,
+            SyntaxKind.NullableDirectiveTrivia);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeNullForgiving,
+            SyntaxKind.SuppressNullableWarningExpression);
+        context.RegisterSyntaxNodeAction(
+            AnalyzePragmaSuppression,
+            SyntaxKind.PragmaWarningDirectiveTrivia);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeSuppressMessage,
+            SyntaxKind.Attribute);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeCatchClause,
+            SyntaxKind.CatchClause);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeSwitchExpression,
+            SyntaxKind.SwitchExpression);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeSwitchStatement,
+            SyntaxKind.SwitchStatement);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeForEachStatement,
+            SyntaxKind.ForEachStatement);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeThrowSyntax,
+            SyntaxKind.ThrowStatement,
+            SyntaxKind.ThrowExpression);
+
+        context.RegisterSymbolAction(AnalyzeProperty, SymbolKind.Property);
+        context.RegisterSymbolAction(AnalyzeMethod, SymbolKind.Method);
+        context.RegisterSymbolAction(AnalyzeField, SymbolKind.Field);
+        context.RegisterSymbolAction(AnalyzeEvent, SymbolKind.Event);
+        context.RegisterSymbolAction(AnalyzeClosedType, SymbolKind.NamedType);
+        context.RegisterSymbolAction(AnalyzeGuidanceType, SymbolKind.NamedType);
+
+        context.RegisterOperationAction(
+            AnalyzePropertyReference,
+            OperationKind.PropertyReference);
+        context.RegisterOperationAction(
+            AnalyzeInvocation,
+            OperationKind.Invocation);
+        context.RegisterOperationAction(
+            AnalyzeNullLiteral,
+            OperationKind.Literal);
+        context.RegisterOperationAction(
+            AnalyzeDefaultValue,
+            OperationKind.DefaultValue);
+    }
+
+    private void AnalyzeNullableCompilation(
+        CompilationAnalysisContext context)
+    {
+        if (context.Compilation.Options is not CSharpCompilationOptions options ||
+            options.NullableContextOptions == NullableContextOptions.Enable)
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.NullableDisabled,
+            Location.None,
+            "compilation nullable context is " +
+                options.NullableContextOptions.ToString());
+    }
+
+    private void AnalyzeNullableDirective(SyntaxNodeAnalysisContext context)
+    {
+        var directive = (NullableDirectiveTriviaSyntax)context.Node;
+        if (!directive.SettingToken.IsKind(SyntaxKind.DisableKeyword))
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.NullableDisabled,
+            directive.GetLocation(),
+            "#nullable disable removes required compiler evidence");
+    }
+
+    private void AnalyzeNullForgiving(SyntaxNodeAnalysisContext context)
+    {
+        Report(
+            context,
+            RuleIds.NullForgiving,
+            context.Node.GetLocation(),
+            "null-forgiving operator discards nullable-flow evidence");
+    }
+
+    private void AnalyzePragmaSuppression(SyntaxNodeAnalysisContext context)
+    {
+        var directive = (PragmaWarningDirectiveTriviaSyntax)context.Node;
+        if (!directive.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword)) { return; }
+        if (directive.ErrorCodes.Count == 0)
+        {
+            Report(context, RuleIds.UnauthorizedSuppression, directive.GetLocation(), "Blanket pragma suppression cannot identify a scoped grant.");
+            return;
+        }
+        foreach (var code in directive.ErrorCodes)
+        {
+            var id = code.ToString().Trim();
+            if (!id.StartsWith("CSA", StringComparison.OrdinalIgnoreCase)) { continue; }
+            var end = directive.SyntaxTree.GetRoot(context.CancellationToken).DescendantTrivia(descendIntoTrivia: true)
+                .Select(trivia => trivia.GetStructure()).OfType<PragmaWarningDirectiveTriviaSyntax>()
+                .Where(next => next.SpanStart > directive.SpanStart && next.DisableOrRestoreKeyword.IsKind(SyntaxKind.RestoreKeyword) &&
+                    (next.ErrorCodes.Count == 0 || next.ErrorCodes.Any(item => item.ToString().Trim() == id)))
+                .Select(next => next.SpanStart).DefaultIfEmpty(directive.SyntaxTree.Length).Min();
+            policy.RegisterSourceSuppression(new(id, code.GetLocation(), directive.SyntaxTree, directive.Span.End, end, policy.NamespaceOf(context.ContainingSymbol)));
+        }
+    }
+
+    private void AnalyzeSuppressMessage(SyntaxNodeAnalysisContext context)
+    {
+        var attribute = (AttributeSyntax)context.Node;
+        if (context.SemanticModel.GetSymbolInfo(
+                attribute,
+                context.CancellationToken).Symbol is not IMethodSymbol constructor ||
+            !string.Equals(
+                constructor.ContainingType.GetFullMetadataName(),
+                "System.Diagnostics.CodeAnalysis.SuppressMessageAttribute",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (attribute.ArgumentList is not AttributeArgumentListSyntax argumentList ||
+            argumentList.Arguments.Count < 2)
+        {
+            return;
+        }
+
+        var value = context.SemanticModel.GetConstantValue(
+            argumentList.Arguments[1].Expression,
+            context.CancellationToken);
+        if (!value.HasValue ||
+            value.Value is not string checkId ||
+            !checkId.StartsWith("CSA", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var declaration = attribute.Parent?.Parent ?? attribute;
+        policy.RegisterSourceSuppression(new(checkId.Split(':')[0], attribute.GetLocation(), attribute.SyntaxTree, declaration.SpanStart, declaration.Span.End, policy.NamespaceOf(context.ContainingSymbol)));
+    }
+
+    private void AnalyzeCatchClause(SyntaxNodeAnalysisContext context)
+    {
+        var catchClause = (CatchClauseSyntax)context.Node;
+        if (catchClause.Block.Statements.Count != 0)
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.SwallowedException,
+            catchClause.CatchKeyword.GetLocation(),
+            "empty catch block discards the failure");
+    }
+
+    private void AnalyzeProperty(SymbolAnalysisContext context)
+    {
+        var property = (IPropertySymbol)context.Symbol;
+        if (property.IsImplicitlyDeclared &&
+            !property.Locations.Any(location => location.IsInSource))
+        {
+            return;
+        }
+
+        ReportNullableContract(context, property, property.Type);
+
+        if (IsPublicApi(property) &&
+            !property.ContainingType.IsRecord &&
+            !ImplementsInheritedContract(property) &&
+            IsKnownMutableCollection(property.Type))
+        {
+            Report(
+                context,
+                RuleIds.MutableShellLeakage,
+                FirstSourceLocation(property),
+                property.ToDisplayString() + " exposes " +
+                    property.Type.ToDisplayString());
+        }
+
+        if (
+            property.DeclaredAccessibility != Accessibility.Public ||
+            !property.ContainingType.IsRecord)
+        {
+            return;
+        }
+
+        if (property.SetMethod is { IsInitOnly: false } setter &&
+            setter.DeclaredAccessibility == Accessibility.Public)
+        {
+            Report(
+                context,
+                RuleIds.MutableSetter,
+                FirstSourceLocation(property),
+                property.ToDisplayString() + " exposes a public set accessor");
+        }
+
+        if (property.Type.TypeKind == TypeKind.Array ||
+            MutableCollectionTypes.Contains(
+                property.Type.OriginalDefinition.GetFullMetadataName()))
+        {
+            Report(
+                context,
+                RuleIds.MutableCollectionExposure,
+                FirstSourceLocation(property),
+                property.ToDisplayString() + " exposes " +
+                    property.Type.ToDisplayString());
+        }
+
+    }
+
+    private void AnalyzeMethod(SymbolAnalysisContext context)
+    {
+        var method = (IMethodSymbol)context.Symbol;
+        AnalyzeConfiguredDomainPrimitives(context, method);
+
+        if (IsPublicApi(method) && !ImplementsInheritedContract(method))
+        {
+            if (!method.ReturnsVoid && ContainsNullableValue(method.ReturnType))
+            {
+                Report(
+                    context,
+                    RuleIds.NullableCoreContract,
+                    FirstSourceLocation(method),
+                    method.ToDisplayString() + " has a nullable return contract");
+            }
+
+            foreach (var parameter in method.Parameters.Where(parameter =>
+                         ContainsNullableValue(parameter.Type)))
+            {
+                Report(
+                    context,
+                    RuleIds.NullableCoreContract,
+                    FirstSourceLocation(parameter),
+                    method.ToDisplayString() + " has nullable parameter " +
+                        parameter.Name);
+            }
+
+            if (method.MethodKind == MethodKind.Ordinary &&
+                !method.ReturnsVoid &&
+                IsKnownMutableCollection(method.ReturnType))
+            {
+                Report(
+                    context,
+                    RuleIds.MutableShellLeakage,
+                    FirstSourceLocation(method),
+                    method.ToDisplayString() + " returns " +
+                        method.ReturnType.ToDisplayString());
+            }
+        }
+
+        if (!method.IsAsync || !method.ReturnsVoid || IsEventHandler(method))
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.AsyncVoid,
+            FirstSourceLocation(method),
+            method.ToDisplayString() + " is async void but is not an event handler");
+    }
+
+    private void AnalyzeField(SymbolAnalysisContext context)
+    {
+        var field = (IFieldSymbol)context.Symbol;
+        ReportNullableContract(context, field, field.Type);
+    }
+
+    private void AnalyzeEvent(SymbolAnalysisContext context)
+    {
+        var @event = (IEventSymbol)context.Symbol;
+        ReportNullableContract(context, @event, @event.Type);
+    }
+
+    private void AnalyzeClosedType(SymbolAnalysisContext context)
+    {
+        var type = (INamedTypeSymbol)context.Symbol;
+        if (UnionCapabilities.IsNativeUnion(type) || !IsConfiguredClosedType(
+                type,
+                context.Options.AnalyzerConfigOptionsProvider))
+        {
+            return;
+        }
+
+        var externallyCallableConstructor = type.InstanceConstructors.FirstOrDefault(
+            constructor => constructor.DeclaredAccessibility is
+                Accessibility.Public or
+                Accessibility.Protected or
+                Accessibility.ProtectedOrInternal);
+
+        if (externallyCallableConstructor is null)
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.ExtensibleClosedHierarchy,
+            FirstSourceLocation(externallyCallableConstructor),
+            type.ToDisplayString() + " has an externally callable constructor");
+    }
+
+    private void AnalyzeGuidanceType(SymbolAnalysisContext context)
+    {
+        var type = (INamedTypeSymbol)context.Symbol;
+        if (type.IsImplicitlyDeclared ||
+            !type.Locations.Any(location => location.IsInSource))
+        {
+            return;
+        }
+
+        var stateMembers = type.GetMembers()
+            .Where(member => !member.IsStatic && member.DeclaredAccessibility != Accessibility.Private)
+            .Where(member => member switch
+            {
+                IPropertySymbol property =>
+                    property.Type.SpecialType == SpecialType.System_Boolean,
+                IFieldSymbol field =>
+                    !field.IsImplicitlyDeclared &&
+                    field.Type.SpecialType == SpecialType.System_Boolean,
+                _ => false
+            })
+            .Select(member => member.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        if (stateMembers.Length >= 2)
+        {
+            Report(
+                context,
+                RuleIds.StateFlags,
+                FirstSourceLocation(type),
+                type.ToDisplayString() + " owns boolean state members: " +
+                    string.Join(", ", stateMembers));
+        }
+
+        if (IsBehaviorTypeCandidate(type))
+        {
+            Report(
+                context,
+                RuleIds.FunctionCandidate,
+                FirstSourceLocation(type),
+                type.ToDisplayString() +
+                    " has a restricted strategy/visitor/builder shape");
+        }
+    }
+
+    private void AnalyzeConfiguredDomainPrimitives(
+        SymbolAnalysisContext context,
+        IMethodSymbol method)
+    {
+        if (method.MethodKind != MethodKind.Ordinary ||
+            !IsPublicApi(method))
+        {
+            return;
+        }
+
+        var encoded = context.Options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue("csassay_domain_primitives", out var configured)
+            ? configured : string.Join(";", policy.Host.Evaluation.Policy.DomainPrimitives.OrderBy(item => item.Key, StringComparer.Ordinal)
+                .Select(item => item.Key + "=" + string.Join(",", item.Value)));
+        if (string.IsNullOrWhiteSpace(encoded)) { return; }
+
+        foreach (var entry in ParseDomainPrimitiveGlossary(encoded))
+        {
+            foreach (var parameter in method.Parameters.Where(parameter =>
+                         string.Equals(
+                             parameter.Name,
+                             entry.ParameterName,
+                             StringComparison.OrdinalIgnoreCase) &&
+                         IsRawDomainPrimitive(parameter.Type) &&
+                         !string.Equals(
+                             parameter.Type.GetFullMetadataName(),
+                             entry.ExpectedType,
+                             StringComparison.Ordinal)))
+            {
+                Report(
+                    context,
+                    RuleIds.PrimitiveObsession,
+                    FirstSourceLocation(parameter),
+                    method.ToDisplayString() + " uses raw " +
+                        parameter.Type.ToDisplayString() + " for " +
+                        parameter.Name + "; glossary type is " +
+                        entry.ExpectedType);
+            }
+        }
+    }
+
+    private void AnalyzePropertyReference(OperationAnalysisContext context)
+    {
+        var operation = (IPropertyReferenceOperation)context.Operation;
+
+        if (context.ContainingSymbol is IMethodSymbol
+            {
+                IsAsync: true
+            } &&
+            string.Equals(operation.Property.Name, "Result", StringComparison.Ordinal) &&
+            MetadataIdentity.IsTaskLike(operation.Property.ContainingType))
+        {
+            Report(
+                context,
+                RuleIds.BlockingAsync,
+                operation.Syntax.GetLocation(),
+                operation.Property.ToDisplayString() + " blocks async flow");
+        }
+
+    }
+
+    private void AnalyzeInvocation(OperationAnalysisContext context)
+    {
+        var invocation = (IInvocationOperation)context.Operation;
+        if (context.ContainingSymbol is not IMethodSymbol
+            {
+                IsAsync: true
+            } ||
+            !string.Equals(invocation.TargetMethod.Name, "Wait", StringComparison.Ordinal) ||
+            !MetadataIdentity.IsTaskLike(invocation.TargetMethod.ContainingType))
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.BlockingAsync,
+            invocation.Syntax.GetLocation(),
+            invocation.TargetMethod.ToDisplayString() + " blocks async flow");
+    }
+
+    private void AnalyzeNullLiteral(OperationAnalysisContext context)
+    {
+        var literal = (ILiteralOperation)context.Operation;
+        if (literal.IsImplicit ||
+            !literal.ConstantValue.HasValue ||
+            literal.ConstantValue.Value is not null ||
+            IsNullObservation(literal))
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.NullValueIntroduction,
+            literal.Syntax.GetLocation(),
+            "null is introduced as a value instead of an explicit domain case");
+    }
+
+    private void AnalyzeDefaultValue(OperationAnalysisContext context)
+    {
+        var defaultValue = (IDefaultValueOperation)context.Operation;
+        if (defaultValue.IsImplicit ||
+            defaultValue.Type is not ITypeSymbol
+            {
+                IsReferenceType: true
+            })
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.NullValueIntroduction,
+            defaultValue.Syntax.GetLocation(),
+            "reference-typed default introduces a null value");
+    }
+
+    private void AnalyzeThrowSyntax(SyntaxNodeAnalysisContext context)
+    {
+        ExpressionSyntax expression;
+        switch (context.Node)
+        {
+            case ThrowStatementSyntax
+            {
+                Expression: ExpressionSyntax statementExpression
+            }:
+                expression = statementExpression;
+                break;
+            case ThrowExpressionSyntax throwExpression:
+                expression = throwExpression.Expression;
+                break;
+            default:
+                return;
+        }
+
+        var methodDeclaration = context.Node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        if (methodDeclaration is null ||
+            context.SemanticModel.GetDeclaredSymbol(
+                methodDeclaration,
+                context.CancellationToken) is not IMethodSymbol method ||
+            !IsPublicApi(method) ||
+            context.SemanticModel.GetTypeInfo(
+                expression,
+                context.CancellationToken).Type is not INamedTypeSymbol exceptionType ||
+            !IsExpectedFailureException(exceptionType))
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.CoreBoundaryException,
+            context.Node.GetLocation(),
+            method.ToDisplayString() + " explicitly throws " +
+                exceptionType.ToDisplayString());
+    }
+
+    private void AnalyzeForEachStatement(SyntaxNodeAnalysisContext context)
+    {
+        var statement = (ForEachStatementSyntax)context.Node;
+        if (!IsSimpleAccumulation(statement.Statement))
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.LoopPipelineOpportunity,
+            statement.ForEachKeyword.GetLocation(),
+            "simple foreach accumulation may be expressible as Select/Where");
+    }
+
+    private void AnalyzeSwitchExpression(SyntaxNodeAnalysisContext context)
+    {
+        var switchExpression = (SwitchExpressionSyntax)context.Node;
+        if (context.SemanticModel.GetTypeInfo(
+            switchExpression.GoverningExpression,
+            context.CancellationToken).Type is not INamedTypeSymbol switchedType)
+        {
+            return;
+        }
+
+        if (UnionCapabilities.IsNativeUnion(switchedType) &&
+            switchExpression.Arms.Any(arm => IsNativeCatchAll(arm.Pattern, context)))
+        {
+            Report(
+                context,
+                RuleIds.NativeUnionDiscard,
+                switchExpression.SwitchKeyword.GetLocation(),
+                "catch-all arm can hide a newly added native union case");
+        }
+
+        AnalyzeClosedSwitch(
+            context,
+            switchedType,
+            switchExpression.Arms.Select(arm => arm.Pattern),
+            switchExpression.SwitchKeyword.GetLocation());
+    }
+
+    private void AnalyzeSwitchStatement(SyntaxNodeAnalysisContext context)
+    {
+        var switchStatement = (SwitchStatementSyntax)context.Node;
+        if (context.SemanticModel.GetTypeInfo(
+            switchStatement.Expression,
+            context.CancellationToken).Type is not INamedTypeSymbol switchedType)
+        {
+            return;
+        }
+        var labels = switchStatement.Sections.SelectMany(section => section.Labels);
+
+        if (UnionCapabilities.IsNativeUnion(switchedType) &&
+            labels.Any(label => label is DefaultSwitchLabelSyntax ||
+                label is CasePatternSwitchLabelSyntax pattern && IsNativeCatchAll(pattern.Pattern, context)))
+        {
+            Report(
+                context,
+                RuleIds.NativeUnionDiscard,
+                switchStatement.SwitchKeyword.GetLocation(),
+                "default/catch-all label can hide a newly added native union case");
+        }
+
+        AnalyzeClosedSwitch(
+            context,
+            switchedType,
+            labels.OfType<CasePatternSwitchLabelSyntax>().Select(label => label.Pattern),
+            switchStatement.SwitchKeyword.GetLocation());
+    }
+
+    // Deliberately bounded: recognize total shapes, without trying to prove
+    // arbitrary property predicates or guards. Explicit case types stay visible.
+    private static bool IsNativeCatchAll(PatternSyntax pattern, SyntaxNodeAnalysisContext context) => pattern switch
+    {
+        DiscardPatternSyntax or VarPatternSyntax => true,
+        ParenthesizedPatternSyntax wrapped => IsNativeCatchAll(wrapped.Pattern, context),
+        BinaryPatternSyntax binary when binary.IsKind(SyntaxKind.OrPattern) =>
+            IsNativeCatchAll(binary.Left, context) || IsNativeCatchAll(binary.Right, context),
+        BinaryPatternSyntax binary when binary.IsKind(SyntaxKind.AndPattern) =>
+            IsNativeCatchAll(binary.Left, context) && IsNativeCatchAll(binary.Right, context),
+        DeclarationPatternSyntax declared => IsObjectPattern(declared.Type, context),
+        TypePatternSyntax typed => IsObjectPattern(typed.Type, context),
+        RecursivePatternSyntax { PositionalPatternClause: null, PropertyPatternClause.Subpatterns.Count: 0 } recursive =>
+            recursive.Type is null || IsObjectPattern(recursive.Type, context),
+        UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern, Pattern: ConstantPatternSyntax constant }
+            when constant.Expression.IsKind(SyntaxKind.NullLiteralExpression) => true,
+        _ => false
+    };
+
+    private static bool IsObjectPattern(TypeSyntax type, SyntaxNodeAnalysisContext context) =>
+        context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type?.SpecialType == SpecialType.System_Object;
+
+    private void AnalyzeClosedSwitch(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol switchedType,
+        IEnumerable<PatternSyntax> patterns,
+        Location location)
+    {
+        if (UnionCapabilities.IsNativeUnion(switchedType) || !IsConfiguredClosedType(
+                switchedType,
+                context.Options.AnalyzerConfigOptionsProvider))
+        {
+            return;
+        }
+
+        var directCases = EnumerateTypes(context.Compilation.Assembly.GlobalNamespace)
+            .Where(type => SymbolEqualityComparer.Default.Equals(type.BaseType, switchedType))
+            .ToImmutableArray();
+
+        if (directCases.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        var handledBuilder =
+            ImmutableHashSet.CreateBuilder<INamedTypeSymbol>(
+                SymbolEqualityComparer.Default);
+        foreach (var pattern in patterns)
+        {
+            if (GetPatternType(pattern, context) is
+                Presence<INamedTypeSymbol>.Present found)
+            {
+                handledBuilder.Add(found.Value);
+            }
+        }
+
+        var handled = handledBuilder.ToImmutable();
+        var missing = directCases
+            .Where(type => !handled.Contains(type))
+            .Select(type => type.ToDisplayString())
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        if (missing.Length == 0)
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.IncompleteClosedHierarchySwitch,
+            location,
+            "missing case(s): " + string.Join(", ", missing));
+    }
+
+    private static Presence<INamedTypeSymbol> GetPatternType(
+        PatternSyntax pattern,
+        SyntaxNodeAnalysisContext context)
+    {
+        var typeSyntax = pattern switch
+        {
+            TypePatternSyntax typePattern =>
+                Presence.Of<TypeSyntax>(typePattern.Type),
+            DeclarationPatternSyntax declarationPattern =>
+                Presence.Of<TypeSyntax>(declarationPattern.Type),
+            RecursivePatternSyntax
+            {
+                Type: TypeSyntax recursiveType
+            } => Presence.Of(recursiveType),
+            _ => Presence.Missing<TypeSyntax>()
+        };
+
+        if (typeSyntax is not Presence<TypeSyntax>.Present found ||
+            context.SemanticModel.GetTypeInfo(
+                found.Value,
+                context.CancellationToken).Type is not INamedTypeSymbol type)
+        {
+            return Presence.Missing<INamedTypeSymbol>();
+        }
+
+        return Presence.Of(type);
+    }
+
+    private static bool IsEventHandler(IMethodSymbol method)
+    {
+        if (method.Parameters.Length != 2)
+        {
+            return false;
+        }
+
+        var eventArgs = method.Parameters[1].Type;
+        while (eventArgs is not null)
+        {
+            if (string.Equals(
+                    eventArgs.GetFullMetadataName(),
+                    "System.EventArgs",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            eventArgs = eventArgs.BaseType;
+        }
+
+        return false;
+    }
+
+    private void ReportNullableContract(
+        SymbolAnalysisContext context,
+        ISymbol symbol,
+        ITypeSymbol type)
+    {
+        if (!IsPublicApi(symbol) ||
+            ImplementsInheritedContract(symbol) ||
+            !ContainsNullableValue(type))
+        {
+            return;
+        }
+
+        Report(
+            context,
+            RuleIds.NullableCoreContract,
+            FirstSourceLocation(symbol),
+            symbol.ToDisplayString() + " exposes a nullable value");
+    }
+
+    private static bool ContainsNullableValue(ITypeSymbol type)
+    {
+        if (type.NullableAnnotation == NullableAnnotation.Annotated)
+        {
+            return true;
+        }
+
+        if (type is IArrayTypeSymbol array)
+        {
+            return ContainsNullableValue(array.ElementType);
+        }
+
+        if (type is not INamedTypeSymbol named)
+        {
+            return false;
+        }
+
+        if (named.TypeArguments.IsEmpty) { return false; }
+        if (named.Name == "Nullable" && string.Equals(
+                named.OriginalDefinition.GetFullMetadataName(),
+                "System.Nullable`1",
+                StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return named.TypeArguments.Any(ContainsNullableValue);
+    }
+
+    private static bool IsPublicApi(ISymbol symbol)
+    {
+        if (!IsExternallyVisible(symbol.DeclaredAccessibility))
+        {
+            return false;
+        }
+
+        var containingType = symbol.ContainingType;
+        while (containingType is not null)
+        {
+            if (!IsExternallyVisible(containingType.DeclaredAccessibility))
+            {
+                return false;
+            }
+
+            containingType = containingType.ContainingType;
+        }
+
+        return true;
+    }
+
+    private static bool IsExternallyVisible(Accessibility accessibility) =>
+        accessibility is
+            Accessibility.Public or
+            Accessibility.Protected or
+            Accessibility.ProtectedOrInternal;
+
+    private static bool ImplementsInheritedContract(ISymbol symbol)
+    {
+        if (symbol is IMethodSymbol
+            {
+                IsOverride: true
+            } or IMethodSymbol
+            {
+                ExplicitInterfaceImplementations.Length: > 0
+            } or IPropertySymbol
+            {
+                IsOverride: true
+            } or IPropertySymbol
+            {
+                ExplicitInterfaceImplementations.Length: > 0
+            } or IEventSymbol
+            {
+                IsOverride: true
+            } or IEventSymbol
+            {
+                ExplicitInterfaceImplementations.Length: > 0
+            })
+        {
+            return true;
+        }
+
+        if (symbol.ContainingType is not INamedTypeSymbol containingType)
+        {
+            return false;
+        }
+
+        foreach (var @interface in containingType.AllInterfaces)
+        {
+            foreach (var member in @interface.GetMembers(symbol.Name))
+            {
+                if (SymbolEqualityComparer.Default.Equals(
+                    containingType.FindImplementationForInterfaceMember(member),
+                    symbol))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsNullObservation(ILiteralOperation literal)
+    {
+        IOperation? current = literal.Parent;
+        while (current is IConversionOperation)
+        {
+            current = current.Parent;
+        }
+
+        if (current is IArgumentOperation
+            {
+                Parent: IInvocationOperation invocation
+            } &&
+            invocation.TargetMethod is
+            {
+                IsStatic: true,
+                ContainingType.SpecialType: SpecialType.System_Object
+            } method &&
+            (string.Equals(method.Name, "Equals", StringComparison.Ordinal) ||
+             string.Equals(method.Name, "ReferenceEquals", StringComparison.Ordinal)))
+        {
+            return true;
+        }
+
+        return current is IConstantPatternOperation or IBinaryOperation
+        {
+            OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals
+        };
+    }
+
+    private static bool IsKnownMutableCollection(ITypeSymbol type) =>
+        type.TypeKind == TypeKind.Array ||
+        MutableCollectionTypes.Contains(
+            type.OriginalDefinition.GetFullMetadataName());
+
+    private static bool IsBehaviorTypeCandidate(INamedTypeSymbol type)
+    {
+        var ordinaryMethods = type.GetMembers()
+            .OfType<IMethodSymbol>()
+            .Where(method =>
+                !method.IsStatic &&
+                !method.IsImplicitlyDeclared &&
+                method.MethodKind == MethodKind.Ordinary)
+            .ToArray();
+
+        if (type.TypeKind == TypeKind.Interface &&
+            type.Name.EndsWith("Strategy", StringComparison.Ordinal) &&
+            ordinaryMethods.Length == 1 &&
+            !type.GetMembers().Any(member => member is IPropertySymbol or IEventSymbol))
+        {
+            return true;
+        }
+
+        if (type.TypeKind == TypeKind.Interface &&
+            type.Name.EndsWith("Visitor", StringComparison.Ordinal) &&
+            ordinaryMethods.Length >= 2)
+        {
+            return true;
+        }
+
+        return type.TypeKind == TypeKind.Class &&
+            type.Name.EndsWith("Builder", StringComparison.Ordinal) &&
+            ordinaryMethods.Any(method =>
+                string.Equals(method.Name, "Build", StringComparison.Ordinal)) &&
+            ordinaryMethods.All(method =>
+                string.Equals(method.Name, "Build", StringComparison.Ordinal) ||
+                method.Name.StartsWith("With", StringComparison.Ordinal) ||
+                method.Name.StartsWith("Add", StringComparison.Ordinal) ||
+                method.Name.StartsWith("Set", StringComparison.Ordinal));
+    }
+
+    private static IEnumerable<DomainPrimitiveGlossaryEntry>
+        ParseDomainPrimitiveGlossary(string encoded)
+    {
+        foreach (var entry in encoded.Split(
+                     [';'],
+                     StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = entry.IndexOf('=');
+            if (separator <= 0 || separator == entry.Length - 1)
+            {
+                continue;
+            }
+
+            var expectedType = entry[..separator].Trim();
+            foreach (var parameterName in entry[(separator + 1)..].Split(
+                         [','],
+                         StringSplitOptions.RemoveEmptyEntries))
+            {
+                var trimmed = parameterName.Trim();
+                if (trimmed.Length > 0)
+                {
+                    yield return new DomainPrimitiveGlossaryEntry(
+                        expectedType,
+                        trimmed[0] == '@'
+                            ? trimmed[1..]
+                            : trimmed);
+                }
+            }
+        }
+    }
+
+    private static bool IsRawDomainPrimitive(ITypeSymbol type) =>
+        type.SpecialType is
+            SpecialType.System_String or
+            SpecialType.System_Boolean or
+            SpecialType.System_Byte or
+            SpecialType.System_SByte or
+            SpecialType.System_Int16 or
+            SpecialType.System_UInt16 or
+            SpecialType.System_Int32 or
+            SpecialType.System_UInt32 or
+            SpecialType.System_Int64 or
+            SpecialType.System_UInt64 or
+            SpecialType.System_Single or
+            SpecialType.System_Double or
+            SpecialType.System_Decimal or
+            SpecialType.System_Char ||
+        string.Equals(
+            type.GetFullMetadataName(),
+            "System.Guid",
+            StringComparison.Ordinal);
+
+    private static bool IsExpectedFailureException(INamedTypeSymbol type)
+    {
+        if (type.GetFullMetadataName() is
+            "System.ArgumentNullException" or
+            "System.ArgumentOutOfRangeException")
+        {
+            return false;
+        }
+
+        for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            if (current.GetFullMetadataName() is
+                "System.ArgumentException" or
+                "System.InvalidOperationException" or
+                "System.FormatException" or
+                "System.Collections.Generic.KeyNotFoundException")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsSimpleAccumulation(StatementSyntax statement)
+    {
+        var single = statement switch
+        {
+            BlockSyntax { Statements.Count: 1 } block => block.Statements[0],
+            _ => statement
+        };
+
+        if (IsSingleAdd(single))
+        {
+            return true;
+        }
+
+        if (single is not IfStatementSyntax
+            {
+                Else: null
+            } conditional)
+        {
+            return false;
+        }
+
+        return conditional.Statement switch
+        {
+            BlockSyntax { Statements.Count: 1 } block =>
+                IsSingleAdd(block.Statements[0]),
+            StatementSyntax nested => IsSingleAdd(nested)
+        };
+    }
+
+    private static bool IsSingleAdd(StatementSyntax statement) =>
+        statement is ExpressionStatementSyntax
+        {
+            Expression: InvocationExpressionSyntax
+            {
+                Expression: MemberAccessExpressionSyntax
+                {
+                    Name.Identifier.ValueText: "Add"
+                },
+                ArgumentList.Arguments.Count: 1
+            }
+        };
+
+    private readonly record struct DomainPrimitiveGlossaryEntry(
+        string ExpectedType,
+        string ParameterName);
+
+    private bool IsConfiguredClosedType(
+        INamedTypeSymbol type,
+        AnalyzerConfigOptionsProvider optionsProvider)
+    {
+        if (!optionsProvider.GlobalOptions.TryGetValue(
+                "csassay_closed_types",
+                out var configured))
+        {
+            configured = string.Join(";", policy.Host.Evaluation.Policy.Representations.ClosedTypes);
+        }
+
+        var metadataName = type.OriginalDefinition.GetFullMetadataName();
+        return configured.Split([';', ','], StringSplitOptions.RemoveEmptyEntries)
+            .Select(value => value.Trim())
+            .Any(value => string.Equals(value, metadataName, StringComparison.Ordinal));
+    }
+
+    private static IEnumerable<INamedTypeSymbol> EnumerateTypes(
+        INamespaceOrTypeSymbol container)
+    {
+        foreach (var member in container.GetMembers())
+        {
+            if (member is INamespaceSymbol namespaceSymbol)
+            {
+                foreach (var nested in EnumerateTypes(namespaceSymbol))
+                {
+                    yield return nested;
+                }
+            }
+            else if (member is INamedTypeSymbol type)
+            {
+                yield return type;
+                foreach (var nested in EnumerateTypes(type))
+                {
+                    yield return nested;
+                }
+            }
+        }
+    }
+
+    private static Location FirstSourceLocation(ISymbol symbol) =>
+        symbol.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None;
+
+    private void Report(
+        SyntaxNodeAnalysisContext context,
+        string ruleId,
+        Location location,
+        string detail) =>
+        context.ReportDiagnostic(policy.Create(ruleId, location, detail, policy.NamespaceOf(context.ContainingSymbol)));
+
+    private void Report(
+        SymbolAnalysisContext context,
+        string ruleId,
+        Location location,
+        string detail) =>
+        context.ReportDiagnostic(policy.Create(ruleId, location, detail, policy.NamespaceOf(context.Symbol)));
+
+    private void Report(
+        OperationAnalysisContext context,
+        string ruleId,
+        Location location,
+        string detail) =>
+        context.ReportDiagnostic(policy.Create(ruleId, location, detail, policy.NamespaceOf(context.ContainingSymbol)));
+
+    private void Report(
+        CompilationAnalysisContext context,
+        string ruleId,
+        Location location,
+        string detail) =>
+        context.ReportDiagnostic(policy.Create(ruleId, location, detail));
+}

@@ -104,6 +104,9 @@ public sealed class VerificationIntegrationTests
             result.Verdict.Evidence.Findings,
             finding => finding.RuleId == "CSAN0001");
         Assert.Equal(RuleDisposition.Advise, nullableDisabled.Disposition);
+        Assert.Equal(AssayVerdictKind.Fail, result.Verdict.Kind);
+        Assert.Contains(result.Verdict.Evidence.Findings, finding => finding.RuleId == "CSAP0001" && finding.Disposition == RuleDisposition.Block);
+        Assert.Contains(result.Verdict.Evidence.Missing, item => item.Code == "CSASSAY-NULLABLE-FLOW-INCOMPLETE");
         Assert.DoesNotContain(
             result.Verdict.Evidence.Findings,
             finding =>
@@ -190,10 +193,10 @@ public sealed class VerificationIntegrationTests
             "Policies",
             "required-test-not-run.json");
         var first = await VerifyFixtureAsync(
-            "BoundaryScope",
+            "CompleteBoundaryScope",
             Presence.Of(policy));
         var second = await VerifyFixtureAsync(
-            "BoundaryScope",
+            "CompleteBoundaryScope",
             Presence.Of(policy));
 
         Assert.Empty(first.Verdict.Evidence.Failures);
@@ -283,7 +286,7 @@ public sealed class VerificationIntegrationTests
             "Policies",
             "advisory-rule-required.json");
         var result = await VerifyFixtureAsync(
-            "BoundaryScope",
+            "CompleteBoundaryScope",
             Presence.Of(policy));
 
         Assert.Equal(AssayVerdictKind.Inconclusive, result.Verdict.Kind);

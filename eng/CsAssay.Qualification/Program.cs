@@ -28,10 +28,11 @@ internal static class Program
                 throw new ArgumentException("Keep qualification output under ignored artifacts/.");
             }
 
-            Directory.CreateDirectory(command == "package-profile" ? Path.GetDirectoryName(output)! : output);
+            Directory.CreateDirectory(command is "package-profile" or "policy-consumers" ? Path.GetDirectoryName(output)! : output);
             return command switch
             {
                 "qualify" => await Qualify(output),
+                "policy-consumers" when args.Length == 5 && args[1] == "--tool" => await PolicyConsumerQualification.Run(Root, output, args[2]),
                 "package-profile" => await PackageProfile(output),
                 _ => throw new ArgumentException("Usage: qualify|package-profile [--output path]")
             };
@@ -98,6 +99,7 @@ internal static class Program
             process.StartInfo.ArgumentList.Add(arg);
         }
 
+        if (log is not null) { process.StartInfo.Environment["CSASSAY_QUALIFICATION_OUTPUT"] = Path.GetDirectoryName(log)!; }
         if (performance)
         {
             process.StartInfo.Environment["CSASSAY_PERFORMANCE_REPORT"] = Path.Combine(Path.GetDirectoryName(log!)!, "performance.json");
@@ -141,6 +143,7 @@ internal static class Program
         var gates = new JsonArray();
         var report = new JsonObject { ["schema"] = "csassay-local-qualification/0.1", ["executionStatus"] = "running", ["sourceCommit"] = source, ["gates"] = gates, ["releaseQualified"] = false, ["publication"] = "none", ["scope"] = "Every required local release gate must pass; failures and logs are retained." };
         var path = Path.Combine(output, "qualification.json");
+        if (File.Exists(path)) { throw new InvalidOperationException("Choose a fresh qualification directory; prior attempts are retained."); }
         Save(path, report);
         (string Name, string[] Command)[] commands = [
             ("restore", ["./eng/restore.sh"]),

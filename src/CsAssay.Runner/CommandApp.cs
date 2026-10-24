@@ -71,7 +71,7 @@ public static class CommandApp
                 (UnionCapabilities.CompilerExposesUnionSymbols()
                     ? "available (qualification still required)"
                     : "unavailable"));
-            output.WriteLine(".NET 11 RC1 native lane: ready");
+            output.WriteLine(".NET 11 RC2 native lane: ready");
             return Task.FromResult(0);
         }
         catch (Exception exception)
@@ -158,54 +158,44 @@ public static class CommandApp
         catch (OperationCanceledException)
         {
             await error.WriteLineAsync("CSharpAssay was cancelled.", CancellationToken.None).ConfigureAwait(false);
+            output.WriteLine("cs-assay : error CSASSAY-CANCELLED: Analysis was interrupted.");
+            output.WriteLine("Tool failed: analysis did not complete.");
             return 3;
         }
         catch (Exception exception)
         {
             await error.WriteLineAsync(
-                "CSharpAssay verification failed: " + exception.Message, CancellationToken.None)
+                "CSharpAssay verification failed: " + DiagnosticPresentation.Sanitize(exception.Message), CancellationToken.None)
                 .ConfigureAwait(false);
+            output.WriteLine("cs-assay : error CSASSAY-ANALYSIS-FAILED: Analysis could not complete.");
+            output.WriteLine("Tool failed: analysis did not complete.");
             return 3;
         }
 
-        ConsoleReporter.Write(output, result.Verdict);
         try
         {
+            var reports = new List<RequestedReport>();
             if (commandLine.JsonPath is Presence<string>.Present jsonPath)
             {
-                if (commandLine.Command == "assess")
-                {
-                    await AssessmentWriter.WriteAsync(jsonPath.Value, result.Verdict, cancellationToken).ConfigureAwait(false);
-                }
-                else
-                {
-                    await JsonEvidenceWriter.WriteAsync(jsonPath.Value, result.Verdict, cancellationToken).ConfigureAwait(false);
-                }
+                reports.Add(new(jsonPath.Value, commandLine.Command == "assess"
+                    ? AssessmentWriter.Write(result.Verdict) : JsonEvidenceWriter.Write(result.Verdict)));
             }
-
             if (commandLine.SarifPath is Presence<string>.Present sarifPath)
             {
-                await SarifWriter.WriteAsync(
-                    sarifPath.Value,
-                    result.Verdict,
-                    cancellationToken).ConfigureAwait(false);
+                reports.Add(new(sarifPath.Value, SarifWriter.Write(result.Verdict, Path.GetDirectoryName(Path.GetFullPath(input.Value)))));
             }
-
             if (commandLine.HtmlPath is Presence<string>.Present htmlPath)
             {
-                var directory = Path.GetDirectoryName(
-                    Path.GetFullPath(htmlPath.Value));
-                if (!string.IsNullOrEmpty(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
-                await File.WriteAllTextAsync(
-                    htmlPath.Value,
-                    HtmlWriter.Write(result.Verdict),
-                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
-                    cancellationToken).ConfigureAwait(false);
+                reports.Add(new(htmlPath.Value, Encoding.UTF8.GetBytes(HtmlWriter.Write(result.Verdict))));
             }
+            await AtomicReportWriter.WriteAsync(reports, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            await error.WriteLineAsync("CSharpAssay report writing was cancelled.", CancellationToken.None).ConfigureAwait(false);
+            output.WriteLine("cs-assay : error CSASSAY-CANCELLED: Requested report writing was interrupted.");
+            output.WriteLine("Tool failed: requested outputs did not complete.");
+            return 3;
         }
         catch (Exception exception) when (
             exception is IOException or
@@ -214,11 +204,14 @@ public static class CommandApp
                 NotSupportedException)
         {
             await error.WriteLineAsync(
-                "CSharpAssay artifact write failed: " + exception.Message, CancellationToken.None)
+                "CSharpAssay artifact write failed: " + DiagnosticPresentation.Sanitize(exception.Message), CancellationToken.None)
                 .ConfigureAwait(false);
+            output.WriteLine("cs-assay : error CSASSAY-REPORT-WRITE: A requested report could not be written.");
+            output.WriteLine("Tool failed: requested outputs did not complete.");
             return 3;
         }
 
+        ConsoleReporter.Write(output, result.Verdict, commandLine.Format, commandLine.ShowSuppressed);
         return result.Verdict.ExitCode;
     }
 
@@ -245,6 +238,8 @@ public static class CommandApp
               cs-assay assess <project-or-solution> [options]
 
             Options:
+              --format <name>  msbuild (default) or text compatibility layout
+              --show-suppressed Detailed accepted suppression observations
               --policy <path>   Explicit .csassay.json
               --profile <name>  native (.NET 11 only)
               --json <path>     Deterministic JSON evidence

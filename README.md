@@ -2,12 +2,17 @@
 
 A deterministic Roslyn verifier for functional C# policy. **.NET 11 is the only supported target and runtime.** The development package line is `0.2.0-rc.1`.
 
-`global.json` pins SDK `11.0.100-rc.1.26425.128` with roll-forward disabled. Projects use `net11.0` and `LangVersion=preview` for native C# unions. The sole profile is `native`, selected by default. Earlier frameworks, `auto`, `compat`, and third-party union/value-object library adapters are unsupported.
+`global.json` pins SDK `11.0.100-rc.2.26504.105` with roll-forward disabled. Projects use `net11.0` and `LangVersion=preview` for native C# unions. The sole profile is `native`, selected by default. Earlier frameworks, `auto`, `compat`, and third-party union/value-object library adapters are unsupported. Runtime go-live support and preview language-feature qualification are separate; see the [toolchain prerequisite](docs/agent-overhaul/toolchain-prerequisite.md).
 
 See the [migration and validation report](docs/net11-migration.md) for breaking changes and validation results.
 
 The current [C# depth undertaking](docs/csharp-depth.md) expands prototype
 catch-all detection while retaining the existing admission and evidence limits.
+
+The boundary/output overhaul adds shared analyzer/verifier policy, narrow grants,
+MSBuild diagnostics and complete SARIF execution metadata. See the
+[behavior and migration guide](docs/agent-overhaul/boundaries-and-output.md);
+source-bound qualification is recorded separately from implementation.
 
 ## Build and test
 

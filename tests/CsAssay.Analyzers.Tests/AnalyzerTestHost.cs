@@ -30,7 +30,9 @@ internal static class AnalyzerTestHost
         IReadOnlyDictionary<string, string> options,
         NullableContextOptions nullableContext =
             NullableContextOptions.Enable,
-        bool concurrentAnalysis = true)
+        bool concurrentAnalysis = true,
+        ImmutableArray<AdditionalText> additionalFiles = default,
+        DiagnosticAnalyzer? analyzer = null)
     {
         var syntaxTrees = sources.Select(source =>
             CSharpSyntaxTree.ParseText(
@@ -45,10 +47,10 @@ internal static class AnalyzerTestHost
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: nullableContext));
         var analyzerOptions = new AnalyzerOptions(
-            ImmutableArray<AdditionalText>.Empty,
+            additionalFiles.IsDefault ? ImmutableArray<AdditionalText>.Empty : additionalFiles,
             new TestOptionsProvider(options));
         var withAnalyzers = compilation.WithAnalyzers(
-            [new FunctionalPolicyAnalyzer()],
+            [analyzer ?? new FunctionalPolicyAnalyzer()],
             new CompilationWithAnalyzersOptions(
                 analyzerOptions,
                 onAnalyzerException: (_, _, _) => { },
@@ -80,7 +82,7 @@ internal static class AnalyzerTestHost
 
         public override AnalyzerConfigOptions GlobalOptions => global;
 
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Empty;
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => global;
 
         public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Empty;
     }

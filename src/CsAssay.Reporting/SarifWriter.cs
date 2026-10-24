@@ -7,7 +7,7 @@ namespace CsAssay.Reporting;
 
 public static class SarifWriter
 {
-    public static byte[] Write(AssayVerdict verdict)
+    public static byte[] Write(AssayVerdict verdict, string? sourceRoot = null)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(
@@ -22,16 +22,24 @@ public static class SarifWriter
             writer.WriteString("version", "2.1.0");
             writer.WriteString(
                 "$schema",
-                "https://json.schemastore.org/sarif-2.1.0.json");
+                "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json");
             writer.WritePropertyName("runs");
             writer.WriteStartArray();
             writer.WriteStartObject();
             WriteTool(writer, verdict.Evidence.ToolVersion);
+            WriteInvocation(writer, verdict);
+            writer.WritePropertyName("originalUriBaseIds");
+            writer.WriteStartObject();
+            writer.WritePropertyName("%SRCROOT%");
+            writer.WriteStartObject();
+            writer.WriteString("uri", sourceRoot is null ? "csassay-source:/" : RootUri(sourceRoot));
+            writer.WriteEndObject();
+            writer.WriteEndObject();
             writer.WritePropertyName("results");
             writer.WriteStartArray();
-            foreach (var finding in verdict.Evidence.Findings)
+            foreach (var item in DiagnosticPresentation.Findings(verdict))
             {
-                WriteResult(writer, finding);
+                WriteResult(writer, item, verdict.Evidence, sourceRoot);
             }
 
             writer.WriteEndArray();
@@ -42,6 +50,7 @@ public static class SarifWriter
             writer.WriteBoolean(
                 "authoritative",
                 verdict.Evidence.IsAuthoritative);
+            writer.WriteString("verificationMode", verdict.Evidence.VerificationMode.ToString().ToLowerInvariant());
             writer.WriteString(
                 "requestedProfile",
                 verdict.Evidence.RequestedProfile.ToString());
@@ -57,6 +66,9 @@ public static class SarifWriter
             writer.WriteString(
                 "policySha256",
                 verdict.Evidence.Policy.Sha256);
+            writer.WriteString("policyTextSha256", verdict.Evidence.PolicyTextSha256);
+            writer.WriteString("policyEvaluationDate", verdict.Evidence.PolicyEvaluationDate);
+            writer.WriteString("findingIdentityRoot", verdict.Evidence.FindingIdentityRoot);
             writer.WriteNumber(
                 "testsTotal",
                 verdict.Evidence.Tests.Sum(test => test.Total));
@@ -98,16 +110,7 @@ public static class SarifWriter
         AssayVerdict verdict,
         CancellationToken cancellationToken)
     {
-        var directory = Path.GetDirectoryName(Path.GetFullPath(path));
-        if (!string.IsNullOrEmpty(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        await File.WriteAllBytesAsync(
-            path,
-            Write(verdict),
-            cancellationToken).ConfigureAwait(false);
+        await AtomicReportWriter.WriteAsync([new RequestedReport(path, Write(verdict))], cancellationToken).ConfigureAwait(false);
     }
 
     private static void WriteTool(Utf8JsonWriter writer, string version)
@@ -155,14 +158,17 @@ public static class SarifWriter
         writer.WriteEndObject();
     }
 
-    private static void WriteResult(Utf8JsonWriter writer, Finding finding)
+    private static void WriteResult(Utf8JsonWriter writer, PresentedFinding item, EvidenceBundle evidence, string? sourceRoot)
     {
+        var finding = item.Finding;
         writer.WriteStartObject();
         writer.WriteString("ruleId", finding.RuleId);
-        writer.WriteString("level", ToLevel(finding.Severity));
+        var ruleIndex = RuleCatalogue.All.OrderBy(rule => rule.Id, StringComparer.Ordinal).Select(rule => rule.Id).ToList().IndexOf(finding.RuleId);
+        if (ruleIndex >= 0) { writer.WriteNumber("ruleIndex", ruleIndex); }
+        writer.WriteString("level", item.Level);
         writer.WritePropertyName("message");
         writer.WriteStartObject();
-        writer.WriteString("text", finding.Message);
+        writer.WriteString("text", item.Message);
         writer.WriteEndObject();
 
         if (!string.IsNullOrEmpty(finding.Location.Path))
@@ -174,27 +180,33 @@ public static class SarifWriter
             writer.WriteStartObject();
             writer.WritePropertyName("artifactLocation");
             writer.WriteStartObject();
-            writer.WriteString("uri", finding.Location.Path);
-            writer.WriteString("uriBaseId", "%SRCROOT%");
+            var artifactPath = sourceRoot is not null && !string.IsNullOrEmpty(finding.PhysicalPath)
+                ? Fingerprints.NormalizePath(Path.GetRelativePath(sourceRoot, finding.PhysicalPath)) : finding.Location.Path;
+            writer.WriteString("uri", ArtifactUri(artifactPath));
+            if (!IsAbsoluteArtifact(artifactPath)) { writer.WriteString("uriBaseId", "%SRCROOT%"); }
             writer.WriteEndObject();
             writer.WritePropertyName("region");
             writer.WriteStartObject();
             writer.WriteNumber("startLine", Math.Max(1, finding.Location.StartLine));
             writer.WriteNumber("startColumn", Math.Max(1, finding.Location.StartColumn));
-            writer.WriteNumber("endLine", Math.Max(1, finding.Location.EndLine));
-            writer.WriteNumber("endColumn", Math.Max(1, finding.Location.EndColumn));
+            writer.WriteNumber("endLine", Math.Max(Math.Max(1, finding.Location.StartLine), finding.Location.EndLine));
+            writer.WriteNumber("endColumn", Math.Max(finding.Location.EndLine <= finding.Location.StartLine ? Math.Max(1, finding.Location.StartColumn) : 1, finding.Location.EndColumn));
             writer.WriteEndObject();
             writer.WriteEndObject();
             writer.WriteEndObject();
             writer.WriteEndArray();
         }
 
-        if (finding.Suppressed)
+        if (item.AcceptedSuppression)
         {
             writer.WritePropertyName("suppressions");
             writer.WriteStartArray();
             writer.WriteStartObject();
-            writer.WriteString("kind", "inSource");
+            var authorization = evidence.Suppressions.FirstOrDefault(suppression => suppression.Authorized && suppression.RuleId == finding.RuleId &&
+                (suppression.Fingerprint.Length > 0 ? suppression.Fingerprint == finding.Fingerprint : suppression.Location == finding.Location));
+            writer.WriteString("kind", authorization?.Form == "effective-diagnostic-suppression" ? "inSource" : "external");
+            writer.WriteString("status", "accepted");
+            writer.WriteString("justification", DiagnosticPresentation.Sanitize(authorization?.Justification ?? "Accepted policy grant; see evidence suppression records."));
             writer.WriteEndObject();
             writer.WriteEndArray();
         }
@@ -209,17 +221,60 @@ public static class SarifWriter
         writer.WriteString("targetFramework", finding.TargetFramework);
         writer.WriteString("certainty", finding.Certainty.ToString());
         writer.WriteString("disposition", finding.Disposition.ToString());
+        writer.WriteString("scope", finding.Scope);
+        writer.WriteString("identityPath", finding.IdentityPath);
+        writer.WriteString("effectiveSeverity", item.Level);
         writer.WriteEndObject();
         writer.WriteEndObject();
     }
 
-    private static string ToLevel(FindingSeverity severity) =>
-        severity switch
+    private static void WriteInvocation(Utf8JsonWriter writer, AssayVerdict verdict)
+    {
+        writer.WritePropertyName("invocations");
+        writer.WriteStartArray();
+        writer.WriteStartObject();
+        writer.WriteNumber("exitCode", verdict.ExitCode);
+        writer.WriteBoolean("executionSuccessful", DiagnosticPresentation.ExecutionSuccessful(verdict));
+        writer.WriteString("exitCodeDescription", DiagnosticPresentation.Summary(verdict));
+        var diagnostics = DiagnosticPresentation.ExecutionDiagnostics(verdict);
+        foreach (var kind in new[] { "execution", "configuration" })
         {
-            FindingSeverity.Error => "error",
-            FindingSeverity.Warning => "warning",
-            FindingSeverity.Info => "note",
-            FindingSeverity.Hidden => "none",
-            _ => "warning"
-        };
+            writer.WritePropertyName(kind == "execution" ? "toolExecutionNotifications" : "toolConfigurationNotifications");
+            writer.WriteStartArray();
+            foreach (var diagnostic in diagnostics.Where(diagnostic => kind == "execution" ? diagnostic.Kind is "execution" or "test" : diagnostic.Kind == "configuration"))
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("descriptor");
+                writer.WriteStartObject();
+                writer.WriteString("id", diagnostic.Code);
+                writer.WriteEndObject();
+                writer.WriteString("level", "error");
+                writer.WritePropertyName("message");
+                writer.WriteStartObject();
+                writer.WriteString("text", diagnostic.Message);
+                writer.WriteEndObject();
+                writer.WriteEndObject();
+            }
+            writer.WriteEndArray();
+        }
+        writer.WriteEndObject();
+        writer.WriteEndArray();
+    }
+
+    private static bool IsAbsoluteArtifact(string path) => path.StartsWith('/') ||
+        path.StartsWith(@"\\", StringComparison.Ordinal) || path.Length >= 3 && char.IsAsciiLetter(path[0]) && path[1] == ':';
+
+    private static string ArtifactUri(string path)
+    {
+        var normalized = Fingerprints.NormalizePath(path);
+        if (normalized.Length >= 3 && char.IsAsciiLetter(normalized[0]) && normalized[1] == ':')
+        {
+            return "file:///" + normalized[..2] + "/" + string.Join("/", normalized[3..].Split('/').Select(Uri.EscapeDataString));
+        }
+        if (normalized.StartsWith("//", StringComparison.Ordinal)) { return new Uri("file:" + normalized).AbsoluteUri; }
+        if (normalized.StartsWith('/')) { return new Uri(normalized).AbsoluteUri; }
+        return string.Join("/", normalized.Split('/').Select(part => Uri.EscapeDataString(part)));
+    }
+
+    private static string RootUri(string root) => ArtifactUri(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
 }

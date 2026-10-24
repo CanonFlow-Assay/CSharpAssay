@@ -25,8 +25,16 @@ only for a reviewed emergency rollback. Under global warnings-as-errors, that
 rollback keeps CSharpAssay diagnostics visible while exempting only admitted
 CSharpAssay IDs from error promotion; unrelated warnings remain errors.
 
-The analyzer package does not consume CLI Core/Shell policy. Its enforcement
-scope is the project that installs it, so keep the reference on reviewed core
-projects rather than installing it centrally across shell projects. The
-authoritative CLI remains required for graph, all-target-framework,
-configured-test, boundary-policy, and completeness evidence.
+The analyzer and verifier now share normalized Core/Shell and fingerprinted-grant
+policy. The package supplies the nearest ancestor .csassay.json as an AdditionalFile,
+or accepts an explicit CsAssayPolicyPath. Selected shell findings remain visible
+warnings even under global warnings-as-errors; core blockers are
+errors. Malformed policy and suppression/nullable-flow integrity failures block.
+Accepted grants remain observations and do not authenticate human approval.
+
+The authoritative CLI remains required for evaluated graph, all target frameworks,
+configured tests and completeness. Supported compiler/editor policy inputs do
+not establish qualification of every IDE host. IDE analysis can be disabled
+independently; removing enforcement or controlling both policy and code is outside
+this bounded guarantee. See docs/agent-overhaul/boundaries-and-output.md for
+matching defaults, deliberate identity migration, editorconfig guards and limits.

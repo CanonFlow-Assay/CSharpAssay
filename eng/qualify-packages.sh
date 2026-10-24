@@ -31,7 +31,7 @@ fi
 chmod +x "$phase4_tool"
 "$phase4_tool" doctor
 "$phase4_tool" verify \
-  specimens/Projects/BoundaryScope/BoundaryScope.csproj
+  specimens/Projects/CompleteBoundaryScope/CompleteBoundaryScope.csproj
 
 "$phase4_dotnet" restore \
   eng/qualification/packaging/AnalyzerConsumer/AnalyzerConsumer.csproj \
@@ -175,3 +175,7 @@ if ! grep -q "CSASSAY-NATIVE-LANGUAGE-REQUIRED" "$phase4_scratch/unsupported-lan
 fi
 
 echo "Fresh tool install, native union consumer, and framework/language rejection qualification passed."
+
+"$phase4_dotnet" eng/CsAssay.Qualification/bin/Release/net11.0/CsAssay.Qualification.dll \
+  policy-consumers --tool "$phase4_tool" \
+  --output "${CSASSAY_QUALIFICATION_OUTPUT:-$phase4_root/artifacts/fresh-install}/packaged-policy-controls"

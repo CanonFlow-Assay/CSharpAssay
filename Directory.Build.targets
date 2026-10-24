@@ -5,6 +5,6 @@
            Text="This repository supports .NET 11 only. Use net11.0 and the SDK pinned in global.json." />
     <Error Condition="'$(LangVersion)' != 'preview'"
            Code="CSASSAY-NATIVE-LANGUAGE-REQUIRED"
-           Text=".NET 11 RC1 native unions require LangVersion=preview." />
+           Text=".NET 11 RC2 native unions require LangVersion=preview." />
   </Target>
 </Project>

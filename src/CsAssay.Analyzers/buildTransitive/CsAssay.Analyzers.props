@@ -1,8 +1,17 @@
 <Project>
   <PropertyGroup>
     <CsAssayEnforceOnBuild Condition="'$(CsAssayEnforceOnBuild)' == ''">true</CsAssayEnforceOnBuild>
+    <_CsAssayPolicyDirectory>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', '.csassay.json'))</_CsAssayPolicyDirectory>
+    <CsAssayPolicyPath Condition="'$(CsAssayPolicyPath)' == '' and '$(_CsAssayPolicyDirectory)' != ''">$(_CsAssayPolicyDirectory)/.csassay.json</CsAssayPolicyPath>
     <RunAnalyzersDuringBuild Condition="'$(CsAssayEnforceOnBuild)' == 'true'">true</RunAnalyzersDuringBuild>
     <_CsAssayBlockingRuleIds>CSAP0001;CSAN0001;CSAN0002;CSAN0003;CSAN0004;CSAI0001;CSAI0002</_CsAssayBlockingRuleIds>
     <WarningsNotAsErrors Condition="'$(CsAssayEnforceOnBuild)' == 'false'">$(WarningsNotAsErrors);$(_CsAssayBlockingRuleIds)</WarningsNotAsErrors>
   </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="CsAssayPolicyPath" />
+    <CompilerVisibleProperty Include="CsAssayEnforceOnBuild" />
+    <CompilerVisibleProperty Include="MSBuildProjectFullPath" />
+    <CompilerVisibleProperty Include="MSBuildProjectName" />
+    <CompilerVisibleProperty Include="TargetFramework" />
+  </ItemGroup>
 </Project>

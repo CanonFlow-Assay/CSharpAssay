@@ -1,11 +1,17 @@
 <Project>
+  <ItemGroup>
+    <AdditionalFiles Include="$(CsAssayPolicyPath)" Condition="'$(CsAssayPolicyPath)' != ''" />
+  </ItemGroup>
   <Target Name="CsAssayRequireNativeToolchain" BeforeTargets="PrepareForBuild">
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(CsAssayEnforceOnBuild)', '^(?i:true|false)$'))"
+           Code="CSASSAY-BUILD-GATE-CONFIG"
+           Text="CsAssayEnforceOnBuild must be true or false. Malformed values cannot silently disable the build gate." />
     <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '^net11\.0(-.+)?$'))"
            Code="CSASSAY-NET11-REQUIRED"
            Text="CsAssay.Analyzers 0.2 requires a .NET 11 target and compiler host. Earlier frameworks are unsupported." />
     <Error Condition="'$(LangVersion)' != 'preview'"
            Code="CSASSAY-NATIVE-LANGUAGE-REQUIRED"
-           Text="CsAssay.Analyzers requires LangVersion=preview for native unions on .NET 11 RC1." />
+           Text="CsAssay.Analyzers requires LangVersion=preview for native unions on .NET 11 RC2." />
   </Target>
 
   <PropertyGroup>
@@ -28,8 +34,7 @@
     <Error Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(_CsAssayWarningsNotAsErrorsNormalized)', '(^|;)(CSAP0001|CSAN000[1-4]|CSAI000[1-2])($|;)'))"
            Code="CSASSAY-BUILD-GATE-SUPPRESSED"
            Text="WarningsNotAsErrors demotes an admitted CSharpAssay blocking rule. Set CsAssayEnforceOnBuild=false only as an explicit, reviewed rollback." />
-    <PropertyGroup>
-      <WarningsAsErrors>$(WarningsAsErrors);$(_CsAssayBlockingRuleIds)</WarningsAsErrors>
-    </PropertyGroup>
+    <!-- Effective errors/advisories come from the same policy projection as the
+         verifier. Global warning promotion would incorrectly block shell advice. -->
   </Target>
 </Project>

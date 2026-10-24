@@ -24,13 +24,15 @@ public sealed record VerificationResult(
 
 public static class VerificationEngine
 {
-    private static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers =
-        [new FunctionalPolicyAnalyzer()];
+    public static Task<VerificationResult> VerifyAsync(VerificationRequest request, CancellationToken cancellationToken) =>
+        VerifyAsync(request, TimeProvider.System, cancellationToken);
 
     public static async Task<VerificationResult> VerifyAsync(
         VerificationRequest request,
+        TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
+        var evaluationDate = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
         var fullInputPath = Path.GetFullPath(request.InputPath);
         var rootPath = Path.GetDirectoryName(fullInputPath) is string directory
             ? directory
@@ -47,6 +49,11 @@ public static class VerificationEngine
             },
             _ => policyResult.Policy
         };
+        var policyRoot = policyResult.Path is Presence<string>.Present declaredPolicy
+            ? Path.GetDirectoryName(declaredPolicy.Value) ?? rootPath : rootPath;
+        var normalizedPolicy = policyResult.Evaluation is Presence<PolicyEvaluation>.Present evaluated
+            ? evaluated.Value : PolicyEvaluation.Normalize(policy, RuleCatalogue.All.Select(rule => rule.Id).ToImmutableArray(), OperatingSystem.IsWindows());
+        var policyTextHash = policyResult.TextSha256;
         var failures = policyResult.Failures.ToBuilder();
         var missing = ImmutableArray.CreateBuilder<MissingEvidence>();
         var findings = ImmutableArray.CreateBuilder<Finding>();
@@ -92,6 +99,28 @@ public static class VerificationEngine
                 policy,
                 workspaceResult.Compilations,
                 failures);
+        }
+
+        var unmatchedProjects = normalizedPolicy.UnmatchedProjects(workspaceResult.Compilations.Select(unit => RelativizePath(unit.ProjectPath, policyRoot)));
+        var solutionScope = Path.GetExtension(fullInputPath) is ".sln" or ".slnx";
+        foreach (var selector in unmatchedProjects)
+        {
+            var message = "Project selector did not match the evaluated graph: " + selector;
+            workspaceDiagnostics.Add(new WorkspaceDiagnosticEvidence("UnusedProjectSelector", message, "", "", solutionScope));
+            if (solutionScope)
+            {
+                missing.Add(new MissingEvidence("CSASSAY-BOUNDARY-PROJECT-UNMATCHED", message, "", ""));
+            }
+        }
+        var declaredNamespaces = workspaceResult.Compilations.SelectMany(unit => EnumerateNamespaces(unit.Compilation.Assembly.GlobalNamespace))
+            .Select(symbol => symbol.ToDisplayString()).ToImmutableArray();
+        foreach (var selector in policy.Boundaries.CoreNamespaces.Concat(policy.Boundaries.ShellNamespaces).Order(StringComparer.Ordinal))
+        {
+            if (!declaredNamespaces.Any(name => PolicyEvaluation.MatchesNamespace(name, [selector])))
+            {
+                workspaceDiagnostics.Add(new WorkspaceDiagnosticEvidence("UnusedNamespaceSelector",
+                    "Namespace selector was not observed in this evaluated compilation graph: " + selector + ". Other configurations and unloaded references were not inspected.", "", "", false));
+            }
         }
 
         foreach (var unit in workspaceResult.Compilations)
@@ -165,7 +194,8 @@ public static class VerificationEngine
             {
                 analyzerResult = await AnalyzerExecutor.ExecuteAsync(
                     unit.Compilation,
-                    Analyzers,
+                    [new FunctionalPolicyAnalyzer(new AnalysisPolicyContext(normalizedPolicy, policyRoot, unit.ProjectPath, unit.Name,
+                        unit.TargetFramework, evaluationDate, true, policyResult.UsedDefault ? "built-in-observe" : "explicit-policy", policyTextHash))],
                     PolicyAnalyzerOptions.Create(policy),
                     cancellationToken).ConfigureAwait(false);
             }
@@ -201,47 +231,42 @@ public static class VerificationEngine
                 var span = Relativize(
                     DiagnosticProjection.ToSourceSpan(diagnostic.Location),
                     rootPath);
-                var finding = CreateFinding(
-                    diagnostic.Id,
-                    diagnostic.GetMessage(
-                        System.Globalization.CultureInfo.InvariantCulture),
-                    diagnostic.IsSuppressed,
-                    unit,
-                    span,
-                    policy,
-                    rootPath);
-                findings.Add(finding);
-
-                if (diagnostic.IsSuppressed)
+                var rule = RuleCatalogue.Find(diagnostic.Id) is Presence<RuleRecord>.Present foundRule
+                    ? foundRule.Value : throw new InvalidOperationException("Unknown rule.");
+                string Property(string key) => diagnostic.Properties.TryGetValue(key, out var value) ? value ?? "" : "";
+                var accepted = Property("csassay_accepted") == "true" && diagnostic.Id != RuleIds.UnauthorizedSuppression;
+                if (diagnostic.Id == RuleIds.NullableDisabled)
                 {
-                    var grant = FindSuppressionGrant(policy, finding);
-                    var authorized =
-                        grant is Presence<SuppressionGrant>.Present active &&
-                        active.Value.Expires >= DateTimeOffset.UtcNow.Date;
-                    suppressions.Add(new SuppressionEvidence(
-                        diagnostic.Id,
-                        "effective-diagnostic-suppression",
-                        grant is Presence<SuppressionGrant>.Present matched
-                            ? matched.Value.Reason
-                            : "No matching reviewed grant.",
-                        authorized,
-                        span));
-
-                    if (!authorized &&
-                        !string.Equals(
-                            diagnostic.Id,
-                            RuleIds.UnauthorizedSuppression,
-                            StringComparison.Ordinal))
+                    missing.Add(new MissingEvidence("CSASSAY-NULLABLE-FLOW-INCOMPLETE", "Nullable analysis was disabled in the evaluated compilation; boundaries and grants cannot restore that evidence.", unit.Name, unit.TargetFramework));
+                }
+                var disposition = Enum.TryParse<RuleDisposition>(Property("csassay_disposition"), out var effective) ? effective : rule.Disposition;
+                var finding = new Finding(diagnostic.Id, diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture),
+                    rule.Disposition == RuleDisposition.Block ? FindingSeverity.Warning : FindingSeverity.Info,
+                    rule.Certainty, disposition, accepted, unit.Name, unit.TargetFramework, span, Property("csassay_fingerprint"))
+                {
+                    Scope = Property("csassay_scope"),
+                    IdentityPath = string.IsNullOrEmpty(diagnostic.Location.GetLineSpan().Path) ? "" : Fingerprints.NormalizePath(Path.GetRelativePath(policyRoot, diagnostic.Location.GetLineSpan().Path)),
+                    PhysicalPath = diagnostic.Location.GetLineSpan().Path
+                };
+                findings.Add(finding);
+                if (accepted || diagnostic.IsSuppressed)
+                {
+                    suppressions.Add(new SuppressionEvidence(diagnostic.Id,
+                        diagnostic.IsSuppressed ? "effective-diagnostic-suppression" : "policy-grant",
+                        accepted ? Property("csassay_justification") : "No matching unexpired grant.", accepted, span)
                     {
-                        findings.Add(CreateFinding(
-                            RuleIds.UnauthorizedSuppression,
-                            "Suppressed " + diagnostic.Id +
-                                " has no unexpired fingerprinted grant.",
-                            suppressed: false,
-                            unit,
-                            span,
-                            policy,
-                            rootPath));
+                        Fingerprint = finding.Fingerprint,
+                        Owner = Property("csassay_owner"),
+                        EvaluationDate = PolicyEvaluation.EvaluationDateText(evaluationDate)
+                    });
+                    if (!accepted && diagnostic.Id != RuleIds.UnauthorizedSuppression)
+                    {
+                        var message = "Suppressed " + diagnostic.Id + " has no unexpired fingerprinted grant.";
+                        findings.Add(new Finding(RuleIds.UnauthorizedSuppression, message, FindingSeverity.Warning,
+                            RuleCertainty.Deterministic, RuleDisposition.Block, false, unit.Name, unit.TargetFramework, span,
+                            Fingerprints.Finding(RuleIds.UnauthorizedSuppression, unit.Name, unit.TargetFramework,
+                                Relativize(DiagnosticProjection.ToSourceSpan(diagnostic.Location), policyRoot), message))
+                        { Scope = finding.Scope, IdentityPath = finding.IdentityPath });
                     }
                 }
             }
@@ -303,7 +328,7 @@ public static class VerificationEngine
             RequestedProfile: policy.Profile,
             Profile: overallProfile,
             IsAuthoritative: request.IsAuthoritative,
-            Policy: CreatePolicyEvidence(policyResult.Path, rootPath),
+            Policy: CreatePolicyEvidence(policyResult, rootPath),
             Toolchain: toolchain,
             Analyzers: CreateAnalyzerEvidence(),
             Projects: projects
@@ -347,152 +372,15 @@ public static class VerificationEngine
                 .ToImmutableArray(),
             Sources: sources.Values
                 .OrderBy(source => source.Path, StringComparer.Ordinal)
-                .ToImmutableArray());
+                .ToImmutableArray())
+        {
+            PolicyEvaluationDate = PolicyEvaluation.EvaluationDateText(evaluationDate),
+            PolicyTextSha256 = policyTextHash,
+            VerificationMode = request.IsAuthoritative ? VerificationMode.Verification : VerificationMode.Analysis
+        };
         var verdict = VerdictFactory.Create(evidence, RuleCatalogue.All);
         return new VerificationResult(verdict, policy, policyResult.Path);
     }
-
-    private static Finding CreateFinding(
-        string ruleId,
-        string message,
-        bool suppressed,
-        WorkspaceCompilation unit,
-        SourceSpan location,
-        AssayPolicy policy,
-        string rootPath)
-    {
-        var rule = RuleCatalogue.Find(ruleId) switch
-        {
-            Presence<RuleRecord>.Present found => found.Value,
-            _ => throw new InvalidOperationException("Unknown rule: " + ruleId)
-        };
-        var inCore = IsInCore(
-            unit,
-            location,
-            policy,
-            rootPath);
-        var disposition = inCore
-            ? rule.Disposition
-            : RuleDisposition.Advise;
-        var fingerprint = Fingerprints.Finding(
-            ruleId,
-            unit.Name,
-            unit.TargetFramework,
-            location,
-            message);
-
-        return new Finding(
-            ruleId,
-            message,
-            DiagnosticProjection.ToFindingSeverity(
-                rule.Disposition == RuleDisposition.Block
-                    ? DiagnosticSeverity.Warning
-                    : DiagnosticSeverity.Info),
-            rule.Certainty,
-            disposition,
-            suppressed,
-            unit.Name,
-            unit.TargetFramework,
-            location,
-            fingerprint);
-    }
-
-    private static bool IsInCore(
-        WorkspaceCompilation unit,
-        SourceSpan location,
-        AssayPolicy policy,
-        string rootPath)
-    {
-        var relativeProject = RelativizePath(unit.ProjectPath, rootPath);
-        if (MatchesProject(
-                relativeProject,
-                policy.Boundaries.ShellProjects))
-        {
-            return false;
-        }
-
-        var projectIsCore = MatchesProject(
-            relativeProject,
-            policy.Boundaries.CoreProjects);
-        if (!policy.Boundaries.CoreProjects.IsDefaultOrEmpty &&
-            !projectIsCore)
-        {
-            return false;
-        }
-
-        if (policy.Boundaries.CoreNamespaces.IsDefaultOrEmpty)
-        {
-            return true;
-        }
-
-        if (string.IsNullOrEmpty(location.Path))
-        {
-            return projectIsCore ||
-                CompilationDeclaresCoreNamespace(
-                    unit.Compilation,
-                    policy.Boundaries.CoreNamespaces);
-        }
-
-        var absolutePath = Path.GetFullPath(
-            Path.Combine(rootPath, location.Path.Replace('/', Path.DirectorySeparatorChar)));
-        var tree = unit.Compilation.SyntaxTrees.FirstOrDefault(candidate =>
-            string.Equals(
-                Path.GetFullPath(candidate.FilePath),
-                absolutePath,
-                StringComparison.OrdinalIgnoreCase));
-        if (tree is null)
-        {
-            return projectIsCore;
-        }
-
-        var lineSpan = tree.GetText().Lines;
-        var lineIndex = Math.Max(0, location.StartLine - 1);
-        var character = Math.Max(0, location.StartColumn - 1);
-        if (lineIndex >= lineSpan.Count)
-        {
-            return projectIsCore;
-        }
-
-        var position = Math.Min(
-            lineSpan[lineIndex].Start + character,
-            lineSpan[lineIndex].End);
-        var symbol = unit.Compilation.GetSemanticModel(tree)
-            .GetEnclosingSymbol(position);
-        var namespaceName = symbol?.ContainingNamespace?.ToDisplayString() ??
-            string.Empty;
-        if (policy.Boundaries.ShellNamespaces.Any(shell =>
-                string.Equals(namespaceName, shell, StringComparison.Ordinal) ||
-                namespaceName.StartsWith(shell + ".", StringComparison.Ordinal)))
-        {
-            return false;
-        }
-
-        return policy.Boundaries.CoreNamespaces.Any(core =>
-            string.Equals(namespaceName, core, StringComparison.Ordinal) ||
-            namespaceName.StartsWith(core + ".", StringComparison.Ordinal));
-    }
-
-    private static bool MatchesProject(
-        string relativeProject,
-        ImmutableArray<string> configuredProjects) =>
-        configuredProjects.Any(project => string.Equals(
-            Fingerprints.NormalizePath(project),
-            relativeProject,
-            StringComparison.OrdinalIgnoreCase));
-
-    private static bool CompilationDeclaresCoreNamespace(
-        CSharpCompilation compilation,
-        ImmutableArray<string> coreNamespaces) =>
-        EnumerateNamespaces(compilation.Assembly.GlobalNamespace)
-            .Select(@namespace => @namespace.ToDisplayString())
-            .Any(namespaceName => coreNamespaces.Any(core =>
-                string.Equals(
-                    namespaceName,
-                    core,
-                    StringComparison.Ordinal) ||
-                namespaceName.StartsWith(
-                    core + ".",
-                    StringComparison.Ordinal)));
 
     private static IEnumerable<INamespaceSymbol> EnumerateNamespaces(
         INamespaceSymbol root)
@@ -554,26 +442,6 @@ public static class VerificationEngine
                     Excluded: true));
             }
         }
-    }
-
-    private static Presence<SuppressionGrant> FindSuppressionGrant(
-        AssayPolicy policy,
-        Finding finding)
-    {
-        foreach (var grant in policy.Suppressions)
-        {
-            if (
-            string.Equals(grant.RuleId, finding.RuleId, StringComparison.Ordinal) &&
-            string.Equals(
-                grant.Fingerprint,
-                finding.Fingerprint,
-                StringComparison.Ordinal))
-            {
-                return Presence.Of(grant);
-            }
-        }
-
-        return Presence.Missing<SuppressionGrant>();
     }
 
     private static ImmutableArray<RuleEvidence> BuildRuleEvidence(
@@ -818,14 +686,14 @@ public static class VerificationEngine
     }
 
     private static PolicyEvidence CreatePolicyEvidence(
-        Presence<string> policyPath,
+        PolicyLoadResult policyResult,
         string rootPath) =>
-        policyPath switch
+        policyResult.Path switch
         {
             Presence<string>.Present present => new PolicyEvidence(
                 "file",
                 RelativizePath(present.Value, rootPath),
-                HashFile(present.Value)),
+                policyResult.RawSha256),
             _ => new PolicyEvidence(
                 "built-in-observe",
                 string.Empty,

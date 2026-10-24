@@ -11,7 +11,7 @@ public sealed class CommandExitTests
             0,
             await RunAsync(
                 "check",
-                Fixture(root, "BoundaryScope")));
+                Fixture(root, "CompleteBoundaryScope")));
         Assert.Equal(
             1,
             await RunAsync(
@@ -39,7 +39,7 @@ public sealed class CommandExitTests
         var exitCode = await CommandApp.RunAsync(
             [
                 "check",
-                Fixture(root, "BoundaryScope"),
+                Fixture(root, "CompleteBoundaryScope"),
                 "--json",
                 root
             ],
@@ -48,10 +48,24 @@ public sealed class CommandExitTests
             TestContext.Current.CancellationToken);
 
         Assert.Equal(3, exitCode);
+        Assert.DoesNotContain("Verification passed:", output.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("Analysis only:", output.ToString(), StringComparison.Ordinal);
         Assert.Contains(
             "artifact write failed",
             error.ToString(),
             StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Cancellation_cannot_print_a_successful_gate()
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+        var exitCode = await CommandApp.RunAsync(["verify", Fixture(FindRoot(), "CompleteBoundaryScope")], output, error, cancellation.Token);
+        Assert.Equal(3, exitCode);
+        Assert.DoesNotContain("Verification passed:", output.ToString(), StringComparison.Ordinal);
     }
 
     private static async Task<int> RunAsync(

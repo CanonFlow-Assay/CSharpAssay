@@ -4,55 +4,45 @@ namespace CsAssay.Reporting;
 
 public static class ConsoleReporter
 {
-    public static void Write(TextWriter output, AssayVerdict verdict)
+    public static void Write(TextWriter output, AssayVerdict verdict, ConsoleFormat format = ConsoleFormat.Msbuild, bool showSuppressed = false)
     {
-        var authority = verdict.Evidence.IsAuthoritative
-            ? "authoritative"
-            : "provisional";
-        output.WriteLine(
-            "CSharpAssay " + verdict.Evidence.ToolVersion + " — " +
-            verdict.Kind + " (" + authority + ")");
-        output.WriteLine(
-            "Projects: " + verdict.Evidence.Projects.Length +
-            "  Findings: " + verdict.Evidence.Findings.Length +
-            "  Tests: " + verdict.Evidence.Tests.Sum(test => test.Total) +
-            "  Missing: " + verdict.Evidence.Missing.Length +
-            "  Failures: " + verdict.Evidence.Failures.Length);
-
-        foreach (var finding in verdict.Evidence.Findings.Take(50))
+        if (format == ConsoleFormat.Text)
         {
-            var location = string.IsNullOrEmpty(finding.Location.Path)
-                ? string.Empty
-                : finding.Location.Path + ":" + finding.Location.StartLine + ":" +
-                    finding.Location.StartColumn + " ";
-            var suppression = finding.Suppressed ? " [suppressed]" : string.Empty;
-            output.WriteLine(
-                location + finding.RuleId + " " + finding.Message + suppression);
+            output.WriteLine("CSharpAssay " + verdict.Evidence.ToolVersion + " — " + verdict.Kind +
+                (verdict.Evidence.IsAuthoritative ? " (authoritative)" : " (provisional)"));
+            output.WriteLine("Projects: " + verdict.Evidence.Projects.Length + "  Findings: " + verdict.Evidence.Findings.Length +
+                "  Tests: " + verdict.Evidence.Tests.Sum(test => test.Total) + "  Missing: " + verdict.Evidence.Missing.Length +
+                "  Failures: " + verdict.Evidence.Failures.Length);
         }
 
-        if (verdict.Evidence.Findings.Length > 50)
+        foreach (var item in DiagnosticPresentation.Findings(verdict).Where(item => !item.AcceptedSuppression || showSuppressed))
         {
-            output.WriteLine(
-                "... " + (verdict.Evidence.Findings.Length - 50) +
-                " additional findings are in the evidence artifact.");
+            var finding = item.Finding;
+            var location = finding.Location;
+            var validSource = !string.IsNullOrWhiteSpace(location.Path) && location.StartLine > 0 && location.StartColumn > 0;
+            var path = DiagnosticPresentation.Sanitize(location.Path);
+            var prefix = format == ConsoleFormat.Text
+                ? (validSource ? path + ":" + location.StartLine + ":" + location.StartColumn + " " : "")
+                : validSource ? path + "(" + location.StartLine + "," + location.StartColumn + "): " : "cs-assay : ";
+            output.WriteLine(prefix + (format == ConsoleFormat.Text ? "" : item.Level + " ") + finding.RuleId +
+                (format == ConsoleFormat.Text ? " " : ": ") + item.Message + (item.AcceptedSuppression ? " [accepted suppression]" : ""));
         }
 
-        foreach (var item in verdict.Evidence.Missing)
+        foreach (var diagnostic in DiagnosticPresentation.ExecutionDiagnostics(verdict))
         {
-            output.WriteLine("missing " + item.Code + ": " + item.Message);
+            output.WriteLine(format == ConsoleFormat.Text
+                ? diagnostic.Kind + " " + diagnostic.Code + ": " + diagnostic.Message
+                : "cs-assay : error " + DiagnosticPresentation.Sanitize(diagnostic.Code) + ": " + diagnostic.Message);
         }
 
-        foreach (var failure in verdict.Evidence.Failures)
+        if (format == ConsoleFormat.Text)
         {
-            output.WriteLine("failure " + failure.Code + ": " + failure.Message);
+            foreach (var test in verdict.Evidence.Tests)
+            {
+                output.WriteLine("test " + test.Outcome + " " + DiagnosticPresentation.Sanitize(test.Input) + " (" + test.Passed +
+                    " passed, " + test.Failed + " failed, " + test.Skipped + " skipped)");
+            }
         }
-
-        foreach (var test in verdict.Evidence.Tests)
-        {
-            output.WriteLine(
-                "test " + test.Outcome + " " + test.Input +
-                " (" + test.Passed + " passed, " + test.Failed +
-                " failed, " + test.Skipped + " skipped)");
-        }
+        output.WriteLine(DiagnosticPresentation.Summary(verdict));
     }
 }

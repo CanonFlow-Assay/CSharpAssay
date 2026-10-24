@@ -35,7 +35,12 @@ public sealed record Finding(
     string Project,
     string TargetFramework,
     SourceSpan Location,
-    string Fingerprint);
+    string Fingerprint)
+{
+    public string Scope { get; init; } = "default";
+    public string IdentityPath { get; init; } = string.Empty;
+    public string PhysicalPath { get; init; } = string.Empty;
+}
 
 public sealed record MissingEvidence(
     string Code,
@@ -72,7 +77,12 @@ public sealed record SuppressionEvidence(
     string Form,
     string Justification,
     bool Authorized,
-    SourceSpan Location);
+    SourceSpan Location)
+{
+    public string Fingerprint { get; init; } = string.Empty;
+    public string Owner { get; init; } = string.Empty;
+    public string EvaluationDate { get; init; } = string.Empty;
+}
 
 public sealed record GeneratedCodeEvidence(
     string Path,
@@ -125,6 +135,8 @@ public sealed record PolicyEvidence(
     string Path,
     string Sha256);
 
+public enum VerificationMode { Unspecified, Analysis, Verification }
+
 public sealed record EvidenceBundle(
     string SchemaVersion,
     string ToolVersion,
@@ -146,6 +158,11 @@ public sealed record EvidenceBundle(
     ImmutableArray<WorkspaceDiagnosticEvidence> WorkspaceDiagnostics,
     ImmutableArray<SourceEvidence> Sources)
 {
+    public string PolicyEvaluationDate { get; init; } = string.Empty;
+    public string PolicyTextSha256 { get; init; } = string.Empty;
+    public string FindingIdentityRoot { get; init; } = "policy-directory";
+    public VerificationMode VerificationMode { get; init; } = VerificationMode.Unspecified;
+
     public static EvidenceBundle Empty(string input, bool isAuthoritative) => new(
         SchemaVersion: "1.2.0",
         ToolVersion: "0.2.0-rc.1",
@@ -173,5 +190,8 @@ public sealed record EvidenceBundle(
         GeneratedCode: ImmutableArray<GeneratedCodeEvidence>.Empty,
         Tests: ImmutableArray<TestRunEvidence>.Empty,
         WorkspaceDiagnostics: ImmutableArray<WorkspaceDiagnosticEvidence>.Empty,
-        Sources: ImmutableArray<SourceEvidence>.Empty);
+        Sources: ImmutableArray<SourceEvidence>.Empty)
+    {
+        VerificationMode = isAuthoritative ? VerificationMode.Verification : VerificationMode.Analysis
+    };
 }

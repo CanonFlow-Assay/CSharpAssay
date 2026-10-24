@@ -1,4 +1,5 @@
 using CsAssay.Domain;
+using CsAssay.Reporting;
 
 namespace CsAssay.Runner;
 
@@ -11,7 +12,10 @@ public sealed record CommandLine(
     Presence<string> HtmlPath,
     Presence<string> PolicyPath,
     Presence<AssayProfile> Profile,
-    bool Help)
+    bool Help,
+    ConsoleFormat Format = ConsoleFormat.Msbuild,
+    bool ShowSuppressed = false,
+    bool FormatSpecified = false)
 {
     public static CommandLine Parse(string[] args)
     {
@@ -42,6 +46,8 @@ public sealed record CommandLine(
         Presence<string> policy = Presence.Missing<string>();
         Presence<AssayProfile> profile = Presence.Missing<AssayProfile>();
         var help = false;
+        Presence<string> format = Presence.Missing<string>();
+        var showSuppressed = false;
 
         for (var index = 1; index < args.Length; index++)
         {
@@ -51,6 +57,13 @@ public sealed record CommandLine(
                 case "-h":
                 case "--help":
                     help = true;
+                    break;
+                case "--format":
+                    format = Once(format, Next(args, ref index, argument), argument);
+                    break;
+                case "--show-suppressed":
+                    if (showSuppressed) { throw new ArgumentException("Duplicate option: " + argument); }
+                    showSuppressed = true;
                     break;
                 case "--json":
                     json = Once(
@@ -114,7 +127,16 @@ public sealed record CommandLine(
             html,
             policy,
             profile,
-            help);
+            help,
+            format switch
+            {
+                Presence<string>.Present { Value: "msbuild" } => ConsoleFormat.Msbuild,
+                Presence<string>.Present { Value: "text" } => ConsoleFormat.Text,
+                Presence<string>.Absent => ConsoleFormat.Msbuild,
+                _ => throw new ArgumentException("--format must be msbuild or text.")
+            },
+            showSuppressed,
+            format is Presence<string>.Present);
         ValidateCommandShape(result);
         return result;
     }
@@ -135,6 +157,10 @@ public sealed record CommandLine(
             return;
         }
 
+        if ((commandLine.FormatSpecified || commandLine.ShowSuppressed) && commandLine.Command is not ("check" or "verify" or "assess"))
+        {
+            throw new ArgumentException("--format and --show-suppressed apply to check, verify and assess only.");
+        }
         var invalid = commandLine.Command switch
         {
             "doctor" when

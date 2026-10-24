@@ -34,11 +34,7 @@ public static class JsonEvidenceWriter
         AssayVerdict verdict,
         CancellationToken cancellationToken)
     {
-        EnsureDirectory(path);
-        await File.WriteAllBytesAsync(
-            path,
-            Write(verdict),
-            cancellationToken).ConfigureAwait(false);
+        await AtomicReportWriter.WriteAsync([new RequestedReport(path, Write(verdict))], cancellationToken).ConfigureAwait(false);
     }
 
     private static void WriteEvidence(
@@ -54,11 +50,15 @@ public static class JsonEvidenceWriter
             ToText(evidence.RequestedProfile));
         writer.WriteString("profile", ToText(evidence.Profile));
         writer.WriteBoolean("authoritative", evidence.IsAuthoritative);
+        writer.WriteString("verificationMode", evidence.VerificationMode.ToString().ToLowerInvariant());
         writer.WritePropertyName("policy");
         writer.WriteStartObject();
         writer.WriteString("origin", evidence.Policy.Origin);
         writer.WriteString("path", evidence.Policy.Path);
         writer.WriteString("sha256", evidence.Policy.Sha256);
+        writer.WriteString("textSha256", evidence.PolicyTextSha256);
+        writer.WriteString("evaluationDate", evidence.PolicyEvaluationDate);
+        writer.WriteString("findingIdentityRoot", evidence.FindingIdentityRoot);
         writer.WriteEndObject();
         WriteToolchain(writer, evidence.Toolchain);
 
@@ -148,6 +148,8 @@ public static class JsonEvidenceWriter
             writer.WriteString("targetFramework", finding.TargetFramework);
             WriteLocation(writer, finding.Location);
             writer.WriteString("fingerprint", finding.Fingerprint);
+            writer.WriteString("scope", finding.Scope);
+            writer.WriteString("identityPath", finding.IdentityPath);
             writer.WriteEndObject();
         }
 
@@ -194,6 +196,9 @@ public static class JsonEvidenceWriter
             writer.WriteString("form", suppression.Form);
             writer.WriteString("justification", suppression.Justification);
             writer.WriteBoolean("authorized", suppression.Authorized);
+            writer.WriteString("fingerprint", suppression.Fingerprint);
+            writer.WriteString("owner", suppression.Owner);
+            writer.WriteString("evaluationDate", suppression.EvaluationDate);
             WriteLocation(writer, suppression.Location);
             writer.WriteEndObject();
         }
@@ -358,12 +363,5 @@ public static class JsonEvidenceWriter
     private static string ToText(RuleDisposition value) =>
         value.ToString().ToLowerInvariant();
 
-    private static void EnsureDirectory(string path)
-    {
-        var directory = Path.GetDirectoryName(Path.GetFullPath(path));
-        if (!string.IsNullOrEmpty(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-    }
+
 }

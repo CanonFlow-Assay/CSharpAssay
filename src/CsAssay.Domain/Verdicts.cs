@@ -67,9 +67,10 @@ public static class VerdictFactory
         var rules = catalogue.ToImmutableDictionary(rule => rule.Id, StringComparer.Ordinal);
         var blocking = evidence.Findings
             .Where(finding =>
-                !finding.Suppressed &&
-                finding.Certainty == RuleCertainty.Deterministic &&
-                finding.Disposition == RuleDisposition.Block &&
+                (finding.RuleId == "CSAP0001" ||
+                    !finding.Suppressed &&
+                    finding.Certainty == RuleCertainty.Deterministic &&
+                    finding.Disposition == RuleDisposition.Block) &&
                 rules.TryGetValue(finding.RuleId, out var rule) &&
                 rule.Status == RuleStatus.Admitted &&
                 rule.Certainty == RuleCertainty.Deterministic &&

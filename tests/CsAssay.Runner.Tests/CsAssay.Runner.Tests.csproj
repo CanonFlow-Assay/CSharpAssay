@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="NJsonSchema" />
+    <None Update="Schemas/sarif-schema-2.1.0.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- MSBuildLocator must load Framework from the pinned SDK, not NuGet. -->
     <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" />
     <ProjectReference Include="../../src/CsAssay.Runner/CsAssay.Runner.csproj" />

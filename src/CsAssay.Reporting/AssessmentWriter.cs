@@ -24,7 +24,6 @@ public static class AssessmentWriter
 
     public static async Task WriteAsync(string path, AssayVerdict verdict, CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)) ?? Directory.GetCurrentDirectory());
-        await File.WriteAllBytesAsync(path, Write(verdict), cancellationToken).ConfigureAwait(false);
+        await AtomicReportWriter.WriteAsync([new RequestedReport(path, Write(verdict))], cancellationToken).ConfigureAwait(false);
     }
 }
