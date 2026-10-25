@@ -1,4 +1,4 @@
-using System.Net;
+using System.Collections.Immutable;
 using System.Text;
 using CsAssay.Domain;
 
@@ -6,63 +6,52 @@ namespace CsAssay.Reporting;
 
 public static class HtmlWriter
 {
-    public static string Write(AssayVerdict verdict)
+    public static string Write(AssayVerdict verdict) => Write(verdict, []);
+
+    public static string Write(AssayVerdict verdict, ImmutableArray<ReportArtifact> artifacts)
     {
-        var builder = new StringBuilder();
-        builder.AppendLine("<!doctype html>");
-        builder.AppendLine("<html lang=\"en\"><head><meta charset=\"utf-8\">");
-        builder.AppendLine("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">");
-        builder.AppendLine("<title>CSharpAssay report</title>");
-        builder.AppendLine("<style>body{font:16px system-ui;max-width:72rem;margin:2rem auto;padding:0 1rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:.45rem;text-align:left}code{white-space:pre-wrap}.pass{color:#176b2c}.fail,.toolfailure{color:#a11616}.inconclusive{color:#875a00}</style>");
-        builder.AppendLine("</head><body>");
-        builder.Append("<h1>CSharpAssay <span class=\"")
-            .Append(verdict.Kind.ToString().ToLowerInvariant())
-            .Append("\">")
-            .Append(WebUtility.HtmlEncode(verdict.Kind.ToString()))
-            .AppendLine("</span></h1>");
-        builder.Append("<p>")
-            .Append(verdict.Evidence.Projects.Length)
-            .Append(" project compilations, ")
-            .Append(verdict.Evidence.Findings.Length)
-            .Append(" findings, ")
-            .Append(verdict.Evidence.Tests.Sum(test => test.Total))
-            .Append(" tests, ")
-            .Append(verdict.Evidence.Missing.Length)
-            .Append(" missing-evidence entries, ")
-            .Append(verdict.Evidence.Failures.Length)
-            .AppendLine(" tool failures.</p>");
-        builder.AppendLine("<table><thead><tr><th>Rule</th><th>Location</th><th>Message</th></tr></thead><tbody>");
-        foreach (var finding in verdict.Evidence.Findings)
+        var report = ReadableReport.From(verdict, artifacts); var builder = new StringBuilder();
+        builder.Append("<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\">\n")
+            .Append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n")
+            .Append("<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'\">\n")
+            .Append("<title>CSharpAssay report</title>\n<style>body{font:16px system-ui;max-width:80rem;margin:2rem auto;padding:0 1rem}table{border-collapse:collapse;width:100%;margin-bottom:1rem}th,td{border:1px solid #bbb;padding:.45rem;text-align:left;overflow-wrap:anywhere}thead{background:#eee}.table{overflow-x:auto}h1{font-size:1.8rem}</style></head><body>\n")
+            .Append("<h1>CSharpAssay: ").Append(E(report.Headline)).Append("</h1>\n<p>").Append(E(report.Summary)).Append("</p>\n");
+        foreach (var table in report.Tables)
         {
-            builder.Append("<tr><td>")
-                .Append(WebUtility.HtmlEncode(finding.RuleId))
-                .Append("</td><td>")
-                .Append(WebUtility.HtmlEncode(
-                    finding.Location.Path + ":" + finding.Location.StartLine))
-                .Append("</td><td>")
-                .Append(WebUtility.HtmlEncode(finding.Message))
-                .AppendLine("</td></tr>");
+            builder.Append("<h2>").Append(E(table.Title)).Append("</h2>\n");
+            if (table.Rows.IsEmpty) { builder.Append("<p>").Append(E(table.EmptyMessage)).Append("</p>\n"); continue; }
+            Start(table.Headers);
+            foreach (var row in table.Rows) Row(row);
+            End();
         }
-
-        builder.AppendLine("</tbody></table>");
-        builder.AppendLine("<h2>Required tests</h2>");
-        builder.AppendLine("<table><thead><tr><th>Input</th><th>Outcome</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead><tbody>");
-        foreach (var test in verdict.Evidence.Tests)
-        {
-            builder.Append("<tr><td>")
-                .Append(WebUtility.HtmlEncode(test.Input))
-                .Append("</td><td>")
-                .Append(WebUtility.HtmlEncode(test.Outcome.ToString()))
-                .Append("</td><td>")
-                .Append(test.Passed)
-                .Append("</td><td>")
-                .Append(test.Failed)
-                .Append("</td><td>")
-                .Append(test.Skipped)
-                .AppendLine("</td></tr>");
-        }
-
-        builder.AppendLine("</tbody></table></body></html>");
+        Findings("Active findings", report.Active); Findings("Accepted suppressed observations", report.Suppressed);
+        builder.Append("<p>This is a recorded evidence summary, not a universal correctness or security proof. Per-file atomic report writing is not a multi-file transaction.</p>\n</body></html>\n");
         return builder.ToString();
+        void Start(IEnumerable<string> headers)
+        {
+            builder.Append("<div class=\"table\"><table><thead><tr>");
+            foreach (var header in headers) builder.Append("<th>").Append(E(header)).Append("</th>");
+            builder.Append("</tr></thead><tbody>\n");
+        }
+        void Row(IEnumerable<string> cells)
+        {
+            builder.Append("<tr>"); foreach (var cell in cells) builder.Append("<td>").Append(E(cell)).Append("</td>"); builder.Append("</tr>\n");
+        }
+        void End() => builder.Append("</tbody></table></div>\n");
+        void Findings(string title, ImmutableArray<PresentedFinding> items)
+        {
+            builder.Append("<h2>").Append(E(title)).Append("</h2>\n");
+            if (items.IsEmpty) { builder.Append("<p>None recorded.</p>\n"); return; }
+            Start(["Rule", "Location", "Effective severity", "Scope", "Message", "Documentation"]);
+            foreach (var item in items)
+            {
+                builder.Append("<tr>");
+                foreach (var cell in ReadableReport.FindingCells(item)) builder.Append("<td>").Append(E(cell)).Append("</td>");
+                var url = ReadableReport.Documentation(item);
+                builder.Append("<td>").Append(url.Length > 0 ? "<a href=\"" + E(url) + "\">Rule guide</a>" : "Unavailable").Append("</td></tr>\n");
+            }
+            End();
+        }
     }
+    private static string E(string value) => ReportEscaping.Html(value);
 }

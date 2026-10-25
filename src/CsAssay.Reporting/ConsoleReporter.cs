@@ -8,7 +8,7 @@ public static class ConsoleReporter
     {
         if (format == ConsoleFormat.Text)
         {
-            output.WriteLine("CSharpAssay " + verdict.Evidence.ToolVersion + " — " + verdict.Kind +
+            output.WriteLine("CSharpAssay " + verdict.Evidence.ToolVersion + " — " + DiagnosticPresentation.Headline(verdict) +
                 (verdict.Evidence.IsAuthoritative ? " (authoritative)" : " (provisional)"));
             output.WriteLine("Projects: " + verdict.Evidence.Projects.Length + "  Findings: " + verdict.Evidence.Findings.Length +
                 "  Tests: " + verdict.Evidence.Tests.Sum(test => test.Total) + "  Missing: " + verdict.Evidence.Missing.Length +

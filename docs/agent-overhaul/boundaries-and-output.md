@@ -140,3 +140,41 @@ seven admitted rules and prototype admission remain unchanged. The additive veri
 even when authority is lost to incomplete scope. Existing machine
 consumers ignore additive fields; paired application qualification exercises the
 actual assess consumer and preserves result, scope and release authority.
+
+## Readable summaries (developer-experience increment)
+
+`check`, `verify` and `assess` now accept optional `--markdown path`, alongside
+existing JSON/SARIF/HTML outputs. HTML and Markdown share a report projection of
+the completed in-memory verdict and `DiagnosticPresentation`; no second scan or
+policy evaluation runs. They show Analysis only / Verification passed / failed /
+incomplete / Tool failed, requested input, mode, authority, effective categories,
+required tests, missing evidence, diagnostics and recorded identities near the
+start. Default-scope warnings are distinct from shell warnings. Prototype raw
+catalogue disposition cannot manufacture effective blockers; accepted suppressed
+observations remain visible separately.
+
+No tests configured is explicitly different from Not run. When policy
+configuration failed, absence of test results is not relabeled none configured.
+Zero findings with missing evidence remains incomplete. Input/scope and identity
+fields are the recorded evidence, not fresh host guesses; contextual doctor is
+available when current prerequisite facts are needed.
+
+Paths/messages/other source text are escaped for HTML/Markdown and control/line
+breaks are sanitized. Generated documentation links come only from canonical
+catalogue HTTPS URLs; artifact paths are listed as text. The summaries include
+no active script or full raw JSON envelope. Identical recorded evidence produces
+deterministic summaries. All requested outputs use the existing per-file atomic
+writer. A requested Markdown failure returns3 and prints no success summary;
+this still is not a multi-file transaction.
+
+Existing JSON/assessment fields, verdicts, exit codes, SARIF fields and fingerprint
+v1 meanings are unchanged. Human HTML layout is replaced; text console headings
+now also use the shared honest headline. No new identity scheme, tracking
+baseline, grant database or new rule is introduced.
+
+See [the CI summary example](../../eng/templates/ci-summary.yml). It uses this
+repository's real required TypeGym policy and a freshly installed local tool.
+Reports use a fresh per-run directory. Verification's original exit status is
+preserved while always-steps retain only produced files and copy actual Markdown
+to GITHUB_STEP_SUMMARY. No previous artifact or fabricated empty report is used.
+Optional SARIF upload needs host availability/permissions and does not grant Pass.

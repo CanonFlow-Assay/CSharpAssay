@@ -9,6 +9,10 @@ public enum ConsoleFormat { Msbuild, Text }
 
 public sealed record PresentedFinding(Finding Finding, string Level, string Message, bool AcceptedSuppression);
 public sealed record ExecutionDiagnostic(string Code, string Message, string Kind);
+public sealed record DiagnosticCounts(int BlockingFindings, int ShellWarnings, int DefaultWarnings, int OtherWarnings, int AdvisoryFindings, int AcceptedSuppressions)
+{
+    public int Warnings => ShellWarnings + DefaultWarnings + OtherWarnings;
+}
 
 /// <summary>Shared effective presentation; raw JSON severity remains unchanged.</summary>
 public static class DiagnosticPresentation
@@ -39,25 +43,37 @@ public static class DiagnosticPresentation
     public static string Summary(AssayVerdict verdict)
     {
         var findings = Findings(verdict);
-        var errors = findings.Count(item => !item.AcceptedSuppression && item.Level == "error") + ExecutionDiagnostics(verdict).Length;
-        var warnings = findings.Count(item => !item.AcceptedSuppression && item.Level == "warning");
-        var notes = findings.Count(item => !item.AcceptedSuppression && item.Level == "note");
-        var suppressions = findings.Count(item => item.AcceptedSuppression);
+        var effective = Counts(findings);
+        var errors = effective.BlockingFindings + ExecutionDiagnostics(verdict).Length;
+        var warnings = effective.Warnings;
+        var notes = effective.AdvisoryFindings;
+        var suppressions = effective.AcceptedSuppressions;
         var provisional = verdict.Evidence.VerificationMode == VerificationMode.Analysis ||
             verdict.Evidence.VerificationMode == VerificationMode.Unspecified && !verdict.Evidence.IsAuthoritative;
-        var prefix = verdict.Kind switch
-        {
-            AssayVerdictKind.ToolFailure => "Tool failed",
-            AssayVerdictKind.Inconclusive => "Verification incomplete",
-            _ when provisional => "Analysis only",
-            AssayVerdictKind.Fail => "Verification failed",
-            _ => "Verification passed"
-        };
+        var prefix = Headline(verdict);
         var counts = errors + " errors, " + warnings + " warnings" + (notes > 0 ? ", " + notes + " notes" : "") +
             (suppressions > 0 ? ", " + suppressions + " accepted suppression" + (suppressions == 1 ? "" : "s") : "");
         return prefix + ": " + counts + (provisional ? ". Configured release tests were not run as a complete verification gate." :
             verdict.Evidence.IsAuthoritative ? "." : ". Release evidence is incomplete.");
     }
+
+    public static string Headline(AssayVerdict verdict) => verdict.Kind switch
+        {
+            AssayVerdictKind.ToolFailure => "Tool failed",
+            AssayVerdictKind.Inconclusive => "Verification incomplete",
+            _ when verdict.Evidence.VerificationMode == VerificationMode.Analysis ||
+                verdict.Evidence.VerificationMode == VerificationMode.Unspecified && !verdict.Evidence.IsAuthoritative => "Analysis only",
+            AssayVerdictKind.Fail => "Verification failed",
+            _ => "Verification passed"
+        };
+
+    public static DiagnosticCounts Counts(ImmutableArray<PresentedFinding> findings) => new(
+        findings.Count(f => !f.AcceptedSuppression && f.Level == "error"),
+        findings.Count(f => !f.AcceptedSuppression && f.Level == "warning" && f.Finding.Scope == "shell"),
+        findings.Count(f => !f.AcceptedSuppression && f.Level == "warning" && f.Finding.Scope == "default"),
+        findings.Count(f => !f.AcceptedSuppression && f.Level == "warning" && f.Finding.Scope is not ("shell" or "default")),
+        findings.Count(f => !f.AcceptedSuppression && f.Level == "note"),
+        findings.Count(f => f.AcceptedSuppression));
 
     public static string Sanitize(string value)
     {

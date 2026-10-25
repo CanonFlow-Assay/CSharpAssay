@@ -27,12 +27,7 @@ public static class PolicyLoader
     {
         try
         {
-            var policyPath = explicitPolicyPath switch
-            {
-                Presence<string>.Present present =>
-                    Presence.Of(Path.GetFullPath(present.Value)),
-                _ => FindPolicy(inputPath)
-            };
+            var policyPath = DiscoverPath(inputPath, explicitPolicyPath);
 
             if (policyPath is not Presence<string>.Present found)
             {
@@ -83,6 +78,12 @@ public static class PolicyLoader
     }
 
     public static AssayPolicy Parse(string json) => PolicyParser.Parse(json, RuleCatalogue.All.Select(rule => rule.Id).ToImmutableArray());
+
+    public static Presence<string> DiscoverPath(string inputPath, Presence<string> explicitPolicyPath) => explicitPolicyPath switch
+    {
+        Presence<string>.Present present => Presence.Of(Path.GetFullPath(present.Value)),
+        _ => FindPolicy(inputPath)
+    };
 
     private static Presence<string> FindPolicy(string inputPath)
     {

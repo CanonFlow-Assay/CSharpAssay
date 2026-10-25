@@ -2,7 +2,6 @@ using System.Text;
 using CsAssay.Catalogue;
 using CsAssay.Domain;
 using CsAssay.Reporting;
-using CsAssay.SdkAdapter;
 using CsAssay.Workspaces;
 
 namespace CsAssay.Runner;
@@ -35,7 +34,7 @@ public static class CommandApp
 
         return commandLine.Command switch
         {
-            "doctor" => await DoctorAsync(output).ConfigureAwait(false),
+            "doctor" => await DoctorCommand.RunAsync(commandLine, new LocalDoctorProbe(), output, error, cancellationToken).ConfigureAwait(false),
             "catalog" => await CatalogAsync(output).ConfigureAwait(false),
             "explain" => await ExplainAsync(commandLine, output, error).ConfigureAwait(false),
             "check" => await AssayAsync(
@@ -52,33 +51,6 @@ public static class CommandApp
                 cancellationToken).ConfigureAwait(false),
             _ => await UnknownCommandAsync(commandLine.Command, error).ConfigureAwait(false)
         };
-    }
-
-    private static Task<int> DoctorAsync(TextWriter output)
-    {
-        try
-        {
-            var instance = WorkspaceLoader.RegisterMsBuild();
-            output.WriteLine("CSharpAssay doctor");
-            output.WriteLine("Runtime: " + Environment.Version);
-            output.WriteLine("MSBuild: " + instance.Version);
-            output.WriteLine(
-                "Roslyn: " +
-                typeof(Microsoft.CodeAnalysis.CSharp.CSharpCompilation)
-                    .Assembly.GetName().Version);
-            output.WriteLine(
-                "Native union symbol surface: " +
-                (UnionCapabilities.CompilerExposesUnionSymbols()
-                    ? "available (qualification still required)"
-                    : "unavailable"));
-            output.WriteLine(".NET 11 RC2 native lane: ready");
-            return Task.FromResult(0);
-        }
-        catch (Exception exception)
-        {
-            output.WriteLine("CSharpAssay doctor failed: " + exception.Message);
-            return Task.FromResult(3);
-        }
     }
 
     private static Task<int> CatalogAsync(TextWriter output)
@@ -125,6 +97,10 @@ public static class CommandApp
         output.WriteLine("Suppression: " + rule.SuppressionPolicy);
         output.WriteLine(
             "Documentation: " + RuleCatalogue.DocumentationUrl(rule));
+        if (rule.Status == RuleStatus.Prototype)
+            output.WriteLine("Prototype/advisory: nonblocking. Catalogue disposition alone is not effective release severity.");
+        output.WriteLine();
+        output.WriteLine(RuleDocumentation.Read(rule));
         return Task.FromResult(0);
     }
 
@@ -175,6 +151,11 @@ public static class CommandApp
         try
         {
             var reports = new List<RequestedReport>();
+            var artifacts = new List<ReportArtifact>();
+            if (commandLine.JsonPath is Presence<string>.Present j) artifacts.Add(new("JSON", j.Value));
+            if (commandLine.SarifPath is Presence<string>.Present s) artifacts.Add(new("SARIF", s.Value));
+            if (commandLine.HtmlPath is Presence<string>.Present h) artifacts.Add(new("HTML", h.Value));
+            if (commandLine.MarkdownPath is Presence<string>.Present m) artifacts.Add(new("Markdown", m.Value));
             if (commandLine.JsonPath is Presence<string>.Present jsonPath)
             {
                 reports.Add(new(jsonPath.Value, commandLine.Command == "assess"
@@ -186,8 +167,10 @@ public static class CommandApp
             }
             if (commandLine.HtmlPath is Presence<string>.Present htmlPath)
             {
-                reports.Add(new(htmlPath.Value, Encoding.UTF8.GetBytes(HtmlWriter.Write(result.Verdict))));
+                reports.Add(new(htmlPath.Value, Encoding.UTF8.GetBytes(HtmlWriter.Write(result.Verdict, [.. artifacts]))));
             }
+            if (commandLine.MarkdownPath is Presence<string>.Present markdownPath)
+                reports.Add(new(markdownPath.Value, Encoding.UTF8.GetBytes(MarkdownWriter.Write(result.Verdict, [.. artifacts]))));
             await AtomicReportWriter.WriteAsync(reports, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -230,7 +213,7 @@ public static class CommandApp
             CSharpAssay — deterministic functional-first C# verification
 
             Usage:
-              cs-assay doctor
+              cs-assay doctor [project-or-solution] [--policy path]
               cs-assay catalog [--profile native|native]
               cs-assay explain <rule-id>
               cs-assay check <project-or-solution> [options]
@@ -245,6 +228,7 @@ public static class CommandApp
               --json <path>     Deterministic JSON evidence
               --sarif <path>    SARIF 2.1.0 results
               --html <path>     Static HTML projection
+              --markdown <path> Static Markdown summary
 
             Command authority:
               check   Provisional analysis; configured release tests are not run

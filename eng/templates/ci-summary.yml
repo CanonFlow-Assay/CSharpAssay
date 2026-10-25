@@ -1,0 +1,67 @@
+# Example for THIS engine repository, whose .csassay.json requires the TypeGym
+# tests. For an application, replace the input/policy and declare real required
+# tests/minima using strict.csassay.json. This file is not an installed workflow.
+name: Verify with a readable summary
+on: [workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Prepare the development tool from the local feed
+        shell: bash
+        run: |
+          ./eng/restore.sh
+          dotnet build CSharpAssay.slnx --no-restore -c Release
+          ./eng/pack-release.sh
+          NUGET_PACKAGES="$RUNNER_TEMP/csassay-tool-cache-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+            dotnet tool install CsAssay.Tool --version 0.2.0-rc.1 \
+            --tool-path artifacts/ci-tools \
+            --configfile eng/qualification/packaging/NuGet.Config --no-cache
+      - name: Authoritative verification with configured required tests
+        id: assay
+        shell: bash
+        run: |
+          report_dir="$(mktemp -d "$RUNNER_TEMP/csassay-reports.XXXXXX")"
+          printf 'report_dir=%s\n' "$report_dir" >> "$GITHUB_OUTPUT"
+          status=0
+          ./artifacts/ci-tools/cs-assay verify CSharpAssay.slnx --policy .csassay.json \
+            --json "$report_dir/verify.json" --sarif "$report_dir/verify.sarif" \
+            --markdown "$report_dir/verify.md" --html "$report_dir/verify.html" || status=$?
+          if [ -f "$report_dir/verify.sarif" ]; then
+            printf 'sarif_ready=true\n' >> "$GITHUB_OUTPUT"
+          fi
+          # Preserve the original verifier result, including 1, 2, 3 or usage64.
+          exit "$status"
+      - name: Display this run's actual Markdown, if produced
+        if: ${{ always() && steps.assay.outputs.report_dir != '' }}
+        shell: bash
+        env:
+          ASSAY_REPORT_DIR: ${{ steps.assay.outputs.report_dir }}
+        run: |
+          if [ -f "$ASSAY_REPORT_DIR/verify.md" ]; then
+            cat "$ASSAY_REPORT_DIR/verify.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Retain this run's produced machine evidence and summaries
+        if: ${{ always() && steps.assay.outputs.report_dir != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: csassay-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.assay.outputs.report_dir }}/verify.json
+            ${{ steps.assay.outputs.report_dir }}/verify.sarif
+            ${{ steps.assay.outputs.report_dir }}/verify.md
+            ${{ steps.assay.outputs.report_dir }}/verify.html
+          if-no-files-found: ignore
+      # Optional where code scanning is available: add security-events: write to
+      # permissions, then uncomment this step. SARIF upload is presentation; it
+      # does not replace or reverse the failed verification step above.
+      # - uses: github/codeql-action/upload-sarif@v4
+      #   if: ${{ always() && steps.assay.outputs.sarif_ready == 'true' }}
+      #   with:
+      #     sarif_file: ${{ steps.assay.outputs.report_dir }}/verify.sarif

@@ -1,5 +1,35 @@
 # Supported .NET 11 SDK prerequisite
 
+## Read-only prerequisite diagnostics
+
+The developer-experience increment adds optional context to the existing command:
+
+```text
+cs-assay doctor [project-or-solution] [--policy path]
+```
+
+The no-input form uses the current directory. An input selects the directory
+used for `dotnet --version` and ancestor `global.json` discovery; the running
+runtime is reported separately and is never treated as SDK identity. The exact
+supported SDK comes from the tool's bundled repository pin. MSBuild output names
+the instance registered for this tool process, with its locator version/path;
+it is not a claim that all projects selected that instance or target framework.
+Roslyn assembly identity and native-union symbol APIs are separate observations.
+
+Policy discovery/parsing is shared with verification. The output lists declared
+core/shell selectors, but does not load a graph or establish selector matches.
+No policy is required for a host-only/no-input observation; a supplied application
+context needs its release policy. A missing pin/SDK/policy or unsupported fact
+returns 2. Unexpected execution/cancellation returns 3; unsupported command options
+remain usage exit64. Exit0 means the observed prerequisites checked successfully.
+
+Doctor runs no restore, SDK install, tests, compilation probes or network scan,
+and writes no reports/source. Missing restoration/build-dependent facts stay
+unestablished. The final line explicitly says application verification has not
+run and points to verify. Doctor is never release authority.
+
+The historical prerequisite qualification record follows.
+
 This is a toolchain-only prerequisite to the boundary/output overhaul. No rule
 admission, policy classification, suppression authorization, console format,
 machine protocol or performance budget changes are included in this step.

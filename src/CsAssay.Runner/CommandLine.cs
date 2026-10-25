@@ -17,6 +17,8 @@ public sealed record CommandLine(
     bool ShowSuppressed = false,
     bool FormatSpecified = false)
 {
+    public Presence<string> MarkdownPath { get; init; } = Presence.Missing<string>();
+
     public static CommandLine Parse(string[] args)
     {
         if (args.Length == 0)
@@ -43,6 +45,7 @@ public sealed record CommandLine(
         Presence<string> json = Presence.Missing<string>();
         Presence<string> sarif = Presence.Missing<string>();
         Presence<string> html = Presence.Missing<string>();
+        Presence<string> markdown = Presence.Missing<string>();
         Presence<string> policy = Presence.Missing<string>();
         Presence<AssayProfile> profile = Presence.Missing<AssayProfile>();
         var help = false;
@@ -82,6 +85,9 @@ public sealed record CommandLine(
                         html,
                         Next(args, ref index, argument),
                         argument);
+                    break;
+                case "--markdown":
+                    markdown = Once(markdown, Next(args, ref index, argument), argument);
                     break;
                 case "--policy":
                     policy = Once(
@@ -136,7 +142,7 @@ public sealed record CommandLine(
                 _ => throw new ArgumentException("--format must be msbuild or text.")
             },
             showSuppressed,
-            format is Presence<string>.Present);
+            format is Presence<string>.Present) { MarkdownPath = markdown };
         ValidateCommandShape(result);
         return result;
     }
@@ -164,12 +170,10 @@ public sealed record CommandLine(
         var invalid = commandLine.Command switch
         {
             "doctor" when
-                Has(commandLine.Input) ||
                 Has(commandLine.RuleId) ||
                 HasAnyOutput(commandLine) ||
-                Has(commandLine.PolicyPath) ||
                 Has(commandLine.Profile) =>
-                "doctor does not accept arguments.",
+                "doctor accepts an optional project/solution and --policy only.",
             "catalog" when
                 Has(commandLine.Input) ||
                 Has(commandLine.RuleId) ||
@@ -205,7 +209,7 @@ public sealed record CommandLine(
     private static bool HasAnyOutput(CommandLine commandLine) =>
         Has(commandLine.JsonPath) ||
         Has(commandLine.SarifPath) ||
-        Has(commandLine.HtmlPath);
+        Has(commandLine.HtmlPath) || Has(commandLine.MarkdownPath);
 
     private static bool Has<T>(Presence<T> value)
         where T : notnull =>

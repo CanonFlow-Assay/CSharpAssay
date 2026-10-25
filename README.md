@@ -16,6 +16,9 @@ source-bound qualification is recorded separately from implementation.
 
 ## Build and test
 
+New here? Start with [local-feed adoption and practical rule explanations](docs/adoption.md)
+and the [ExpenseGuard first-change exercise](docs/expenseguard-first-change.md).
+
 Install the exact pinned SDK, then run:
 
 ```sh
@@ -32,7 +35,7 @@ Tests are serialized because the suite includes an analyzer latency gate. Older 
 dotnet run --project src/CsAssay.Runner -- doctor
 dotnet run --project src/CsAssay.Runner -- catalog
 dotnet run --project src/CsAssay.Runner -- check CSharpAssay.slnx
-dotnet run --project src/CsAssay.Runner -- verify CSharpAssay.slnx --json artifacts/csassay.json --sarif artifacts/csassay.sarif
+dotnet run --project src/CsAssay.Runner -- verify CSharpAssay.slnx --json artifacts/csassay.json --sarif artifacts/csassay.sarif --html artifacts/csassay.html --markdown artifacts/csassay.md
 dotnet run --project src/CsAssay.Runner -- assess CSharpAssay.slnx --json artifacts/assessment.json
 ```
 

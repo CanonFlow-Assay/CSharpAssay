@@ -25,5 +25,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="../../docs/packaging/tool/README.md" Pack="true" PackagePath="\" />
+    <EmbeddedResource Include="../../global.json" LogicalName="CsAssay.SupportedToolchain.json" />
   </ItemGroup>
 </Project>
