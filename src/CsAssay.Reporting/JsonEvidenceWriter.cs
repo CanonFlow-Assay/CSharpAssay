@@ -232,6 +232,17 @@ public static class JsonEvidenceWriter
             writer.WriteNumber("passed", test.Passed);
             writer.WriteNumber("failed", test.Failed);
             writer.WriteNumber("skipped", test.Skipped);
+            writer.WritePropertyName("failureDetails");
+            writer.WriteStartArray();
+            foreach (var detail in test.FailureDetails)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("testName", detail.TestName);
+                writer.WriteString("message", detail.Message);
+                writer.WriteEndObject();
+            }
+            writer.WriteEndArray();
+            writer.WriteBoolean("failureDetailsTruncated", test.FailureDetailsTruncated);
             writer.WriteEndObject();
         }
 

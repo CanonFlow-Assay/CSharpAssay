@@ -277,6 +277,29 @@ public static class TestExecutor
             }
         }
 
+        // Capture only structured failed-test names/messages, never unrelated process
+        // output, environment, runUser, StdOut/StdErr or stack traces.
+        const int maximumDetails = 20;
+        const int maximumNameLength = 1024;
+        const int maximumMessageLength = 4096;
+        var failedResults = results.Where(result => (string?)result.Attribute("outcome") == "Failed")
+            .OrderBy(result => (string)result.Attribute("testName")!, StringComparer.Ordinal)
+            .ThenBy(result => result.Element(trx + "Output")?.Element(trx + "ErrorInfo")?.Element(trx + "Message")?.Value ?? string.Empty,
+                StringComparer.Ordinal).ToArray();
+        var truncated = failedResults.Length > maximumDetails;
+        string Bounded(string value, int limit)
+        {
+            if (value.Length <= limit) return value;
+            truncated = true;
+            // Avoid cutting a UTF-16 surrogate pair in half.
+            var length = char.IsHighSurrogate(value[limit - 1]) ? limit - 1 : limit;
+            return value[..length];
+        }
+        var details = failedResults.Take(maximumDetails).Select(result => new TestFailureDetail(
+            Bounded((string)result.Attribute("testName")!, maximumNameLength),
+            Bounded(result.Element(trx + "Output")?.Element(trx + "ErrorInfo")?.Element(trx + "Message")?.Value ?? string.Empty,
+                maximumMessageLength))).ToImmutableArray();
+
         return new TestRunEvidence(
             requirement.Input,
             requirement.Configuration,
@@ -288,7 +311,11 @@ public static class TestExecutor
             total,
             passed,
             failed,
-            skipped);
+            skipped)
+        {
+            FailureDetails = details,
+            FailureDetailsTruncated = truncated
+        };
     }
 
     private static ProcessStartInfo CreateStartInfo(

@@ -141,9 +141,60 @@ public sealed class ReadableReportTests
             var json = Path.Combine(root, "assessment.json");
             var assessed = await CommandApp.RunAsync(["assess", input, "--json", json, "--markdown", Path.Combine(root, "assess.md")], output, error, TestContext.Current.CancellationToken);
             Assert.Equal(0, assessed); using var envelope = JsonDocument.Parse(await File.ReadAllBytesAsync(json, TestContext.Current.CancellationToken));
-            Assert.True(envelope.RootElement.TryGetProperty("assessment", out _)); Assert.True(envelope.RootElement.TryGetProperty("receipt", out _));
+            Assert.True(envelope.RootElement.TryGetProperty("assessment", out _)); Assert.True(envelope.RootElement.TryGetProperty("receipt", out var receipt));
+            Assert.False(receipt.GetProperty("evidence").TryGetProperty("invocation", out _));
+            var assessedMarkdown = await File.ReadAllTextAsync(Path.Combine(root, "assess.md"), TestContext.Current.CancellationToken);
+            Assert.Contains("Repeat this invocation", assessedMarkdown);
+            Assert.Contains("--json", assessedMarkdown); Assert.Contains(json, assessedMarkdown);
+            Assert.Contains(Environment.CurrentDirectory, assessedMarkdown);
+            var first = Path.Combine(root, "repeat-one.json"); var second = Path.Combine(root, "repeat-two.json");
+            foreach (var destination in new[] { first, second })
+                Assert.Equal(0, await CommandApp.RunAsync(["check", input, "--json", destination], output, error, TestContext.Current.CancellationToken));
+            Assert.Equal(await File.ReadAllBytesAsync(first, TestContext.Current.CancellationToken),
+                await File.ReadAllBytesAsync(second, TestContext.Current.CancellationToken));
         }
         finally { Directory.Delete(root, true); }
+    }
+
+
+    [Fact]
+    public void Failure_detail_is_consistent_escaped_and_additive_in_existing_reports()
+    {
+        const string name = "Boundary|<img>\u001b\u202e";
+        const string message = "Expected: Approve\nActual: MoreInfo <script> [x](javascript:bad)";
+        var test = new TestRunEvidence("Tests.csproj", "Release", true, TestRunOutcome.Failed, 1, 2, 1, 1, 0)
+        { FailureDetails = [new(name, message), new("NoMessage", "")], FailureDetailsTruncated = true };
+        var evidence = EvidenceBundle.Empty("App", true) with { Tests = [test], Invocation = Presence.Of(new CommandEvidence("cwd|<img>", "dotnet", ["tool.dll", "verify", "App"])) };
+        var verdict = new FailVerdict([], evidence);
+        using var json = JsonDocument.Parse(JsonEvidenceWriter.Write(verdict));
+        var recorded = json.RootElement.GetProperty("evidence").GetProperty("tests")[0];
+        // Existing count/outcome consumers ignore additive details; no field changed meaning.
+        Assert.Equal("1.2.0", json.RootElement.GetProperty("schemaVersion").GetString());
+        Assert.Equal("fail", json.RootElement.GetProperty("verdict").GetString());
+        Assert.Equal(1, json.RootElement.GetProperty("exitCode").GetInt32());
+        Assert.Equal("failed", recorded.GetProperty("outcome").GetString());
+        Assert.Equal(2, recorded.GetProperty("total").GetInt32());
+        Assert.Equal(1, recorded.GetProperty("failed").GetInt32());
+        Assert.Equal(name, recorded.GetProperty("failureDetails")[0].GetProperty("testName").GetString());
+        Assert.Equal(message, recorded.GetProperty("failureDetails")[0].GetProperty("message").GetString());
+        Assert.True(recorded.GetProperty("failureDetailsTruncated").GetBoolean());
+        using var assessment = JsonDocument.Parse(AssessmentWriter.Write(verdict));
+        Assert.True(JsonElement.DeepEquals(recorded, assessment.RootElement.GetProperty("receipt").GetProperty("evidence").GetProperty("tests")[0]));
+        using var output = new StringWriter(); ConsoleReporter.Write(output, verdict);
+        using var sarif = JsonDocument.Parse(SarifWriter.Write(verdict));
+        var notification = sarif.RootElement.GetProperty("runs")[0].GetProperty("invocations")[0].GetProperty("toolExecutionNotifications")[0].GetProperty("message").GetProperty("text").GetString();
+        Assert.Contains("Expected: Approve Actual: MoreInfo", notification);
+        Assert.Contains(notification!, output.ToString());
+        foreach (var rendered in new[] { HtmlWriter.Write(verdict), MarkdownWriter.Write(verdict) })
+        {
+            Assert.Contains("Expected: Approve", rendered); Assert.Contains("Actual: MoreInfo", rendered);
+            Assert.Contains("NoMessage", rendered); Assert.Contains("Unavailable: runner supplied no assertion message.", rendered);
+            Assert.Contains("Truncated", rendered); Assert.Contains("Repeat this invocation", rendered);
+            Assert.DoesNotContain("<img>", rendered, StringComparison.Ordinal); Assert.DoesNotContain("<script>", rendered, StringComparison.Ordinal);
+            Assert.DoesNotContain('\u001b', rendered); Assert.DoesNotContain('\u202e', rendered);
+        }
+        Assert.Contains("Unknown: this result did not record", HtmlWriter.Write(new PassVerdict(EvidenceBundle.Empty("App", true))));
+        Assert.Contains("No structured failed-test detail recorded", MarkdownWriter.Write(new FailVerdict([], evidence with { Tests = [test with { FailureDetails = [], FailureDetailsTruncated = false }] })));
     }
 
     private static Finding Finding() => new("CSAI0001", "Public setter", FindingSeverity.Warning, RuleCertainty.Deterministic, RuleDisposition.Block,

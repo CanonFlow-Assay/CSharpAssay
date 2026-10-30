@@ -112,6 +112,13 @@ public enum TestRunOutcome
     NotRun
 }
 
+public sealed record TestFailureDetail(string TestName, string Message);
+
+public sealed record CommandEvidence(
+    string WorkingDirectory,
+    string Executable,
+    ImmutableArray<string> Arguments);
+
 public sealed record TestRunEvidence(
     string Input,
     string Configuration,
@@ -121,7 +128,11 @@ public sealed record TestRunEvidence(
     int Total,
     int Passed,
     int Failed,
-    int Skipped);
+    int Skipped)
+{
+    public ImmutableArray<TestFailureDetail> FailureDetails { get; init; } = [];
+    public bool FailureDetailsTruncated { get; init; }
+}
 
 public sealed record ToolchainEvidence(
     string SdkVersion,
@@ -158,6 +169,7 @@ public sealed record EvidenceBundle(
     ImmutableArray<WorkspaceDiagnosticEvidence> WorkspaceDiagnostics,
     ImmutableArray<SourceEvidence> Sources)
 {
+    public Presence<CommandEvidence> Invocation { get; init; } = Presence.Missing<CommandEvidence>();
     public string PolicyEvaluationDate { get; init; } = string.Empty;
     public string PolicyTextSha256 { get; init; } = string.Empty;
     public string FindingIdentityRoot { get; init; } = "policy-directory";

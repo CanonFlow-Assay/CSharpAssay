@@ -89,3 +89,12 @@ CSharpAssay executes admitted checks and requires configured evidence. The C#
 compiler handles native-union exhaustiveness. The application tests enforce the
 receipt policy. An explicit IDE set-to-init action for CSAI0001 is useful for an
 immutability finding; it does not repair or infer the threshold requirement.
+
+## Three automated isolated exercises
+
+The paired Playground now provides `eng/tooling exercise-change-verification`
+and `samples/100-expenseguard/docs/change-verification.md`: a compiling admitted
+core violation, an established business-boundary failure and a skipped required
+evidence item, each followed by a fresh full repair verification. See the
+[report contract](change-verification/report-contract.md) and
+[agent repair procedure](change-verification/agent-repair.md).

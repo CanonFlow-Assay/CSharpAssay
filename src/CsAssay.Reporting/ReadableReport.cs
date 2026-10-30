@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using CsAssay.Catalogue;
 using CsAssay.Domain;
 
@@ -25,6 +26,13 @@ public sealed record ReadableReport(string Headline, string Summary, ImmutableAr
             [["Requested input", e.Input], ["Verification mode", e.VerificationMode.ToString()], ["Authority flag", e.IsAuthoritative ? "true" : "false"],
              ["Verdict / exit", verdict.Kind + " / " + N(verdict.ExitCode)], ["Requested / effective profile", e.RequestedProfile + " / " + e.Profile],
              ["Project compilations", N(e.Projects.Length)]], "No scope recorded."));
+        var commandRows = e.Invocation is Presence<CommandEvidence>.Present invocation
+            ? ImmutableArray.Create(ImmutableArray.Create("Working directory", invocation.Value.WorkingDirectory),
+                ImmutableArray.Create("Executable", invocation.Value.Executable),
+                ImmutableArray.Create("Arguments (JSON array)", JsonSerializer.Serialize(invocation.Value.Arguments)))
+            : [];
+        tables.Add(new("Repeat this invocation", ["Field", "Recorded value"], commandRows,
+            "Unknown: this result did not record a CLI invocation. Consult the caller's command record."));
         tables.Add(new("Effective findings", ["Category", "Count"],
             [["Active blocking findings", N(counts.BlockingFindings)], ["Shell warnings", N(counts.ShellWarnings)],
              ["Default-scope warnings", N(counts.DefaultWarnings)], ["Other-scope warnings", N(counts.OtherWarnings)],
@@ -36,6 +44,11 @@ public sealed record ReadableReport(string Headline, string Summary, ImmutableAr
             e.Tests.Select(t => ImmutableArray.Create(t.Input, t.Configuration, t.Required ? "yes" : "no", t.Outcome == TestRunOutcome.NotRun ? "Not run" : t.Outcome.ToString(),
                 N(t.Total), N(t.Passed), N(t.Failed), N(t.Skipped))).ToImmutableArray(),
             testsUnknown ? "No test results recorded; policy configuration was not established." : "None configured. This does not establish application behavior."));
+        tables.Add(new("Failed test details", ["Required input", "Test", "Runner message"],
+            e.Tests.SelectMany(t => t.FailureDetails.Select(d => ImmutableArray.Create(t.Input, d.TestName,
+                d.Message.Length > 0 ? d.Message : "Unavailable: runner supplied no assertion message.")))
+                .Concat(e.Tests.Where(t => t.FailureDetailsTruncated).Select(t => ImmutableArray.Create(t.Input, "Truncated", "Detail limit reached; aggregate counts remain complete.")))
+                .ToImmutableArray(), "No structured failed-test detail recorded."));
         tables.Add(new("Missing evidence", ["Code", "Project", "Target", "Reason"],
             e.Missing.Select(m => ImmutableArray.Create(m.Code, m.Project, m.TargetFramework, m.Message)).ToImmutableArray(), "None recorded."));
         tables.Add(new("Execution/configuration diagnostics", ["Kind", "Code", "Message"],

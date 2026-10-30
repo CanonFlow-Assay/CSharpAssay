@@ -39,12 +39,14 @@ public static class CommandApp
             "explain" => await ExplainAsync(commandLine, output, error).ConfigureAwait(false),
             "check" => await AssayAsync(
                 commandLine,
+                args,
                 authoritative: false,
                 output,
                 error,
                 cancellationToken).ConfigureAwait(false),
             "verify" or "assess" => await AssayAsync(
                 commandLine,
+                args,
                 authoritative: true,
                 output,
                 error,
@@ -106,6 +108,7 @@ public static class CommandApp
 
     private static async Task<int> AssayAsync(
         CommandLine commandLine,
+        string[] args,
         bool authoritative,
         TextWriter output,
         TextWriter error,
@@ -148,6 +151,18 @@ public static class CommandApp
             return 3;
         }
 
+        // Attach observed invocation context to the completed result; do not
+        // recalculate the verdict or invent a source snapshot from the Git head.
+        var verdict = result.Verdict with
+        {
+            Evidence = result.Verdict.Evidence with
+            {
+                Invocation = Presence.Of(new CommandEvidence(Environment.CurrentDirectory,
+                    Environment.ProcessPath ?? string.Empty,
+                    string.Equals(Path.GetFileNameWithoutExtension(Environment.ProcessPath), "dotnet", StringComparison.OrdinalIgnoreCase)
+                        ? [typeof(CommandApp).Assembly.Location, .. args] : [.. args]))
+            }
+        };
         try
         {
             var reports = new List<RequestedReport>();
@@ -159,18 +174,18 @@ public static class CommandApp
             if (commandLine.JsonPath is Presence<string>.Present jsonPath)
             {
                 reports.Add(new(jsonPath.Value, commandLine.Command == "assess"
-                    ? AssessmentWriter.Write(result.Verdict) : JsonEvidenceWriter.Write(result.Verdict)));
+                    ? AssessmentWriter.Write(verdict) : JsonEvidenceWriter.Write(verdict)));
             }
             if (commandLine.SarifPath is Presence<string>.Present sarifPath)
             {
-                reports.Add(new(sarifPath.Value, SarifWriter.Write(result.Verdict, Path.GetDirectoryName(Path.GetFullPath(input.Value)))));
+                reports.Add(new(sarifPath.Value, SarifWriter.Write(verdict, Path.GetDirectoryName(Path.GetFullPath(input.Value)))));
             }
             if (commandLine.HtmlPath is Presence<string>.Present htmlPath)
             {
-                reports.Add(new(htmlPath.Value, Encoding.UTF8.GetBytes(HtmlWriter.Write(result.Verdict, [.. artifacts]))));
+                reports.Add(new(htmlPath.Value, Encoding.UTF8.GetBytes(HtmlWriter.Write(verdict, [.. artifacts]))));
             }
             if (commandLine.MarkdownPath is Presence<string>.Present markdownPath)
-                reports.Add(new(markdownPath.Value, Encoding.UTF8.GetBytes(MarkdownWriter.Write(result.Verdict, [.. artifacts]))));
+                reports.Add(new(markdownPath.Value, Encoding.UTF8.GetBytes(MarkdownWriter.Write(verdict, [.. artifacts]))));
             await AtomicReportWriter.WriteAsync(reports, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -194,8 +209,8 @@ public static class CommandApp
             return 3;
         }
 
-        ConsoleReporter.Write(output, result.Verdict, commandLine.Format, commandLine.ShowSuppressed);
-        return result.Verdict.ExitCode;
+        ConsoleReporter.Write(output, verdict, commandLine.Format, commandLine.ShowSuppressed);
+        return verdict.ExitCode;
     }
 
     private static async Task<int> UnknownCommandAsync(

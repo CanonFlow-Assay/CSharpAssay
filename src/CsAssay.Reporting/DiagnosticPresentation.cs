@@ -32,8 +32,14 @@ public static class DiagnosticPresentation
         verdict.Evidence.Missing.Select(item => new ExecutionDiagnostic(item.Code, Sanitize(item.Message), "configuration"))
             .Concat(verdict.Evidence.Failures.Select(item => new ExecutionDiagnostic(item.Code, Sanitize(item.Message), "execution")))
             .Concat(verdict.Evidence.Tests.Where(test => test.Required && test.Outcome == TestRunOutcome.Failed)
-                .Select(test => new ExecutionDiagnostic("CSASSAY-REQUIRED-TESTS-FAILED", Sanitize("Required tests failed: " + test.Input + " (" + test.Failed + " failed)."), "test")))
+                .Select(test => new ExecutionDiagnostic("CSASSAY-REQUIRED-TESTS-FAILED", Sanitize(TestFailureMessage(test)), "test")))
             .ToImmutableArray();
+
+    private static string TestFailureMessage(TestRunEvidence test) =>
+        "Required tests failed: " + test.Input + " (" + test.Failed + " failed)." +
+        string.Concat(test.FailureDetails.Select(detail => " [" + detail.TestName + "] " +
+            (detail.Message.Length > 0 ? detail.Message : "Failure detail unavailable."))) +
+        (test.FailureDetailsTruncated ? " [Failure details truncated; counts remain complete.]" : "");
 
     public static bool ExecutionSuccessful(AssayVerdict verdict) =>
         verdict.Kind is not (AssayVerdictKind.ToolFailure or AssayVerdictKind.Inconclusive) &&
