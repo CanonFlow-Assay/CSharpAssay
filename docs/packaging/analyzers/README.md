@@ -2,7 +2,7 @@
 
 `CsAssay.Analyzers` supplies the admitted CSharpAssay Roslyn diagnostics to
 editor and build hosts running .NET 11. Consumer projects must target
-`net11.0` and use `LangVersion=preview`; older targets and hosts are unsupported. The package embeds the analyzer, its three
+`net11.0` and use `LangVersion=15.0`; older targets and hosts are unsupported. The package embeds the analyzer, its three
 CSharpAssay-owned runtime dependencies under `analyzers/dotnet/cs`, and a
 transitive MSBuild enforcement target.
 

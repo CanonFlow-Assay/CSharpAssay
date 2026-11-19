@@ -1,8 +1,8 @@
 # Adopt CSharpAssay without surprise enforcement
 
 The current development line is **0.2.0-rc.1**, .NET 11 only. Use exact SDK
-`11.0.100-rc.2.26504.105` from `global.json`, roll-forward disabled, and C# preview
-for native unions. Runtime support and preview language qualification are separate.
+`11.0.100` from `global.json`, roll-forward disabled, and C# 15
+for native unions. The stable SDK supplies the released native-union compiler.
 The historical 0.1.x releases, including 0.1.2, do not describe this native build.
 This guide does **not** claim that the development package is published on NuGet.
 

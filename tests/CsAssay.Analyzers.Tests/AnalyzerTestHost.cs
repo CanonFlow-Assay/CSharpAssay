@@ -37,7 +37,7 @@ internal static class AnalyzerTestHost
         var syntaxTrees = sources.Select(source =>
             CSharpSyntaxTree.ParseText(
                 source.Text,
-                new CSharpParseOptions(LanguageVersion.Preview),
+                new CSharpParseOptions(LanguageVersion.CSharp15),
                 path: source.Path));
         var compilation = CSharpCompilation.Create(
             "AnalyzerTest",

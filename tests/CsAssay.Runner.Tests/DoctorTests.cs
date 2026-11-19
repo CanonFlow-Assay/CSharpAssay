@@ -24,6 +24,7 @@ public sealed class DoctorTests
     [InlineData("sdk", "CSASSAY-DOCTOR-SDK-UNSUPPORTED")]
     [InlineData("absent-sdk", "CSASSAY-DOCTOR-SDK-UNAVAILABLE")]
     [InlineData("pin", "CSASSAY-DOCTOR-PIN-MISMATCH")]
+    [InlineData("prerelease-enabled", "CSASSAY-DOCTOR-PIN-MISMATCH")]
     [InlineData("bad-pin", "CSASSAY-DOCTOR-PIN-INVALID")]
     [InlineData("missing-pin", "CSASSAY-DOCTOR-PIN-MISSING")]
     [InlineData("policy", "CSASSAY-CONFIG-INVALID")]
@@ -38,6 +39,9 @@ public sealed class DoctorTests
             case "sdk": probe.Facts = probe.Facts with { SelectedSdk = "10.0.999" }; break;
             case "absent-sdk": probe.Facts = probe.Facts with { SelectedSdk = "", SdkExitCode = 145, SdkDetail = "requested SDK is not installed" }; break;
             case "pin": File.WriteAllText(fixture.Pin, "{\"sdk\":{\"version\":\"10.0.999\",\"rollForward\":\"disable\",\"allowPrerelease\":true}}"); break;
+            case "prerelease-enabled":
+                File.WriteAllText(fixture.Pin, File.ReadAllText(fixture.Pin).Replace("false", "true", StringComparison.Ordinal));
+                break;
             case "bad-pin": File.WriteAllText(fixture.Pin, "{"); break;
             case "missing-pin": File.Delete(fixture.Pin); break;
             case "policy": File.WriteAllText(fixture.Policy, "{"); break;
@@ -97,7 +101,7 @@ public sealed class DoctorTests
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Project)!);
             File.WriteAllText(Project, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net11.0</TargetFramework></PropertyGroup></Project>");
-            File.WriteAllText(Pin, "{\"sdk\":{\"version\":\"" + DoctorCommand.SupportedSdk + "\",\"rollForward\":\"disable\",\"allowPrerelease\":true}}");
+            File.WriteAllText(Pin, "{\"sdk\":{\"version\":\"" + DoctorCommand.SupportedSdk + "\",\"rollForward\":\"disable\",\"allowPrerelease\":false}}");
             File.WriteAllText(Policy, "{\"profile\":\"native\",\"boundaries\":{\"coreProjects\":[\"MissingButNotLoaded.csproj\"],\"shellNamespaces\":[\"Adapter\"]}}");
         }
         public async Task<(int Exit, string Output, string Error)> Run(Probe probe)

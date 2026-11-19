@@ -41,7 +41,7 @@ internal static class CorpusVerifier
         var source = File.ReadAllText(path);
         var syntaxTree = CSharpSyntaxTree.ParseText(
             source,
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new CSharpParseOptions(LanguageVersion.CSharp15),
             path);
         var compilation = CSharpCompilation.Create(
             "TypeGym_" + Path.GetFileName(

@@ -18,7 +18,7 @@ This builds local development dependencies and may update local package-lock
 identities. Inspect them separately; commit the preparation state before a
 source-bound qualification. Do not discard unrelated edits or pretend a
 previous receipt qualifies a new package build. Both checkouts require their
-exact pinned .NET 11 RC2 SDK; no .NET 10 or union-library fallback is supported.
+exact pinned .NET 11 SDK; no .NET 10 or union-library fallback is supported.
 
 ## Locate the rule and its executable requirements
 

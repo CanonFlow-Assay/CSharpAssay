@@ -1,4 +1,4 @@
-# Installation: .NET 11 RC1
+# Installation: .NET 11
 
 Install SDK `11.0.100-rc.1.26425.128`, target `net11.0`, and set `LangVersion` to `preview`. Earlier targets and compiler hosts are unsupported.
 

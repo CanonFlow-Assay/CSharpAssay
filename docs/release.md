@@ -19,7 +19,7 @@ dotnet test CSharpAssay.slnx --no-build --no-restore \
 Release packaging requires a clean working tree so the commit recorded in the
 package metadata and provenance is the exact source of every payload byte.
 The script first re-establishes the repository's ordinary stable Release build,
-so stale output from a prior `-p:LangVersion=preview` experiment cannot enter a
+so stale output from a prior language-override experiment cannot enter a
 stable package.
 
 `pack-release.sh` performs two independent packs. The repository-owned audit
@@ -68,7 +68,7 @@ See [publishing.md](publishing.md).
 
 ## CI authority
 
-The .NET 11 RC1 job is the sole release gate. It restores the solution and workspace fixtures with lock files, builds and tests, self-verifies, qualifies packages, and records provenance. There is no optional older-runtime or preview fallback lane.
+The .NET 11 job is the sole release gate. It restores the solution and workspace fixtures with lock files, builds and tests, self-verifies, qualifies packages, and records provenance. There is no optional older-runtime or preview fallback lane.
 
 Local Forgejo qualification can be recorded with `./eng/qualify-local`.
 The CLI and representative performance fixture share the explicit

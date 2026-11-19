@@ -1,5 +1,7 @@
 # Agent overhaul baseline and contract
 
+This records the original prerelease qualification. See [the current toolchain](../../README.md) for the supported SDK and language version.
+
 Started from engine `ef9de10bc319c1814a6f2a1a71faaea9c58bf483` and
 Playground `8fcb37d5b31e348255d452ce7fd611c410d517c7`, with clean source
 worktrees. Work is isolated in `CSharpAssay-Overhaul` and

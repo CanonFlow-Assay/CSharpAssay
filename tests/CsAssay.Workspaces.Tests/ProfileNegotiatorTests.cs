@@ -26,11 +26,20 @@ public sealed class ProfileNegotiatorTests
     [InlineData("net11.0-windows")]
     public void Native_is_available_without_an_opt_in(string framework)
     {
-        var result = ProfileNegotiator.Negotiate(AssayProfile.Native, Unit(framework));
+        var result = ProfileNegotiator.Negotiate(AssayProfile.Native, Unit(framework), allowPreview: false);
 
         Assert.Equal(EffectiveProfile.Native, result.Profile);
         Assert.Equal("native", result.EvidenceName);
         Assert.IsType<Presence<MissingEvidence>.Absent>(result.Missing);
+    }
+
+    [Fact]
+    public void Preview_language_respects_the_policy_opt_out()
+    {
+        var result = ProfileNegotiator.Negotiate(
+            AssayProfile.Native, Unit("net11.0", LanguageVersion.Preview), allowPreview: false);
+
+        Assert.IsType<Presence<MissingEvidence>.Present>(result.Missing);
     }
 
     [Fact]
@@ -58,7 +67,7 @@ public sealed class ProfileNegotiatorTests
 
     private static WorkspaceCompilation Unit(
         string framework,
-        LanguageVersion language = LanguageVersion.Preview)
+        LanguageVersion language = LanguageVersion.CSharp15)
     {
         var paths = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ??
             throw new InvalidOperationException("Runtime references are unavailable.");

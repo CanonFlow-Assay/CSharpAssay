@@ -1,4 +1,4 @@
-> Historical planning/status record. Current support is .NET 11 RC1 only; see [the migration report](docs/net11-migration.md).
+> Historical planning/status record. See [the current toolchain](README.md) for repository prerequisites.
 
 # CSharpAssay implementation status
 

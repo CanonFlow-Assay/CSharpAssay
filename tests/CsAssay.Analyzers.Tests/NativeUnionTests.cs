@@ -134,7 +134,7 @@ public sealed class NativeUnionTests
             throw new InvalidOperationException("Runtime references are unavailable.");
         return CSharpCompilation.Create(
             "UnionProbe",
-            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview))],
+            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp15))],
             paths.Split(Path.PathSeparator).Select(path => MetadataReference.CreateFromFile(path)),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }

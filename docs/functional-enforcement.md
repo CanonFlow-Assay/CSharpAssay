@@ -1,6 +1,6 @@
 # Functional enforcement and its limits
 
-The active toolchain is pinned .NET 11 RC1 and C# preview. The catalogue, compiler,
+The active toolchain is pinned .NET 11 and C# 15. The catalogue, compiler,
 project policy and executed evidence jointly define the actual guarantees.
 
 | Concern | Current authority |

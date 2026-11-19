@@ -9,9 +9,9 @@
     <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '^net11\.0(-.+)?$'))"
            Code="CSASSAY-NET11-REQUIRED"
            Text="CsAssay.Analyzers 0.2 requires a .NET 11 target and compiler host. Earlier frameworks are unsupported." />
-    <Error Condition="'$(LangVersion)' != 'preview'"
+    <Error Condition="'$(LangVersion)' != '15.0'"
            Code="CSASSAY-NATIVE-LANGUAGE-REQUIRED"
-           Text="CsAssay.Analyzers requires LangVersion=preview for native unions on .NET 11 RC2." />
+           Text="CsAssay.Analyzers requires LangVersion=15.0 for native unions on .NET 11." />
   </Target>
 
   <PropertyGroup>

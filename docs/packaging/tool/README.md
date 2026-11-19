@@ -1,6 +1,6 @@
 # CSharpAssay Tool
 
-`CsAssay.Tool` 0.2.0-rc.1 requires .NET 11 and analyzes only .NET 11 projects using C# preview. The default and only profile is `native`.
+`CsAssay.Tool` 0.2.0-rc.1 requires .NET 11 and analyzes only .NET 11 projects using C# 15. The default and only profile is `native`.
 
 ```sh
 cs-assay doctor

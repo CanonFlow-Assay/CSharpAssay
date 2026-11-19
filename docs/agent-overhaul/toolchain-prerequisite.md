@@ -1,5 +1,7 @@
 # Supported .NET 11 SDK prerequisite
 
+This records the original prerelease qualification. See [the current toolchain](../../README.md) for the supported SDK and language version.
+
 ## Read-only prerequisite diagnostics
 
 The developer-experience increment adds optional context to the existing command:

@@ -36,7 +36,7 @@ public sealed class RuleDocumentationTests
             Assert.Equal(2, examples.Length);
             for (var index = 0; index < examples.Length; index++)
             {
-                var compilation = CSharpCompilation.Create("Guide", [CSharpSyntaxTree.ParseText(examples[index], new CSharpParseOptions(LanguageVersion.Preview), path: "Guide.cs", cancellationToken: TestContext.Current.CancellationToken)],
+                var compilation = CSharpCompilation.Create("Guide", [CSharpSyntaxTree.ParseText(examples[index], new CSharpParseOptions(LanguageVersion.CSharp15), path: "Guide.cs", cancellationToken: TestContext.Current.CancellationToken)],
                     References, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
                 Assert.Empty(compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(d => d.Severity == DiagnosticSeverity.Error));
                 var findings = await compilation.WithAnalyzers([new FunctionalPolicyAnalyzer()], new AnalyzerOptions([])).GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken);

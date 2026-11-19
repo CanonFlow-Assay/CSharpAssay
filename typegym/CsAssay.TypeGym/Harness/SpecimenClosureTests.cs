@@ -110,7 +110,7 @@ public sealed class SpecimenClosureTests
     {
         var tree = CSharpSyntaxTree.ParseText(
             "public sealed class Sample { }",
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new CSharpParseOptions(LanguageVersion.CSharp15),
             cancellationToken: TestContext.Current.CancellationToken);
         var compilation = CSharpCompilation.Create(
             "ThrowingSpecimen",
@@ -166,7 +166,7 @@ public sealed class SpecimenClosureTests
         Assert.True(File.Exists(path), "Missing specimen: " + path);
         var tree = CSharpSyntaxTree.ParseText(
             File.ReadAllText(path),
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new CSharpParseOptions(LanguageVersion.CSharp15),
             path);
         var compilation = CSharpCompilation.Create(
             "Specimen_" + Path.GetFileName(
@@ -276,7 +276,7 @@ public sealed class SpecimenClosureTests
             """;
         var tree = CSharpSyntaxTree.ParseText(
             source,
-            new CSharpParseOptions(LanguageVersion.Preview));
+            new CSharpParseOptions(LanguageVersion.CSharp15));
         var compilation = CSharpCompilation.Create(
             "ThrowingSpecimenAnalyzerAssembly",
             [tree],

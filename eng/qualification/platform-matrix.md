@@ -1,13 +1,13 @@
 # Current platform qualification matrix
 
-The active lane is the exact .NET 11 RC1 SDK in `global.json`, C# preview and
-Roslyn 5.9.0. Older framework targeting has no fallback release authority.
+The active lane is the exact .NET 11 SDK in `global.json`, C# 15 and
+Roslyn 5.12.0. Older framework targeting has no fallback release authority.
 The [previous .NET 10 matrix](historical/platform-matrix-net10.md) and admission
 phase JSON files are historical records; they are not current native results.
 
 | Capability | CSharpAssay engine | DAA application workflow |
 | --- | --- | --- |
-| SDK / language | Pinned .NET 11 RC1 / preview | Same exact pin |
+| SDK / language | Pinned .NET 11 / C# 15 | Same exact pin |
 | Project intake | Evaluated compiler/workspace graph | Explicit .csproj and .slnx |
 | Native unions | Compiler capability check and native corpus | Required in authored core samples |
 | Admitted rules | Seven; catalogue is authoritative | Original engine receipt retained |

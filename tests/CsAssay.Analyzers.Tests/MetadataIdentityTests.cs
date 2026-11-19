@@ -50,7 +50,7 @@ public sealed class MetadataIdentityTests
     }
 
     private static CSharpCompilation Compile(string source) => CSharpCompilation.Create("Identity",
-        [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview))],
+        [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp15))],
         [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
         new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
 }

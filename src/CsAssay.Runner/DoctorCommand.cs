@@ -109,9 +109,9 @@ public static class DoctorCommand
                     var sdk = document.RootElement.GetProperty("sdk");
                     var version = sdk.GetProperty("version").GetString();
                     var roll = sdk.TryGetProperty("rollForward", out var r) ? r.GetString() : "unspecified";
-                    var preview = sdk.TryGetProperty("allowPrerelease", out var p) && p.ValueKind == JsonValueKind.True;
-                    output.WriteLine("Declared pin: " + Clean(version ?? "unknown") + "; rollForward=" + Clean(roll ?? "unknown") + "; allowPrerelease=" + preview);
-                    if (version != SupportedSdk || roll != "disable" || !preview) Issue("CSASSAY-DOCTOR-PIN-MISMATCH", "Pin does not match the supported exact preview toolchain policy.");
+                    var prerelease = sdk.TryGetProperty("allowPrerelease", out var p) ? p.ValueKind : JsonValueKind.Undefined;
+                    output.WriteLine("Declared pin: " + Clean(version ?? "unknown") + "; rollForward=" + Clean(roll ?? "unknown") + "; allowPrerelease=" + (prerelease == JsonValueKind.False ? "false" : "true or unspecified"));
+                    if (version != SupportedSdk || roll != "disable" || prerelease != JsonValueKind.False) Issue("CSASSAY-DOCTOR-PIN-MISMATCH", "Pin does not match the supported exact stable toolchain policy.");
                 }
                 catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException)
                 { Issue("CSASSAY-DOCTOR-PIN-INVALID", "SDK pin is malformed: " + exception.Message); }

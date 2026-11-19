@@ -19,7 +19,8 @@ public static class ProfileNegotiator
         var nativeLanguage = unit.Compilation.SyntaxTrees
             .Select(tree => tree.Options)
             .OfType<CSharpParseOptions>()
-            .All(options => options.LanguageVersion == LanguageVersion.Preview);
+            .All(options => options.LanguageVersion == LanguageVersion.CSharp15 ||
+                (allowPreview && options.LanguageVersion == LanguageVersion.Preview));
         var net11 = unit.TargetFramework.Equals("net11.0", StringComparison.OrdinalIgnoreCase) ||
             unit.TargetFramework.StartsWith("net11.0-", StringComparison.OrdinalIgnoreCase);
         var runtimeSupport = unit.Compilation.GetTypeByMetadataName(
@@ -28,14 +29,14 @@ public static class ProfileNegotiator
                 "System.Runtime.CompilerServices.IUnion") is not null;
 
         if (requested != AssayProfile.Native || !net11 || !nativeLanguage ||
-            !allowPreview || !runtimeSupport || !UnionCapabilities.CompilerExposesUnionSymbols())
+            !runtimeSupport || !UnionCapabilities.CompilerExposesUnionSymbols())
         {
             return new ProfileNegotiation(
                 EffectiveProfile.Native,
                 "native-unavailable",
                 Presence.Of(new MissingEvidence(
                     "CSASSAY-NATIVE-UNAVAILABLE",
-                    "CSharpAssay requires .NET 11, C# preview, and native compiler/runtime union support. Earlier targets and library compatibility profiles are unsupported.",
+                    "CSharpAssay requires .NET 11, C# 15, and native compiler/runtime union support. Earlier targets and library compatibility profiles are unsupported.",
                     unit.Name,
                     unit.TargetFramework)));
         }

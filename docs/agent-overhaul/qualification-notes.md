@@ -1,5 +1,7 @@
 # Retained overhaul qualification attempts
 
+This records the original prerelease qualification. See [the current toolchain](../../README.md) for the supported SDK and language version.
+
 The independent SDK prerequisite (`3187106`) passed all seven engine gates on
 .NET 11 RC2, with 170 tests and p95 33.4952 ms under the unchanged 50 ms budget.
 Its paired SDK-only Playground qualification is a separate source/evidence scope.
